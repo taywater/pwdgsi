@@ -28,8 +28,16 @@
 #'
 #' @return Output will be a vector of integers corresponding to \code{dtime_edt} and representing
 #'   the event ID for each time step.
+#'   
+#' @details Function should be used inside \code{\link[dplyr]{mutate}} to add output to the corresponding table.    
 #'
 #' @export
+#' 
+#' @examples
+#' gage_temp <- mutate(rainfall, 
+#'   event_id = detectEvents(dtime_edt = rainfall$dtime_edt, 
+#'   rainfall_in = rainfall$rainfall_in, 
+#'   iet_hr = 6, mindepth_in = 0.10))
 
 detectEvents <- function(dtime_edt, rainfall_in, iet_hr = 6, mindepth_in = 0.10) {
 
@@ -128,10 +136,32 @@ NULL
 #' @param dtime_edt vector, POSIXct date times representing a single rain event
 #'
 #' @return \describe{
-#'        \item{\code{\link{stormDepth_in}}}{Output will be total rainfall depth for the event, in inches.}
+#'        \item{\code{stormDepth_in}}{Output will be total rainfall depth for the event, in inches.}
 #' }
 #'
+#' @seealso \code{\link[dplyr]{group_by}}, \code{\link[dplyr]{arrange}},
+#'  \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{summarize}},
+#'  \code{\link[dplyr]{select}}
+#'  
 #' @export
+#' 
+#' @examples 
+#' rain_newevents <- rainfall %>%  #use dplyr pipe to update dataframe
+#'  group_by(gage_uid) %>% 
+#'   arrange(dtime_edt) %>% 
+#'   mutate(event_id = detectEvents(dtime_edt, rainfall_in)) %>%
+#'   #Drop the last "complete" event in case it straddles the month boundary
+#'   #It will get processed the when the next batch of data comes in
+#'   filter(!is.na(event_id), event_id != max(event_id, na.rm = TRUE)) %>%
+#'   group_by(gage_uid, event_id) %>%
+#'   summarize(eventdatastart_edt = first(dtime_edt),
+#'             eventdataend_edt = last(dtime_edt),
+#'             eventduration_hr = stormDuration_hr(dtime_edt),
+#'             eventpeakintensity_inhr = stormPeakIntensity_inhr(dtime_edt, rainfall_in),
+#'             eventavgintensity_inhr = stormAvgIntensity_inhr(dtime_edt, rainfall_in),
+#'             eventdepth_in = stormDepth_in(rainfall_in)) %>%
+#'   select(-event_id)
+ 
 
 stormDepth_in <- function(rainfall_in) {
 
@@ -157,7 +187,7 @@ stormDepth_in <- function(rainfall_in) {
 #' @rdname storm
 #'
 #' @return \describe{
-#'        \item{\code{\link{stormDuration_hr}}}{Output will be a double with the duration of the event, in hours.}
+#'        \item{\code{stormDuration_hr}}{Output will be a double with the duration of the event, in hours.}
 #' }
 #'
 #' @export
@@ -199,7 +229,7 @@ stormDuration_hr <- function(dtime_edt) {
 #' @rdname storm
 #'
 #' @return \describe{
-#'        \item{\code{\link{stormPeakIntensity_inhr}}}{Output will be a number representing the event's peak intensity in inches/hour.}
+#'        \item{\code{stormPeakIntensity_inhr}}{Output will be a number representing the event's peak intensity in inches/hour.}
 #' }
 #'
 #' @export
@@ -250,7 +280,7 @@ stormPeakIntensity_inhr <- function(dtime_edt, rainfall_in) {
 #' @rdname storm
 #'
 #' @return \describe{
-#'        \item{\code{\link{stormAvgIntensity_inhr}}}{Output will be a number representing the event's average intensity in inches/hour.}
+#'        \item{\code{stormAvgIntensity_inhr}}{Output will be a number representing the event's average intensity in inches/hour.}
 #' }
 #'
 #' @export
@@ -292,7 +322,18 @@ stormAvgIntensity_inhr <- function(dtime_edt, rainfall_in) {
 #'    the graphical parameters are hard coded and the legend is deleted.
 #'    This may change in future versions.
 #'
+#' @seealso \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{filter}}
+#'
 #' @export
+#' 
+#' @examples
+#' gage_temp <- mutate(rainfall, 
+#'   event_id = detectEvents(dtime_edt = rainfall$dtime_edt, 
+#'   rainfall_in = rainfall$rainfall_in, 
+#'   iet_hr = 6, mindepth_in = 0.10)) %>% filter(event_id == 2)
+#'   
+#' hyetograph(dtime_edt = gage_temp$dtime_edt, 
+#'   rainfall_in = gage_temp$rainfall_in, raingage = 2, event = 2)   
 
 
 

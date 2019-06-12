@@ -22,3 +22,12 @@ Output will be a vector of integers corresponding to \code{dtime_edt} and repres
 \description{
 Return a dataset of rainfall event IDs for a time period
 }
+\details{
+Function should be used inside \code{\link[dplyr]{mutate}} to add output to the corresponding table.
+}
+\examples{
+gage_temp <- mutate(rainfall, 
+  event_id = detectEvents(dtime_edt = rainfall$dtime_edt, 
+  rainfall_in = rainfall$rainfall_in, 
+  iet_hr = 6, mindepth_in = 0.10))
+}

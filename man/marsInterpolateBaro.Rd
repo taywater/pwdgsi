@@ -28,12 +28,15 @@ Returns an on-site barometric pressure reading, an interpolated barometric press
  or a combination.
 }
 \examples{
+
+ load "interpolateBaro" example dataset
+
  marsInterpolateBaro(
- baro_psi = interpolateBaro[[1]]$baro_psi, 
- smp_id = interpolateBaro[[1]]$smp_id, 
- weight = interpolateBaro[[1]]$weight, 
- target_id = interpolateBaro[[2]]
- )
+   baro_psi = interpolateBaro[[1]]$baro_psi, 
+   smp_id = interpolateBaro[[1]]$smp_id, 
+   weight = interpolateBaro[[1]]$weight, 
+   target_id = interpolateBaro[[2]]
+   )
 
 }
 \seealso{

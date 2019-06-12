@@ -23,3 +23,15 @@ Output will be a ggplot2 object of the hyetograph. Currently,
 \description{
 Return hyetograph of events processed by \code{\link{detectEvents}}
 }
+\examples{
+gage_temp <- mutate(rainfall, 
+  event_id = detectEvents(dtime_edt = rainfall$dtime_edt, 
+  rainfall_in = rainfall$rainfall_in, 
+  iet_hr = 6, mindepth_in = 0.10)) \%>\% filter(event_id == 2)
+  
+hyetograph(dtime_edt = gage_temp$dtime_edt, 
+  rainfall_in = gage_temp$rainfall_in, raingage = 2, event = 2)   
+}
+\seealso{
+\code{\link[dplyr]{mutate}}, \code{\link[dplyr]{filter}}
+}
