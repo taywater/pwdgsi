@@ -1,14 +1,3 @@
-#dplyr stuff
-library(magrittr)
-library(tidyverse)
-library(lubridate)
-library(padr)
-library(zoo)
-
-#Other Stuff
-library(odbc)
-
-
 # gapFillEventID -----------------------
 #When determining the appropriate event ID for zero-punctuated timestamps in a rainfall series, use this function
 #Zeroes that appear within an event (ie less than 6 hours of time has elapsed between measurements) should have the event ID of the event they occur in

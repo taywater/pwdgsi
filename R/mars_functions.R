@@ -2,13 +2,8 @@
 #File of stored functions for analysis of green stormwater infrastructure developed
 #for use by the Philadelphia Water Department
 #Written by Katie Swanson and checked by Laurie Kellndorfer, CDM Smith, February 2019
-#Last update: 3/15/2019
+#Last update: 6/12/2019 - Nick Manna, AKRF
 
-# Dependencies  ----------------
-library(dplyr) #detectEvents
-library(ggplot2) #detectEvents, hyetograph
-library(lubridate) #hyetograph
-library(scales) #hyetograph
 
 # detectEvents -----------------------------------------
 # NOTES: Based on a function written by Taylor Heffernan (see "detectEvents.r" and related email from 4/5/18,

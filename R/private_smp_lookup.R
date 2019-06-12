@@ -1,14 +1,7 @@
-
 #PWD GSI MARS
 #Written by Taylor Heffernan, PWD, and Nicholas Manna, AKRF
 #Last modified: 06/10/2019
 #Function based on steps to identify private SMPs for 1 tracking number, created by Taylor Heffernan
-#Is read into the script:
-
-
-
-#Depends
-library(odbc)
 
 
 #lookupPrivateSMPs---------------------
