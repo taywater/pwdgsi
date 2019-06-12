@@ -1,12 +1,16 @@
 Package: pwdgsi
 Type: Package
 Title: Philadelphia Water Department Green Stormwater Infrastructure
-Version: 0.1.0
+Version: 0.1.1
 Author: Taylor Heffernan (PWD) and Nicholas Manna (AKRF)
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Maintainer: Taylor Heffernan (PWD) and Nicholas Manna (AKRF)
+Description: R functions and sample datasets related to the analysis
+    of green stormwater infrastructure (GSI). Functions for analyzing
+    rainfall, barometric pressure, water level recession rates, and
+    other forms of data related to GSI are provided here. Developed by
+    the Monitoring, Analysis, and Research Support (MARS) group within
+    the Philadelphia Water Department's Office of Watersheds.
+License: Don't be a jerk
 Encoding: UTF-8
 LazyData: true
 Imports:
@@ -15,8 +19,6 @@ Imports:
   magrittr, 
   odbc,
   padr,
-  rgdal,
-  rgeos,
   tidyverse,
   zoo
 RoxygenNote: 6.1.1
