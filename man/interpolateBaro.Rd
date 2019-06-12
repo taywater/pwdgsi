@@ -18,4 +18,7 @@
 A dataset containing barometric pressures and inverse distance weights for SMPs,
 along with a target SMP ID, for which the user requests data.
 }
+\seealso{
+\code{\link{marsInterpolateBaro}}
+}
 \keyword{datasets}

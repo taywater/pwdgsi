@@ -11,9 +11,12 @@
   \item{gage_uid}{rain gage ID}
 }}
 \usage{
-\code{example_rain_gage}
+\code{rainfall}
 }
 \description{
 A dataset containing datetimes, rainfall in inches, and rainfall gage id.
+}
+\seealso{
+\code{\link{detectEvents}}, \code{\link{storm}}, \code{\link{hyetograph}}
 }
 \keyword{datasets}

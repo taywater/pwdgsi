@@ -15,7 +15,7 @@
 #'   \item{target_ID}{SMP ID for which the user requests data}
 #' }
 #' 
-#' 
+#' @seealso \code{\link{marsInterpolateBaro}}
 #' 
 "interpolateBaro"
 
@@ -26,7 +26,7 @@
 #' 
 #' @docType data
 #' 
-#' @usage \code{example_rain_gage}
+#' @usage \code{rainfall}
 #' 
 #' @format A dataframe with 105 rows and 3 variables
 #' \describe{
@@ -34,4 +34,7 @@
 #'   \item{rainfall_in}{rainfall total in the 15 minutes preceding the corresponding datetime}
 #'   \item{gage_uid}{rain gage ID}
 #' }
+#' 
+#' @seealso \code{\link{detectEvents}}, \code{\link{storm}}, \code{\link{hyetograph}}
+#' 
 "rainfall"
