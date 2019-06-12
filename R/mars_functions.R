@@ -34,9 +34,9 @@
 #' @export
 #' 
 #' @examples
-#' gage_temp <- mutate(rainfall, 
-#'   event_id = detectEvents(dtime_edt = rainfall$dtime_edt, 
-#'   rainfall_in = rainfall$rainfall_in, 
+#' gage_temp <- mutate(marsSampleRain, 
+#'   event_id = detectEvents(dtime_edt = marsSampleRain$dtime_edt, 
+#'   rainfall_in = marsSampleRain$rainfall_in, 
 #'   iet_hr = 6, mindepth_in = 0.10))
 
 detectEvents <- function(dtime_edt, rainfall_in, iet_hr = 6, mindepth_in = 0.10) {
@@ -146,13 +146,10 @@ NULL
 #' @export
 #' 
 #' @examples 
-#' rain_newevents <- rainfall %>%  #use dplyr pipe to update dataframe
+#' rain_newevents <- marsSampleRain %>%  #use dplyr pipe to update dataframe
 #'  group_by(gage_uid) %>% 
 #'   arrange(dtime_edt) %>% 
 #'   mutate(event_id = detectEvents(dtime_edt, rainfall_in)) %>%
-#'   #Drop the last "complete" event in case it straddles the month boundary
-#'   #It will get processed the when the next batch of data comes in
-#'   filter(!is.na(event_id), event_id != max(event_id, na.rm = TRUE)) %>%
 #'   group_by(gage_uid, event_id) %>%
 #'   summarize(eventdatastart_edt = first(dtime_edt),
 #'             eventdataend_edt = last(dtime_edt),
@@ -160,7 +157,6 @@ NULL
 #'             eventpeakintensity_inhr = stormPeakIntensity_inhr(dtime_edt, rainfall_in),
 #'             eventavgintensity_inhr = stormAvgIntensity_inhr(dtime_edt, rainfall_in),
 #'             eventdepth_in = stormDepth_in(rainfall_in)) %>%
-#'   select(-event_id)
  
 
 stormDepth_in <- function(rainfall_in) {
@@ -327,9 +323,9 @@ stormAvgIntensity_inhr <- function(dtime_edt, rainfall_in) {
 #' @export
 #' 
 #' @examples
-#' gage_temp <- mutate(rainfall, 
-#'   event_id = detectEvents(dtime_edt = rainfall$dtime_edt, 
-#'   rainfall_in = rainfall$rainfall_in, 
+#' gage_temp <- mutate(marsSampleRain, 
+#'   event_id = detectEvents(dtime_edt = marsSampleRain$dtime_edt, 
+#'   rainfall_in = marsSampleRain$rainfall_in, 
 #'   iet_hr = 6, mindepth_in = 0.10)) %>% filter(event_id == 2)
 #'   
 #' hyetograph(dtime_edt = gage_temp$dtime_edt, 

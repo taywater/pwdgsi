@@ -50,9 +50,14 @@ gapFillEventID <- function(event_low, event_high){
 #' @param daylight_savings logi, Adjust for daylight savings time? when doing QAQC
 #'   this should be \code{FALSE} because the water level data does not spring forwards.
 #'
-#' @return Output will be a data frame with four columns: dtime_est (POSIXct datetime with tz = EST or EDT as specified by \code{daylight_savings}), rainfall_in,
-#'   gagename, and event_id. This data will correspond to the specified SMP and date range.
-#'
+#' @return Output will be a data frame with four columns, which corresponds to the specified SMP and date range:
+#' 
+#'   \item{dtime_est}{POSIXct datetime with tz = EST or EDT as specified by \code{daylight_savings}}
+#'   \item{rainfall_in}{num, rainfall for the 15 minute preceding the corresponding datetime}
+#'   \item{gagename}{rain gage ID}
+#'   \item{event_id}{event number during this timestep}
+#' 
+#' 
 #' @seealso \code{\link[pwdgsi]{gapFillEventID}}, \code{\link{detectEvents}}
 #'
 #' @export

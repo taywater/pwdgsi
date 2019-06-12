@@ -14,7 +14,7 @@
 #'
 #' @seealso \itemize{
 #'      \code{\link{marsFetchBaroData}},
-#'      data: \code{\link{interpolateBaro}}
+#'      data: \code{\link{marsSampleBaro}}
 #'  }   
 #'
 #' @param baro_psi vector, num, barometric pressures measured at the same timestamp
@@ -33,13 +33,13 @@
 #' 
 #' @examples
 #' 
-#'  load "interpolateBaro" example dataset
+#'  data(marsSampleBaro)
 #' 
 #'  marsInterpolateBaro(
-#'    baro_psi = interpolateBaro[[1]]$baro_psi, 
-#'    smp_id = interpolateBaro[[1]]$smp_id, 
-#'    weight = interpolateBaro[[1]]$weight, 
-#'    target_id = interpolateBaro[[2]]
+#'    baro_psi = marsSampleBaro[[1]]$baro_psi, 
+#'    smp_id = marsSampleBaro[[1]]$smp_id, 
+#'    weight = marsSampleBaro[[1]]$weight, 
+#'    target_id = marsSampleBaro[[2]]
 #'    )
 #' 
 
@@ -69,12 +69,17 @@ marsInterpolateBaro <- function(baro_psi, smp_id, weight, target_id){
 #' @param end_date POSIXct, format: "YYYY-MM-DD", end of data request range
 #' @param data_interval chr, \code{"5 mins"} or \code{"15 mins"}, interval at which baro data will be returned.
 #'
-#' @return Output will be a dataframe with four columns: "dtime_est" (POSIXct, format: "YYYY-MM-DD HH:MM:SS"),
-#'    "baro_psi" (num), "smp_id" (chr), "neighbors" (int).
+#' @return Output will be a dataframe with four columns: 
+#'   
+#'     \item{dtime_est}{POSIXct, format: "YYYY-MM-DD HH:MM:SS"}
+#'     \item{baro_psi}{num, barometric pressure in psi}
+#'     \item{smp_id}{chr, SMP ID for each baro}
+#'     \item{neighbors}{num, count of baros interpolated from}
+#'     
 #'     If the target SMP has an on-site baro with data, the "neighbors" column will be NA.
 #'     If there are fewer than five baros to interprolate from, based on \code{\link{marsInterpolateBaro}},
 #'     all columns other than "dtime_est" will be NA.
-#'
+#' 
 #' @export
 #'
 #' @seealso \code{\link{marsInterpolateBaro}}

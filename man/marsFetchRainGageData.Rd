@@ -20,8 +20,12 @@ marsFetchRainGageData(con, target_id, start_date, end_date,
 this should be \code{FALSE} because the water level data does not spring forwards.}
 }
 \value{
-Output will be a data frame with four columns: dtime_est (POSIXct datetime with tz = EST or EDT as specified by \code{daylight_savings}), rainfall_in,
-  gagename, and event_id. This data will correspond to the specified SMP and date range.
+Output will be a data frame with four columns, which corresponds to the specified SMP and date range:
+
+  \item{dtime_est}{POSIXct datetime with tz = EST or EDT as specified by \code{daylight_savings}}
+  \item{rainfall_in}{num, rainfall for the 15 minute preceding the corresponding datetime}
+  \item{gagename}{rain gage ID}
+  \item{event_id}{event number during this timestep}
 }
 \description{
 Return data from the rain gage nearest a target SMP, for a specified date range.

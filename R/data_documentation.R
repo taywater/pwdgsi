@@ -1,11 +1,11 @@
-#' Interpolate Baro List
+#' Sample Baro Data
 #' 
 #' A dataset containing barometric pressures and inverse distance weights for SMPs,
 #' along with a target SMP ID, for which the user requests data. 
 #' 
 #' @docType data
 #' 
-#' @usage \code{interpolateBaro}
+#' @usage \code{marsSampleBaro}
 #' 
 #' @format A list containing a dataframe with 9 rows and 3 variables, and a character. 
 #' \describe{
@@ -17,16 +17,16 @@
 #' 
 #' @seealso \code{\link{marsInterpolateBaro}}
 #' 
-"interpolateBaro"
+"marsSampleBaro"
 
 
-#' Rainfall
+#' Sample Rain Data
 #' 
 #' A dataset containing datetimes, rainfall in inches, and rainfall gage id. 
 #' 
 #' @docType data
 #' 
-#' @usage \code{rainfall}
+#' @usage \code{marsSampleRain}
 #' 
 #' @format A dataframe with 105 rows and 3 variables
 #' \describe{
@@ -37,4 +37,4 @@
 #' 
 #' @seealso \code{\link{detectEvents}}, \code{\link{storm}}, \code{\link{hyetograph}}
 #' 
-"rainfall"
+"marsSampleRain"

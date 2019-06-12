@@ -19,8 +19,13 @@ marsFetchBaroData(con, target_id, start_date, end_date,
 \item{data_interval}{chr, \code{"5 mins"} or \code{"15 mins"}, interval at which baro data will be returned.}
 }
 \value{
-Output will be a dataframe with four columns: "dtime_est" (POSIXct, format: "YYYY-MM-DD HH:MM:SS"),
-   "baro_psi" (num), "smp_id" (chr), "neighbors" (int).
+Output will be a dataframe with four columns: 
+  
+    \item{dtime_est}{POSIXct, format: "YYYY-MM-DD HH:MM:SS"}
+    \item{baro_psi}{num, barometric pressure in psi}
+    \item{smp_id}{chr, SMP ID for each baro}
+    \item{neighbors}{num, count of baros interpolated from}
+    
     If the target SMP has an on-site baro with data, the "neighbors" column will be NA.
     If there are fewer than five baros to interprolate from, based on \code{\link{marsInterpolateBaro}},
     all columns other than "dtime_est" will be NA.

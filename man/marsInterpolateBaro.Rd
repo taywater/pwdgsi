@@ -29,19 +29,19 @@ Returns an on-site barometric pressure reading, an interpolated barometric press
 }
 \examples{
 
- load "interpolateBaro" example dataset
+ data(marsSampleBaro)
 
  marsInterpolateBaro(
-   baro_psi = interpolateBaro[[1]]$baro_psi, 
-   smp_id = interpolateBaro[[1]]$smp_id, 
-   weight = interpolateBaro[[1]]$weight, 
-   target_id = interpolateBaro[[2]]
+   baro_psi = marsSampleBaro[[1]]$baro_psi, 
+   smp_id = marsSampleBaro[[1]]$smp_id, 
+   weight = marsSampleBaro[[1]]$weight, 
+   target_id = marsSampleBaro[[2]]
    )
 
 }
 \seealso{
 \itemize{
      \code{\link{marsFetchBaroData}},
-     data: \code{\link{interpolateBaro}}
+     data: \code{\link{marsSampleBaro}}
  }
 }

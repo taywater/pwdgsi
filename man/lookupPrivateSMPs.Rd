@@ -12,8 +12,13 @@ lookupPrivateSMPs(con, tracking_numbers)
 \item{tracking_number}{chr, tracking number for the requested SMP}
 }
 \value{
-Output will be a dateframe. For tracking numbers were found in database, output will be private SMP
-  "tracking_number" (chr), "project name" (chr), "smp_id" (int), and "plan_label" (chr).
+Output will be a dateframe with four columns:
+  
+    \item{tracking_number}{chr, requested SMP tracking number}
+    \item{project name}{chr, SMP poject name}
+    \item{smp_id}{int, SMP ID}
+    \item{plan_label}{chr, name that the SMP is given on the plan set}
+  
   If a tracking number is not found, that row will include an error message
   in the "project name" column, and NAs in "smp_id" and "plan_label".
 }
