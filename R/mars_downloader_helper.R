@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 # Load Libraries --------------------
 #dplyr stuff
@@ -10,6 +11,8 @@ library(zoo)
 #Other Stuff
 library(odbc)
 
+=======
+>>>>>>> 3c12791548140e7b47381d58b5e0baf114f3dca3
 # marsInterpolateBaro -------------------------
 #When requesting baro data, if an SMP has a baro with data on-site for a specific timestep, use that baro.
 #If not, use the inverse distance weighted interpolation of all baros with data.
@@ -24,7 +27,10 @@ library(odbc)
 #' Returns an on-site barometric pressure reading, an interpolated barometric pressure reading, \code{NA},
 #'  or a combination.
 #'
-#' @seealso \code{\link{marsFetchBaroData}}
+#' @seealso \itemize{
+#'      \code{\link{marsFetchBaroData}},
+#'      data: \code{\link{interpolateBaro}}
+#'  }   
 #'
 #' @param baro_psi vector, num, barometric pressures measured at the same timestamp
 #' @param smp_id vector, chr, SMP IDs where the measurements took place
@@ -39,6 +45,10 @@ library(odbc)
 #'   If there are fewer than 5 readings, return \code{NA}.
 #'
 #' @export
+#' 
+#' @examples
+#'  marsInterpolateBaro(baro_psi = {interpolateBaro}[1]$baro_psi)
+#' 
 
 
 marsInterpolateBaro <- function(baro_psi, smp_id, weight, target_id){
