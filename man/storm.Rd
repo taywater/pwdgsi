@@ -34,7 +34,9 @@ stormAvgIntensity_inhr(dtime_edt, rainfall_in)
        \item{\code{\link{stormPeakIntensity_inhr}}}{Output will be a number representing the event's peak intensity in inches/hour.}
 }
 
-\item{\code{\link{stormAvgIntensity_inhr}}}{Output will be a number representing the event's average intensity in inches/hour.}
+\describe{
+       \item{\code{\link{stormAvgIntensity_inhr}}}{Output will be a number representing the event's average intensity in inches/hour.}
+}
 }
 \description{
 Return storm depth, duration, average intensity, and peak intensity of an event processed using \code{\link{detectEvents}}.
