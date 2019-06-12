@@ -2,7 +2,7 @@
 # NOTES: Based on plots developed by Dwayne Myers and modified by Katie Swanson 2/4/2019
 # Plots hyetographs of events processed by detectEvents funtion
 
-# IN: dtime_edt A vector of times at which rainfall was collected in the storm
+# IN: dtime_est A vector of times at which rainfall was collected in the storm
 # IN: rainfall_in The depth of water that fell at each time, in inches
 # OUT:  Rainfall hyetograph
 
@@ -10,7 +10,7 @@
 #'
 #' Return hyetograph of events processed by \code{\link{detectEvents}}
 #'
-#' @param dtime_edit vector, POSIXct datetimes representing a single rain event
+#' @param dtime_est vector, POSIXct datetimes representing a single rain event
 #' @param rainfall_in vector, num, rainfall in inches for that rain event
 #' @param raingage chr, Label for the hyetograph for what rain gage the data came from
 #' @param event chr, label for the hyetograph for what rain gage the data came from
@@ -25,19 +25,19 @@
 #' 
 #' @examples
 #' gage_temp <- mutate(marsSampleRain, 
-#'   event_id = detectEvents(dtime_edt = marsSampleRain$dtime_edt, 
+#'   event_id = detectEvents(dtime_est = marsSampleRain$dtime_est, 
 #'   rainfall_in = marsSampleRain$rainfall_in, 
 #'   iet_hr = 6, mindepth_in = 0.10)) %>% filter(event_id == 2)
 #'   
-#' hyetograph(dtime_edt = gage_temp$dtime_edt, 
+#' hyetograph(dtime_est = gage_temp$dtime_est, 
 #'   rainfall_in = gage_temp$rainfall_in, raingage = 2, event = 2)   
 
 
 
-hyetograph <- function(dtime_edt, rainfall_in, raingage, event){
+hyetograph <- function(dtime_est, rainfall_in, raingage, event){
 
   #0. check data
-  if(length(dtime_edt) != length(rainfall_in)){
+  if(length(dtime_est) != length(rainfall_in)){
     stop("Datetime and rainfall lengths must be equal")
   }
 
@@ -46,7 +46,7 @@ hyetograph <- function(dtime_edt, rainfall_in, raingage, event){
   }
 
   #1.1 Process data
-  rain_data <- data.frame(dtimeEST = lubridate::force_tz(dtime_edt, tz = "EST"),
+  rain_data <- data.frame(dtimeEST = lubridate::force_tz(dtime_est, tz = "EST"),
                           rainIN = rainfall_in)
 
   if(nrow(rain_data) == 0){

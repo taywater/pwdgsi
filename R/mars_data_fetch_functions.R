@@ -65,7 +65,7 @@ lookupPrivateSMPs <- function(con, tracking_numbers){
 #'
 #' @return Output will be a data frame with four columns, which corresponds to the specified SMP and date range:
 #' 
-#'   \item{dtime_est}{POSIXct datetime with tz = EST or EDT as specified by \code{daylight_savings}}
+#'   \item{dtime_est OR dtime_edt}{POSIXct datetime with tz = EST or EDT as specified by \code{daylight_savings}}
 #'   \item{rainfall_in}{num, rainfall for the 15 minute preceding the corresponding datetime}
 #'   \item{gagename}{rain gage ID}
 #'   \item{event_id}{event number during this timestep}
