@@ -1,18 +1,3 @@
-<<<<<<< HEAD
-
-# Load Libraries --------------------
-#dplyr stuff
-library(magrittr)
-library(tidyverse)
-library(lubridate)
-library(padr)
-library(zoo)
-
-#Other Stuff
-library(odbc)
-
-=======
->>>>>>> 3c12791548140e7b47381d58b5e0baf114f3dca3
 # marsInterpolateBaro -------------------------
 #When requesting baro data, if an SMP has a baro with data on-site for a specific timestep, use that baro.
 #If not, use the inverse distance weighted interpolation of all baros with data.
