@@ -27,6 +27,18 @@ Output will be a single barometric pressure reading.
 Returns an on-site barometric pressure reading, an interpolated barometric pressure reading, \code{NA},
  or a combination.
 }
+\examples{
+ marsInterpolateBaro(
+ baro_psi = interpolateBaro[[1]]$baro_psi, 
+ smp_id = interpolateBaro[[1]]$smp_id, 
+ weight = interpolateBaro[[1]]$weight, 
+ target_id = interpolateBaro[[2]]
+ )
+
+}
 \seealso{
-\code{\link{marsFetchBaroData}}
+\itemize{
+     \code{\link{marsFetchBaroData}},
+     data: \code{\link{interpolateBaro}}
+ }
 }

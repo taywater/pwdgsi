@@ -4,7 +4,12 @@
 \name{rainfall}
 \alias{rainfall}
 \title{Rainfall}
-\format{An object of class \code{data.frame} with 105 rows and 3 columns.}
+\format{A dataframe with 105 rows and 3 variables
+\describe{
+  \item{dtime_edt}{POSIXct datetime, YYYY-MM-DD HH:MM:SS}
+  \item{rainfall_in}{rainfall total in the 15 minutes preceding the corresponding datetime}
+  \item{gage_uid}{rain gage ID}
+}}
 \usage{
 \code{example_rain_gage}
 }
