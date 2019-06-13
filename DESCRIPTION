@@ -2,8 +2,9 @@ Package: pwdgsi
 Type: Package
 Title: Philadelphia Water Department Green Stormwater Infrastructure
 Version: 0.1.1
-Author: Taylor Heffernan (PWD) and Nicholas Manna (AKRF)
-Maintainer: Taylor Heffernan (PWD) and Nicholas Manna (AKRF)
+Authors@R: c(
+    person("Taylor", "Heffernan", role = c("aut", "cre"), comment = "PWD"),
+    person("Nicholas", "Manna", role = c("aut", "cre"), comment = "AKRF"))
 Description: R functions and sample datasets related to the analysis
     of green stormwater infrastructure (GSI). Functions for analyzing
     rainfall, barometric pressure, water level recession rates, and
