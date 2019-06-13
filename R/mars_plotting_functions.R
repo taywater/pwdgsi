@@ -25,11 +25,11 @@
 #' 
 #' @examples
 #' gage_temp <- mutate(marsSampleRain, 
-#'   event_id = detectEvents(dtime_est = marsSampleRain$dtime_est, 
+#'   event_id = detectEvents(dtime_edt = marsSampleRain$dtime_edt, 
 #'   rainfall_in = marsSampleRain$rainfall_in, 
 #'   iet_hr = 6, mindepth_in = 0.10)) %>% filter(event_id == 2)
 #'   
-#' hyetograph(dtime_est = gage_temp$dtime_est, 
+#' hyetograph(dtime_edt = gage_temp$dtime_edt, 
 #'   rainfall_in = gage_temp$rainfall_in, raingage = 2, event = 2)   
 
 

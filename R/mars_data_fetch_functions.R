@@ -40,13 +40,14 @@ lookupPrivateSMPs <- function(con, tracking_numbers){
   hits <- filter(planreviewtable, tracking_number %in% tracking_numbers)
 
   #If any of the tracking numbers weren't found, we can return an error message
-  misses <- tracking_numbers[!(tracking_numbers %in% planreviewtable$tracking_number)] %>%
-    {data.frame(tracking_number = ., project_name = "Tracking number not found. Did you type it wrong?", smp_id = NA, plan_label = NA)}
-  #{} around a function in a pipeline means that the pipe does not automatically insert the pipe antecedent value as the first argument of the next function
-  #Instead, you direct where the antecedent value goes with a .
-  #In this case, it is being named tracking number. If we didn't do it with the {}, the column of the data frame would be named .
-
-  privateSMPs <- bind_rows(hits, misses)
+  misses <- tracking_numbers[!(tracking_numbers %in% planreviewtable$tracking_number)]
+  
+  if(length(misses) > 0) {
+    invalid <- data.frame(tracking_number = misses, project_name = "Tracking number not found. Did you type it wrong?", smp_id = NA, plan_label = NA)
+    privateSMPs <- bind_rows(hits, invalid)
+  } else {
+    privateSMPs <- hits
+  }
 
   return(privateSMPs)
 }
