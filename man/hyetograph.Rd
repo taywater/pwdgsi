@@ -4,7 +4,7 @@
 \alias{hyetograph}
 \title{Plot hyetograph}
 \usage{
-hyetograph(dtime_est, rainfall_in, raingage, event)
+hyetograph(dtime_est, rainfall_in, raingage, event, reverse_y = FALSE)
 }
 \arguments{
 \item{dtime_est}{vector, POSIXct datetimes representing a single rain event}
@@ -14,6 +14,8 @@ hyetograph(dtime_est, rainfall_in, raingage, event)
 \item{raingage}{chr, Label for the hyetograph for what rain gage the data came from}
 
 \item{event}{chr, label for the hyetograph for what rain gage the data came from}
+
+\item{reverse_y}{logical, whether the Y axes should be reversed}
 }
 \value{
 Output will be a ggplot2 object of the hyetograph. Currently,

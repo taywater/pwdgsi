@@ -14,6 +14,7 @@
 #' @param rainfall_in vector, num, rainfall in inches for that rain event
 #' @param raingage chr, Label for the hyetograph for what rain gage the data came from
 #' @param event chr, label for the hyetograph for what rain gage the data came from
+#' @param reverse_y logical, whether the Y axes should be reversed
 #'
 #' @return Output will be a ggplot2 object of the hyetograph. Currently,
 #'    the graphical parameters are hard coded and the legend is deleted.
@@ -34,7 +35,7 @@
 
 
 
-hyetograph <- function(dtime_est, rainfall_in, raingage, event){
+hyetograph <- function(dtime_est, rainfall_in, raingage, event, reverse_y = FALSE){
 
   #0. check data
   if(length(dtime_est) != length(rainfall_in)){
@@ -150,6 +151,14 @@ hyetograph <- function(dtime_est, rainfall_in, raingage, event){
   rain_data <- rbind(rain_data, end)
 
 
+  #Which scale function are we using?
+  if(reverse_y == TRUE){
+    y_scale_function <- ggplot2::scale_y_reverse
+  }else{
+    y_scale_function <- ggplot2::scale_y_continuous  
+  }
+  
+  
   #3. Plot
   hyetograph <-
     ggplot2::ggplot(data = rain_data,
@@ -197,7 +206,7 @@ hyetograph <- function(dtime_est, rainfall_in, raingage, event){
       #expand = c(0.03,0) # control where y axis crosses - first number is fraction of plot left as white space
     ) +
 
-    ggplot2::scale_y_continuous(
+    y_scale_function(
       #expand = c(0.03,0), # control where x axis crosses - first number is fraction left as white space
       #limits = c(min_rain, max_rain), # set y axis limits
       breaks = seq(min_rain, max_rain, by = rain_major_interval),
