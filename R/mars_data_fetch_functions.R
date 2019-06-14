@@ -90,7 +90,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
   gage_query <- paste("SELECT dtime_edt, rainfall_in, gage_uid FROM public.rainfall_gage",
                       "WHERE gage_uid = CAST('", smp_gage$gage_uid[1], "' as int)",
                       "AND dtime_edt >= Date('", start_date, "')",
-                      "AND dtime_edt <= Date('", end_date + days(1), "');")
+                      "AND dtime_edt <= Date('", end_date + lubridate::days(1), "');")
 
   gage_temp <- odbc::dbGetQuery(con, gage_query)
 
@@ -103,7 +103,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
   }
 
   gage_temp$rainfall_in %<>% as.numeric
-  gage_temp$dtime_edt %<>% ymd_hms(tz = "America/New_york")
+  gage_temp$dtime_edt %<>% lubridate::ymd_hms(tz = "America/New_york")
 
   #Apparently, attempting to set the time zone on a datetime that falls squarely on the spring forward datetime
   #Such as 2005-04-03 02:00:00
@@ -117,11 +117,11 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
   #Thankfully, the dst() function returns TRUE if a dtime is within that zone
   if(daylightsavings == FALSE){
     dst_index <- lubridate::dst(gage_temp$dtime_edt)
-    gage_temp$dtime_edt %<>% force_tz("EST") #Assign new TZ without changing dates
+    gage_temp$dtime_edt %<>% lubridate::force_tz("EST") #Assign new TZ without changing dates
     gage_temp$dtime_edt[dst_index] <- gage_temp$dtime_edt[dst_index] - lubridate::hours(1)
   }
 
-  gage_temp %<>% dplyr::mutate(event_id = detectEvents(dtime_edt = dtime_edt, rainfall_in = rainfall_in, iet_hr = 6, mindepth_in = 0.10))
+  gage_temp %<>% dplyr::mutate(event_id = detectEvents(dtime_est = dtime_edt, rainfall_in = rainfall_in, iet_hr = 6, mindepth_in = 0.10))
 
   #Punctuate data with zeroes to prevent linear interpolation when plotting
   #If the time between data points A and B is greater than 15 minutes (the normal timestep), we must insert a zero 15 minutes after A
@@ -183,7 +183,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
     finalseries <- finalseries %>%
       dplyr::mutate(dtime_est = dtime_edt) %>%
       dplyr::select(-dtime_edt)
-    finalseries <- select(finalseries, dtime_est, rainfall_in, gagename, event_id)
+    finalseries <- dplyr::select(finalseries, dtime_est, rainfall_in, gagename, event_id)
   }
 
 
@@ -325,12 +325,12 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 
   #browser()
   #Generate the beginning of a report about the baro request
-  report_filename <- paste("//pwdoows/oows/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader/Reports/", paste0(paste(today("EST"), smp_id, "baro_report", sep ="_"), ".txt"))
+  report_filename <- paste("//pwdoows/oows/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader/Reports/", paste0(paste(lubridate::today("EST"), target_id, "baro_report", sep ="_"), ".txt"))
   report_title <- "Composite Baro Data Generation Report"
   write(report_title, file = report_filename, append = FALSE)
 
   #Record the arguments used to supply the baro data
-  arguments <- c(paste("SMP:", smp_id),
+  arguments <- c(paste("SMP:", target_id),
                  paste("Start Date:", start_date),
                  paste("End date:", end_date),
                  paste("Data Interval:", data_interval)
@@ -398,14 +398,14 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
               neighbors = ifelse(target_id %in% smp_id, NA, dplyr::n()))
 
   #Adding "neighbor" counts and instances to report
-  neighbors <- data.frame(group_by(interpolated_baro, neighbors) %>% dplyr::summarize(count = dplyr::n()))
+  neighbors <- dplyr::group_by(interpolated_baro, neighbors) %>% dplyr::summarize(count = dplyr::n())
   write(paste("Neighbors: Count"), file = report_filename, append = TRUE)
   for(i in 1:nrow(neighbors)){
     write(paste(neighbors$neighbors[i], paste(neighbors$count[i]), sep = ":  "), file = report_filename, append = TRUE)
   }
 
   #Note the file that the output has been saved to
-  write(paste0("Baro data has been saved to ", paste(smp_id, start_date, "to", end_date, sep = "_"), ".csv"), file = report_filename, append = TRUE)
+  write(paste0("Baro data has been saved to ", paste(target_id, start_date, "to", end_date, sep = "_"), ".csv"), file = report_filename, append = TRUE)
 
   finalseries <- interpolated_baro
 

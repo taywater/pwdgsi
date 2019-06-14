@@ -66,7 +66,7 @@ detectEvents <- function(dtime_est, rainfall_in, iet_hr = 6, mindepth_in = 0.10)
   # 2. Process rainfall data
   prepseries <- tibble::tibble(dtime = dtime_est,
                             rf_in = rainfall_in) %>%
-    dplyr::mutate(lag_time = dplyr::lag(dtime, 1, default = first(dtime) - interval_sec)) %>%
+    dplyr::mutate(lag_time = dplyr::lag(dtime, 1, default = dplyr::first(dtime) - interval_sec)) %>%
     dplyr::mutate(gap_hr = difftime(dtime, lag_time, unit = "hours"))
 
   min_interval_hr <- .25
@@ -94,7 +94,7 @@ detectEvents <- function(dtime_est, rainfall_in, iet_hr = 6, mindepth_in = 0.10)
     # note: subtracted from minimum threshold because spot check indicated that
     # some events at the threshold were not being included in the event
     # detection (but not all). Probably a floating point issue.
-    dplyr::mutate(event_id = 1:n()) # all events that are greater than the min depth
+    dplyr::mutate(event_id = 1:dplyr::n()) # all events that are greater than the min depth
 
   # 3.6 Join event summary to rainfall data
   output <- prepseries %>%
