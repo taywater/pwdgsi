@@ -133,7 +133,7 @@ NULL
 #' }
 #'
 #' @seealso \code{\link[dplyr]{group_by}}, \code{\link[dplyr]{arrange}},
-#'  \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{summarize}},
+#'  \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{summarise}},
 #'  \code{\link[dplyr]{select}}
 #'  
 #' @export
