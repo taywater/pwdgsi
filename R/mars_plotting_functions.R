@@ -54,7 +54,7 @@ hyetograph <- function(dtime_est, rainfall_in, raingage, event){
   }
 
   #1.3 Assume minimum interval
-  min_interval <- minutes(15)
+  min_interval <- lubridate::minutes(15)
 
   #1.4  Calculate cumulative rainfall
   rain_data <- rain_data %>% dplyr::mutate(cumulative = cumsum(rainIN))
@@ -76,7 +76,7 @@ hyetograph <- function(dtime_est, rainfall_in, raingage, event){
   #2.1 Calculate plotting limits
   #Calculate minimum and maximum data values
   min_date <- min(rain_data$dtimeEST, na.rm = TRUE)
-  max_date <- max(rain_data$dtimeEST, na.rm = TRUE) + hours(6)
+  max_date <- max(rain_data$dtimeEST, na.rm = TRUE) + lubridate::hours(6)
   min_rain <- 0
   max_rain <- max(rain_data$rain, na.rm = TRUE)
   #calculate scaling factor for secondary y-axis for cumulative rainfall
@@ -139,7 +139,7 @@ hyetograph <- function(dtime_est, rainfall_in, raingage, event){
   major_date_breaks <- lubridate::force_tz(seq.POSIXt(day_marker[1], max_date, by = x), tz = "EST")
 
   #All plots use one-hour interval for minor x-axis breaks
-  minor_date_breaks <- lubridate::force_tz(seq.POSIXt(day_marker[1], max_date + hours(6), by = "hour"), tz = "EST")
+  minor_date_breaks <- lubridate::force_tz(seq.POSIXt(day_marker[1], max_date + lubridate::hours(6), by = "hour"), tz = "EST")
 
   #2.6 Add row for cumulative rainfall
   #Note - this row forces cumulative rainfall to plot throughout full extent shown, otherwise
@@ -152,43 +152,43 @@ hyetograph <- function(dtime_est, rainfall_in, raingage, event){
 
   #3. Plot
   hyetograph <-
-    ggplot(data = rain_data,
-           aes(x = dtimeEST,
+    ggplot2::ggplot(data = rain_data,
+           ggplot2::aes(x = dtimeEST,
                y = cumulative/max_cumulative_scaling)
 
     ) +
 
-    geom_area(color = "grey32",
+    ggplot2::geom_area(color = "grey32",
               fill = "slateblue1",
               alpha = 0.2
     ) +
 
-    geom_bar(data = rain_data,
-             aes(x = dtimeEST,
+    ggplot2::geom_bar(data = rain_data,
+             ggplot2::aes(x = dtimeEST,
                  y = rainIN),
       fill = "cornflowerblue", # set the line color
       stat="identity"
     ) +
 
     #Day boundaries
-    geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", size = 1.2) + #date boundaries
+    ggplot2::geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", size = 1.2) + #date boundaries
 
-    annotate("rect", xmin = day_marker-0.03*event_duration,
+    ggplot2::annotate("rect", xmin = day_marker-0.03*event_duration,
              xmax = day_marker - 0.01*event_duration,
              ymin = 0.7*max_rain,
              ymax = 0.9*max_rain,
              alpha = 0.8,
              fill = "white")+
 
-    annotate("text", x = day_marker-0.02*event_duration,
+    ggplot2::annotate("text", x = day_marker-0.02*event_duration,
              y = 0.8*max_rain,
              label = day_marker,
              angle = 90,
              size = 5)+
 
-    theme_bw() + # a basic black and white theme
+    ggplot2::theme_bw() + # a basic black and white theme
 
-    scale_x_datetime(
+    ggplot2::scale_x_datetime(
       name = " ", # x axis label
       labels = scales::date_format("%H:%M", "EST"),
       limits = c(min_date - min_interval, max_date), # set x axis limits
@@ -197,28 +197,28 @@ hyetograph <- function(dtime_est, rainfall_in, raingage, event){
       #expand = c(0.03,0) # control where y axis crosses - first number is fraction of plot left as white space
     ) +
 
-    scale_y_continuous(
+    ggplot2::scale_y_continuous(
       #expand = c(0.03,0), # control where x axis crosses - first number is fraction left as white space
       #limits = c(min_rain, max_rain), # set y axis limits
       breaks = seq(min_rain, max_rain, by = rain_major_interval),
       minor_breaks = seq(min_rain, max_rain, by = rain_minor_interval),
-      sec.axis = sec_axis(~.*max_cumulative_scaling, name = "Cumulative Rainfall (in)")
+      sec.axis = ggplot2::sec_axis(~.*max_cumulative_scaling, name = "Cumulative Rainfall (in)")
 
     ) +
 
-    labs(
+    ggplot2::labs(
       y = "Rainfall (in)",
       title = title_text
     ) +
 
-    theme(
-      text = element_text(size = 16),
-      axis.text.x = element_text(size = 14, color = "black"), # set font size and color of x axis text
-      axis.text.y = element_text(size = 14, color = "black"), # set font size and color of y axis text
-      panel.background =  element_rect(fill = "white", colour = NA), # set white background
-      panel.border =      element_rect(fill = NA, colour="black"), # set black border
-      panel.grid.major =  element_line(colour = "grey70", size = 0.2), # set major grid lines
-      panel.grid.minor =  element_line(colour = "grey90", size = 0.5), # set minor grid lines
+    ggplot2::theme(
+      text = ggplot2::element_text(size = 16),
+      axis.text.x = ggplot2::element_text(size = 14, color = "black"), # set font size and color of x axis text
+      axis.text.y = ggplot2::element_text(size = 14, color = "black"), # set font size and color of y axis text
+      panel.background =  ggplot2::element_rect(fill = "white", colour = NA), # set white background
+      panel.border =      ggplot2::element_rect(fill = NA, colour="black"), # set black border
+      panel.grid.major =  ggplot2::element_line(colour = "grey70", size = 0.2), # set major grid lines
+      panel.grid.minor =  ggplot2::element_line(colour = "grey90", size = 0.5), # set minor grid lines
       legend.position = "none"
     )
   return(hyetograph)

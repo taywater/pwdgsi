@@ -66,7 +66,7 @@ detectEvents <- function(dtime_est, rainfall_in, iet_hr = 6, mindepth_in = 0.10)
   # 2. Process rainfall data
   prepseries <- tibble::tibble(dtime = dtime_est,
                             rf_in = rainfall_in) %>%
-    dplyr::mutate(lag_time = lag(dtime, 1, default = first(dtime) - interval_sec)) %>%
+    dplyr::mutate(lag_time = dplyr::lag(dtime, 1, default = first(dtime) - interval_sec)) %>%
     dplyr::mutate(gap_hr = difftime(dtime, lag_time, unit = "hours"))
 
   min_interval_hr <- .25
@@ -99,7 +99,7 @@ detectEvents <- function(dtime_est, rainfall_in, iet_hr = 6, mindepth_in = 0.10)
   # 3.6 Join event summary to rainfall data
   output <- prepseries %>%
     dplyr::left_join(prepsums, by = "event") %>%
-    select(dtime_est = dtime,
+    dplyr::select(dtime_est = dtime,
            rainfall_in = rf_in,
            event_id)
 

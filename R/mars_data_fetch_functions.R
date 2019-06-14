@@ -76,13 +76,13 @@ lookupPrivateSMPs <- function(con, tracking_numbers){
 #' @export
 
 marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylightsavings){
-  if(!dbIsValid(con)){
+  if(!odbc::dbIsValid(con)){
     stop("Argument 'con' is not an open RODBC channel")
   }
 
 
   #Get closest gage
-  smp_gage <- dbGetQuery(con, "SELECT * FROM public.smp_gage") %>% filter(smp_id == target_id)
+  smp_gage <- odbc::dbGetQuery(con, "SELECT * FROM public.smp_gage") %>% dplyr::filter(smp_id == target_id)
 
   #Collect gage data
   #First, get all the relevant data from the closest gage
@@ -91,12 +91,12 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
                       "AND dtime_edt >= Date('", start_date, "')",
                       "AND dtime_edt <= Date('", end_date + days(1), "');")
 
-  gage_temp <- dbGetQuery(con, gage_query)
+  gage_temp <- odbc::dbGetQuery(con, gage_query)
 
   if(nrow(gage_temp) == 0){
 
-    if(month(start_date) == month(today())){
-      stop(paste("Rainfall data appears in the MARS database on about a 5 week delay. \nData for", month(start_date, label = TRUE, abbr = FALSE), "should be available in the second week of", month(today() + months(1), label = TRUE, abbr = FALSE)))
+    if(lubridate::month(start_date) == lubridate::month(lubridate::today())){
+      stop(paste("Rainfall data appears in the MARS database on about a 5 week delay. \nData for", lubridate::month(start_date, label = TRUE, abbr = FALSE), "should be available in the second week of", lubridate::month(lubridate::today() + lubridate::months(1), label = TRUE, abbr = FALSE)))
     }
     stop("There is no data in the database for this date range.")
   }
@@ -109,18 +109,18 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
   #Returns NA, because the time is impossible.
   #I hate this so, so much
   #To mitigate this, we will strip NA values from the new object
-  gage_temp %<>% filter(!is.na(dtime_edt))
+  gage_temp %<>% dplyr::filter(!is.na(dtime_edt))
 
   #Our water level data is not corrected for daylight savings time. ie it doesn't spring forwards
   #So we must shift back any datetimes within the DST window
   #Thankfully, the dst() function returns TRUE if a dtime is within that zone
   if(daylightsavings == FALSE){
-    dst_index <- dst(gage_temp$dtime_edt)
+    dst_index <- lubridate::dst(gage_temp$dtime_edt)
     gage_temp$dtime_edt %<>% force_tz("EST") #Assign new TZ without changing dates
-    gage_temp$dtime_edt[dst_index] <- gage_temp$dtime_edt[dst_index] - hours(1)
+    gage_temp$dtime_edt[dst_index] <- gage_temp$dtime_edt[dst_index] - lubridate::hours(1)
   }
 
-  gage_temp %<>% mutate(event_id = detectEvents(dtime_edt = dtime_edt, rainfall_in = rainfall_in, iet_hr = 6, mindepth_in = 0.10))
+  gage_temp %<>% dplyr::mutate(event_id = detectEvents(dtime_edt = dtime_edt, rainfall_in = rainfall_in, iet_hr = 6, mindepth_in = 0.10))
 
   #Punctuate data with zeroes to prevent linear interpolation when plotting
   #If the time between data points A and B is greater than 15 minutes (the normal timestep), we must insert a zero 15 minutes after A
@@ -145,7 +145,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
 
       #The zero goes 15 minutes (900 seconds) after the first boundary
       #Filled by index because R is weird about partially filled data frame rows
-      fill <- boundary.low + seconds(900)
+      fill <- boundary.low + lubridate::seconds(900)
       zeroFills[zeroFillIndex, 1] <- fill                   #dtime_edt
       zeroFills[zeroFillIndex, 2] <- 0                      #rainfall_in
       zeroFills[zeroFillIndex, 3] <- smp_gage$gage_uid[1]   #gage_uid
@@ -157,7 +157,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
       if(k > 30){
 
         #This zero goes 15 minutes before the upper boundary
-        fill <- boundary.high - seconds(900)
+        fill <- boundary.high - lubridate::seconds(900)
         zeroFills[zeroFillIndex + 1, 1] <- fill                   #dtime_edt
         zeroFills[zeroFillIndex + 1, 2] <- 0                      #rainfall_in
         zeroFills[zeroFillIndex + 1, 3] <- smp_gage$gage_uid[1]   #gage_uid
@@ -171,17 +171,17 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
   }
 
   #Replace UIDs with SMP IDs
-  gages <- dbGetQuery(con, "SELECT * FROM public.gage")
-  finalseries <- bind_rows(gage_temp, zeroFills) %>%
-    left_join(gages) %>%
-    select(dtime_edt, rainfall_in, gagename, event_id) %>%
-    arrange(dtime_edt)
+  gages <- odbc::dbGetQuery(con, "SELECT * FROM public.gage")
+  finalseries <- dplyr::bind_rows(gage_temp, zeroFills) %>%
+    dplyr::left_join(gages) %>%
+    dplyr::select(dtime_edt, rainfall_in, gagename, event_id) %>%
+    dplyr::arrange(dtime_edt)
 
   #Rename dtime column if we are undoing daylight savings time
   if(daylightsavings == FALSE){
     finalseries <- finalseries %>%
-      mutate(dtime_est = dtime_edt) %>%
-      select(-dtime_edt)
+      dplyr::mutate(dtime_est = dtime_edt) %>%
+      dplyr::select(-dtime_edt)
     finalseries <- select(finalseries, dtime_est, rainfall_in, gagename, event_id)
   }
 
@@ -318,7 +318,7 @@ marsInterpolateBaro <- function(baro_psi, smp_id, weight, target_id){
 #'
 
 marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interval = c("5 mins", "15 mins")){
-  if(!dbIsValid(con)){
+  if(!odbc::dbIsValid(con)){
     stop("Argument 'con' is not an open ODBC channel")
   }
 
@@ -339,14 +339,14 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 
 
   #Get SMP locations, and the locations of the baro sensors
-  smp_loc <- dbGetQuery(con, "SELECT * FROM public.smp_loc")
-  locus_loc <- filter(smp_loc, smp_id == target_id)
-  baro_smp <- dbGetQuery(con, "SELECT DISTINCT smp_id FROM public.baro_rawfile;") %>% pull(smp_id)
+  smp_loc <- odbc::dbGetQuery(con, "SELECT * FROM public.smp_loc")
+  locus_loc <- dplyr::filter(smp_loc, smp_id == target_id)
+  baro_smp <- odbc::dbGetQuery(con, "SELECT DISTINCT smp_id FROM public.baro_rawfile;") %>% dplyr::pull(smp_id)
 
   #Collect baro data
   #Get all baro data for the specified time period
-  baro <- dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + days(1), "';"))
-  baro$dtime_est %<>% force_tz(tz = "EST")
+  baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "';"))
+  baro$dtime_est %<>% lubridate::force_tz(tz = "EST")
 
 
   #When the user requests data at a 5-minute resolution, we need to stretch our 15-minute data into 5-minute data
@@ -356,11 +356,11 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 
     #Spread data to have all baro measurements use the same dtime_est column
     #So we can pad every 15-minute time series at once
-    baro <- spread(baro, "smp_id", "baro_psi")
+    baro <- tidyr::spread(baro, "smp_id", "baro_psi")
 
     #Pad installs 5 minute intervals in our 15 minute dtime_est column. All other columns become NA
     #End value is 10 minutes after the final period because that 15 minute data point is good for 10 more minutes
-    baro_pad <- pad(baro, start_val = min(baro$dtime_est), end_val = max(baro$dtime_est) + minutes(10), interval = "5 mins")
+    baro_pad <- padr::pad(baro, start_val = min(baro$dtime_est), end_val = max(baro$dtime_est) + lubridate::minutes(10), interval = "5 mins")
 
     #We report on the number of LOCF operations
     write("Number of LOCFs", file = report_filename, append = TRUE)
@@ -369,35 +369,35 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
     countNAs <- baro_pad[1,]
     for(i in 2:ncol(baro_pad)){
       countNAs[,i] <- sum(is.na(baro_pad[,i])) #count NAs before they are filled
-      baro_pad[,i] <- na.locf(baro_pad[,i], maxgap = 2, na.rm = FALSE) #maxgap = 2 means only fill NAs created by the pad
+      baro_pad[,i] <- zoo::na.locf(baro_pad[,i], maxgap = 2, na.rm = FALSE) #maxgap = 2 means only fill NAs created by the pad
       countNAs[,i] <- countNAs[,i]- sum(is.na(baro_pad[,i])) #subtract remaining NAs to get number of NAs filled
       write(paste(colnames(countNAs[i]), ": ", countNAs[,i], sep = ""), file = report_filename, append = TRUE) #Add LOCF count to report
     }
 
     #Return baro data to long data format
-    baro <- gather(baro_pad, "smp_id", "baro_psi", -dtime_est) %>%
-      filter(!is.na(baro_psi))
+    baro <- tidyr::gather(baro_pad, "smp_id", "baro_psi", -dtime_est) %>%
+      dplyr::filter(!is.na(baro_psi))
   }
 
 
 
   #Calculate the distance between every baro location and the target SMP, then add weight
-  baro_weights <- filter(smp_loc, smp_id %in% baro_smp) %>%
-    mutate(lon_dist = lon_wgs84 - locus_loc$lon_wgs84,
+  baro_weights <- dplyr::filter(smp_loc, smp_id %in% baro_smp) %>%
+    dplyr::mutate(lon_dist = lon_wgs84 - locus_loc$lon_wgs84,
            lat_dist = lat_wgs84 - locus_loc$lat_wgs84,
            dist_total = sqrt(abs(lon_dist**2 - lat_dist**2))) %>%
-    mutate(weight = 1/dist_total) %>% #inverse distance weight with power = 1
-    select(smp_id, weight) %>%
-    arrange(smp_id)
+    dplyr::mutate(weight = 1/dist_total) %>% #inverse distance weight with power = 1
+    dplyr::select(smp_id, weight) %>%
+    dplyr::arrange(smp_id)
 
-  interpolated_baro <- left_join(baro, baro_weights, by = "smp_id") %>% #join baro and weights
-    group_by(dtime_est) %>% #group datetimes, then calculate weighting effect for each datetime
-    summarize(baro_psi =  marsInterpolateBaro(baro_psi, smp_id, weight, target_id),
+  interpolated_baro <- dplyr::left_join(baro, baro_weights, by = "smp_id") %>% #join baro and weights
+    dplyr::group_by(dtime_est) %>% #group datetimes, then calculate weighting effect for each datetime
+    dplyr::summarize(baro_psi =  marsInterpolateBaro(baro_psi, smp_id, weight, target_id),
               smp_id = ifelse(target_id %in% smp_id, target_id, "interpolated"),
-              neighbors = ifelse(target_id %in% smp_id, NA, n()))
+              neighbors = ifelse(target_id %in% smp_id, NA, dplyr::n()))
 
   #Adding "neighbor" counts and instances to report
-  neighbors <- data.frame(group_by(interpolated_baro, neighbors) %>% summarize(count = n()))
+  neighbors <- data.frame(group_by(interpolated_baro, neighbors) %>% dplyr::summarize(count = dplyr::n()))
   write(paste("Neighbors: Count"), file = report_filename, append = TRUE)
   for(i in 1:nrow(neighbors)){
     write(paste(neighbors$neighbors[i], paste(neighbors$count[i]), sep = ":  "), file = report_filename, append = TRUE)
@@ -410,9 +410,9 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 
   #Give 5 or 15 minute data as appropriate
   if(data_interval == "15 mins"){
-    clippedseries <- data.frame(dtime_est = seq.POSIXt(from = start_date, to = end_date + days(1), by = data_interval) )
+    clippedseries <- data.frame(dtime_est = seq.POSIXt(from = start_date, to = end_date + lubridate::days(1), by = data_interval) )
 
-    finalseries <- filter(finalseries, dtime_est %in% clippedseries$dtime_est)
+    finalseries <- dplyr::filter(finalseries, dtime_est %in% clippedseries$dtime_est)
     return(finalseries)
   } else{
     return(finalseries)

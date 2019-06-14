@@ -19,6 +19,7 @@ Imports:
   magrittr, 
   odbc,
   padr,
+  scales,
   tidyverse,
   zoo
 RoxygenNote: 6.1.1
