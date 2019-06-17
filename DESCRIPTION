@@ -15,7 +15,6 @@ License: Don't be a jerk
 Encoding: UTF-8
 LazyData: true
 Imports:
-  dplyr,
   lubridate,
   magrittr, 
   odbc,
