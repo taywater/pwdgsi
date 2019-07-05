@@ -52,10 +52,10 @@ rain_newevents <- marsSampleRain \%>\%  #use dplyr pipe to update dataframe
             eventduration_hr = stormDuration_hr(dtime_est),
             eventpeakintensity_inhr = stormPeakIntensity_inhr(dtime_est, rainfall_in),
             eventavgintensity_inhr = stormAvgIntensity_inhr(dtime_est, rainfall_in),
-            eventdepth_in = stormDepth_in(rainfall_in)) \%>\%
+            eventdepth_in = stormDepth_in(rainfall_in))
 }
 \seealso{
 \code{\link[dplyr]{group_by}}, \code{\link[dplyr]{arrange}},
- \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{summarize}},
+ \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{summarise}},
  \code{\link[dplyr]{select}}
 }

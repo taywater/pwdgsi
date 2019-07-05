@@ -1,3 +1,45 @@
+# minInterval_hr ----------------------------------------------------------
+# Function to calculate minimum measurement interval for use in other functions
+
+# Arguments:
+# IN:  dtime_est        A vector of POSIXct date times, in ascending order
+
+# OUT: min_interval_hr  Minimum time measurement interval, in hours
+
+# Not exported from package
+
+# roxygen
+#' Calculate minimum measurement interval for use in other functions
+#' @param dtime_est  vector, POSIXct date times, in ascending order
+#' 
+#' @return Minimum time measurement interval, in hours
+#' 
+
+
+minInterval_hr <- function(dtime_est) {
+  #1.1  Check for unsorted datetime data
+  if(!(identical(order(dtime_est), 1:length(dtime_est)))) {
+    stop("Datetime data is not sorted in ascending order")
+  }
+  
+  #1.2 Check to make sure that event duration is greater than one measurement, assume 15 minute increment if not
+  if(length(dtime_est) == 1) {
+    message("Datetime data only contains one measurement. Assumed minimum measurement interval is 15 minutes.")
+    # assume 15 minute increments
+    return(0.25)
+  }
+  
+  #2. Calculate minimum interval
+  time <- data.frame(dtime_est) %>%
+    dplyr::mutate(start_est = dplyr::lag(dtime_est, 1),
+                  gap_hr = difftime(dtime_est, start_est, unit = "hours"))
+  
+  min_interval_hr <- min(time$gap_hr, na.rm = TRUE)
+  
+  #3. Return value
+  return(min_interval_hr)
+}
+
 # detectEvents -----------------------------------------
 # NOTES: Based on a function written by Taylor Heffernan (see "detectEvents.r" and related email from 4/5/18,
 # modified by Katie Swanson 2/4/2019) returns a dataset of event IDs for a rainfall time
@@ -32,7 +74,9 @@
 #'   rainfall_in = marsSampleRain$rainfall_in, 
 #'   iet_hr = 6, mindepth_in = 0.10))
 
-detectEvents <- function(dtime_est, rainfall_in, iet_hr = 6, mindepth_in = 0.10) {
+detectEvents <- function(dtime_est, rainfall_in, 
+                         #DEFAULT VALUES
+                         iet_hr = 6, mindepth_in = 0.10) {
 
   # 1. QC checks
   # 1.1 Check for non-zero and negative rainfall values
@@ -59,7 +103,12 @@ detectEvents <- function(dtime_est, rainfall_in, iet_hr = 6, mindepth_in = 0.10)
   if(!(length(dtime_est) == length(rainfall_in))) {
     stop("dtime_est and rainfall_in must be the same length")
   }
-
+  # 1.6 Check that data is in 15-minute increments
+  min_interval <- minInterval_hr(dtime_est)
+  if(min_interval  != 0.25) {
+    message("Function assumes that data aggregation interval is 15 minutes. User should check to confirm.")
+  }
+  
   # Assumed interval
   interval_sec <- 15 * 60
 
@@ -69,8 +118,8 @@ detectEvents <- function(dtime_est, rainfall_in, iet_hr = 6, mindepth_in = 0.10)
     dplyr::mutate(lag_time = dplyr::lag(dtime, 1, default = dplyr::first(dtime) - interval_sec)) %>%
     dplyr::mutate(gap_hr = difftime(dtime, lag_time, unit = "hours"))
 
-  min_interval_hr <- .25
-
+  min_interval <- min(prepseries$gap_hr, na.rm = TRUE)
+  
   # 3. Identify events
 
   # 3.1 Initialize column
@@ -80,7 +129,7 @@ detectEvents <- function(dtime_est, rainfall_in, iet_hr = 6, mindepth_in = 0.10)
   prepseries$start[1] <- ifelse(prepseries$gap_hr[2] < iet_hr, 1, 0)
 
   # 3.3 Identify beginning of new events
-  prepseries$start[prepseries$gap_hr >= iet_hr + min_interval_hr] <- 1
+  prepseries$start[prepseries$gap_hr >= iet_hr + min_interval] <- 1
 
   # 3.4 Generate series of new events
   prepseries <- prepseries %>%
@@ -149,7 +198,7 @@ NULL
 #'             eventduration_hr = stormDuration_hr(dtime_est),
 #'             eventpeakintensity_inhr = stormPeakIntensity_inhr(dtime_est, rainfall_in),
 #'             eventavgintensity_inhr = stormAvgIntensity_inhr(dtime_est, rainfall_in),
-#'             eventdepth_in = stormDepth_in(rainfall_in)) %>%
+#'             eventdepth_in = stormDepth_in(rainfall_in))
  
 
 stormDepth_in <- function(rainfall_in) {
@@ -159,8 +208,8 @@ stormDepth_in <- function(rainfall_in) {
   }
 
   # 1. QC checks
-  if(!all(rainfall_in >= 0)) {
-    stop("Negative rainfall data.")
+  if(!all(rainfall_in > 0)) {
+    stop("All rainfall data must be greater than 0.")
   }
 
   # 2. Calculate stormDepth
@@ -201,9 +250,14 @@ stormDuration_hr <- function(dtime_est) {
   }
 
   # 2. Calculate storm duration
-  event_start <- dtime_est[1] - 15 * 60 # assumes 15 minute increments
+  event_start <- dtime_est[1]
+  #Notes: Assumes 15-minute time increments. As written, code should 
+  #only be applied to ONE EVENT at a time
 
-  duration <- difftime(dtime_est[length(dtime_est)], event_start, unit = "hours")
+  duration_calc <- difftime(dtime_est[length(dtime_est)], event_start, unit = "hours")
+  duration <- as.double(duration_calc) + 0.25 
+  #15-minutes added to account for time subtraction
+  
   return(as.double(duration))
 }
 
@@ -250,11 +304,24 @@ stormPeakIntensity_inhr <- function(dtime_est, rainfall_in) {
     stop("dtime_est and rainfall_in must be the same length")
   }
 
+  # 2. Calculate minimum interval
+  min <- minInterval_hr(dtime_est)
+  
+  # alert user if minimum interval is not 15 minutes
+  if (min != 0.25){
+    message("Assumed minimum measurement interval is 15 minutes.")
+  } 
+  
+  # Alert user if event only contains one measurement 
+  if(length(dtime_est) == 1){
+    message("Datetime data only contains one measurement.")
+  }
+  mult <- 4
+  
   # 3. Calculate peak intensity
   # Assumes that the interval is 15 minutes.
-  # 15 minute rainfall intervals means that the peak intensity is 4x the highest measured data point
   maximum <- max(rainfall_in)
-  peak <- maximum * 4
+  peak <- maximum * mult
 
   return(peak)
 }
