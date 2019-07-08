@@ -8,8 +8,10 @@
 
 # Not exported from package
 
-# roxygen
-#' Calculate minimum measurement interval for use in other functions
+#' Minimum Measurement Interval
+#'
+#' Calculate minimum measurement interval for use in other functions.
+#' 
 #' @param dtime_est  vector, POSIXct date times, in ascending order
 #' 
 #' @return Minimum time measurement interval, in hours
