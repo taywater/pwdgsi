@@ -30,7 +30,7 @@
 
 lookupPrivateSMPs <- function(con, tracking_numbers){
   #Validate DB connection
-  if(!dbIsValid(con)){
+  if(!odbc::dbIsValid(con)){
     stop("Argument 'con' is not an open ODBC channel")
   }
 

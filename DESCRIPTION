@@ -4,7 +4,8 @@ Title: Philadelphia Water Department Green Stormwater Infrastructure
 Version: 0.1.1
 Authors@R: c(
     person("Taylor", "Heffernan", role = c("aut", "cre"), comment = "PWD", email = "taylor.heffernan@phila.gov"),
-    person("Nicholas", "Manna", role = c("aut"), comment = "AKRF", email = "nmanna@akrf.com"))
+    person("Nicholas", "Manna", role = c("aut"), comment = "AKRF", email = "nmanna@akrf.com"),
+    person("Katie", "Swanson", role = c("aut"), comment = "CDM Smith", email = "SwansonK@cdmsmith.com"))
 Description: R functions and sample datasets related to the analysis
     of green stormwater infrastructure (GSI). Functions for analyzing
     rainfall, barometric pressure, water level recession rates, and
@@ -15,7 +16,6 @@ License: Don't be a jerk
 Encoding: UTF-8
 LazyData: true
 Imports:
-  dplyr,
   lubridate,
   magrittr, 
   odbc,
