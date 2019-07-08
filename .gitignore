@@ -2,3 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+update_accessdb_tables/output
+update_baro_tables/output
+update_ow_data/output
+update_rainfall_tables/output
+update_smp_tables/output
