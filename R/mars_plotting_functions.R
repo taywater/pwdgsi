@@ -233,7 +233,7 @@ hyetograph <- function(dtime_est, rainfall_in, raingage, event, reverse_y = FALS
   return(hyetograph)
 }
 
-# Simulated Water Levels Plot -------------------------------------------------
+# Simulated Water Levels Plot NOT CURRENTLY WORKING -------------------------------------------------
 #Description of the arguments:
 
 #IN:  event                              Rainfall event ID (grouping variable)
@@ -278,7 +278,7 @@ hyetograph <- function(dtime_est, rainfall_in, raingage, event, reverse_y = FALS
 #' 
 #' @return Plot of simulated depth and volume with rainfall
 #' 
-#' @export
+
 
 simPlotNested <- function(event, #group_by variable, simulated or observed event, for title block
                           df, #nested dataframe
