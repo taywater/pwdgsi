@@ -7,3 +7,7 @@ magrittr::`%>%`
 #' @importFrom magrittr %<>%
 #' @export
 magrittr::`%<>%`
+
+#' @importFrom lubridate %--%
+#' @export
+lubridate::`%--%`
