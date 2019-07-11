@@ -77,6 +77,21 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' 
 #' @return Output is a dataframe with the following columns: dtime_est, rainfall_in, event, Simulated_depth_ft, Simulated_vol_ft3, Simulated_orifice_vol_ft3
 #' 
+#' @seealso \code{\link{simulation.stats}}
+#' 
+#' @example 
+#' simulated_data <- simWaterLevel_ft(dtime_est = rain_data_filtered$dtime_est, 
+#'   rainfall_in = rain_data_filtered$rainfall_in, 
+#'   event = rain_data_filtered$event,
+#'   infil_footprint_ft2 = smp_stats$infil_footprint_ft2[7], 
+#'   dcia_ft2 = smp_stats$dcia_ft2[7],
+#'   orifice_height_ft = smp_stats$orifice_height_ft[7],
+#'   orifice_diam_in = smp_stats$orifice_diam_in[7],
+#'   storage_depth_ft = smp_stats$storage_depth_ft[7],
+#'   storage_vol_ft3 = smp_stats$storage_vol_ft3[7],
+#'   infil_rate_inhr = smp_stats$infil_rate_inhr[7])
+#' 
+#' 
 #' @export
 
 simWaterLevel_ft <- function(dtime_est,
@@ -114,7 +129,7 @@ simWaterLevel_ft <- function(dtime_est,
   #Filter to create a separate dataframe, and run analysis, for each unique event
   for(j in 1:length(unique_events)){
     by_event <- collected_data %>% 
-      filter(event == unique_events[j])
+      dplyr::filter(event == unique_events[j])
     
     dtime_est <- by_event$dtime_est
     rainfall_in <- by_event$rainfall_in
@@ -124,7 +139,7 @@ simWaterLevel_ft <- function(dtime_est,
                              by = 0.25*60*60) #15-min interval - function will not accept minutes(15)
     
     #Generate data with only timesteps that don't have rainfall measurements
-    new_rows <- as.data.frame(timeseries[!timeseries %in% dtime_est]) %>% mutate(rainfall_in = 0, event = unique_events[j])
+    new_rows <- as.data.frame(timeseries[!timeseries %in% dtime_est]) %>% dplyr::mutate(rainfall_in = 0, event = unique_events[j])
     colnames(new_rows) <- c("dtime_est", "rainfall_in", "event")
     
     #bind with timesteps that have rainfall measurements
@@ -165,7 +180,7 @@ simWaterLevel_ft <- function(dtime_est,
         orifice_area_ft2 *
         sqrt(2 * 32.2 * max(WL_above_orifice_ft, 0)) * #set to 0 if below orifice
         60 * #convert cfs to cfm     
-        minutes(15) #assuming 15 minutes for first timestep
+        lubridate::minutes(15) #assuming 15 minutes for first timestep
     }
     
     # Potential Infiltration
@@ -184,7 +199,7 @@ simWaterLevel_ft <- function(dtime_est,
       
       #If timestep exceeds the dataframe length, add a new row at the next timestep
       if(i > nrow(simseries)){
-        simseries <- rbind(simseries, data.frame("dtime_est" = lubridate::force_tz(simseries$dtime_est[i-1]+minutes(15), tz = "EST"),
+        simseries <- rbind(simseries, data.frame("dtime_est" = lubridate::force_tz(simseries$dtime_est[i-1]+lubridate::minutes(15), tz = "EST"),
                                                  "rainfall_in" = 0,
                                                  "event" = output$event[1],
                                                  "depth_ft" = 0,
@@ -196,7 +211,7 @@ simWaterLevel_ft <- function(dtime_est,
       }
       
       # Calculate time since last measurement
-      elapsed_time_hr = (simseries$dtime_est[i-1] %--% simseries$dtime_est[i])/hours(1)
+      elapsed_time_hr = (simseries$dtime_est[i-1] %--% simseries$dtime_est[i])/lubridate::hours(1)
       
       # Starting Storage
       simseries$vol_ft3[i] <- simseries$end_vol_ft3[i-1]
@@ -243,12 +258,12 @@ simWaterLevel_ft <- function(dtime_est,
       
     }
     #bind new data 
-    simseries_total <- bind_rows(simseries_total, simseries) 
+    simseries_total <- dplyr::bind_rows(simseries_total, simseries) 
     
   }
   #Series returns a data frame including water depth #may be updated
   
-  simseries_total <- simseries_total %>% select("dtime_est", "rainfall_in", "event", "depth_ft", "vol_ft3", "slow_release_ft3")
+  simseries_total <- simseries_total %>% dplyr::select("dtime_est", "rainfall_in", "event", "depth_ft", "vol_ft3", "slow_release_ft3")
   
   colnames(simseries_total) <- c("dtime_est", 
                                  "rainfall_in", 
@@ -291,6 +306,27 @@ NULL
 #'      \item{\code{overtoppingCheck_bool}}{Output is true or false based on overtopping evaluation}
 #' }
 #' 
+#' @examples
+#' 
+#' simulation_summary <- simulated_data %>%
+#'   dplyr::group_by(event) %>%
+#'   dplyr::summarize(startdate = min(dtime_est), #add start date of event to summary table,
+#'                   
+#'    #1. Overtopping check
+#'    overtopping = overtoppingCheck_bool(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
+#' 
+#'    #2. Simulated storage utilization
+#'    peakUtilization = peakStorUtil_percent(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
+#' 
+#'    #3. Peak release rate
+#'    peakReleaseRate_cfs = orificePeakRelease_cfs(dtime_est, Simulated_orifice_vol_ft3),
+#' 
+#'    #4. Total orifice outflow volume (rounded for table format)
+#'    orifice_volume_ft3 = round(sum(Simulated_orifice_vol_ft3),0),
+#' 
+#'    #5. Draindown time
+#'    draindown_time_hr = draindown_hr(dtime_est, rainfall_in, Simulated_depth_ft))
+#'    
 #' @export
 
 
@@ -385,10 +421,10 @@ orificePeakRelease_cfs <- function(dtime_est,
   
   #2. Calculate timestep and pull maximum value
   df_max <- df %>%
-    dplyr::mutate(elapsed_time_hr = difftime(lead(dtime_est), dtime_est, unit = "hours")) %>%
+    dplyr::mutate(elapsed_time_hr = difftime(dplyr::lead(dtime_est), dtime_est, unit = "hours")) %>%
     dplyr::filter(is.na(orifice_ft3) == FALSE) %>%
     dplyr::arrange(orifice_ft3) %>%
-    dplyr::slice(n()) #pull row containing max orifice volume
+    dplyr::slice(dplyr::n()) #pull row containing max orifice volume
   
   #3. Calculate peak rate
   #3.1 Check that outflow data is not NA
@@ -447,7 +483,7 @@ draindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
     dplyr::mutate(rain_event = detectEvents(dtime_est, rainfall_in)) %>%
     dplyr::filter(rain_event == 1) %>%
     dplyr::arrange(dtime_est) %>% #confirm that dtime is in ascending order
-    dplyr::slice(n()) #pull last row (corresponds to end of rainfall event)
+    dplyr::slice(dplyr::n()) #pull last row (corresponds to end of rainfall event)
   
   #2. Confirm that there was a response in the structure during the event (water level > 0)
   check <- any(waterlevel_ft > 0)  

@@ -43,3 +43,6 @@ Output is a dataframe with the following columns: dtime_est, rainfall_in, event,
 \description{
 Simulates water level in subsurface stormwater infiltration system with underdrain
 }
+\seealso{
+\code{\link{simulation.stats}}
+}

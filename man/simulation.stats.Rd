@@ -49,3 +49,25 @@ draindown_hr(dtime_est, rainfall_in, waterlevel_ft)
 \description{
 Summarize and Evaluate System Performance
 }
+\examples{
+
+simulation_summary <- simulated_data \%>\%
+  dplyr::group_by(event) \%>\%
+  dplyr::summarize(startdate = min(dtime_est), #add start date of event to summary table,
+                  
+   #1. Overtopping check
+   overtopping = overtoppingCheck_bool(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
+
+   #2. Simulated storage utilization
+   peakUtilization = peakStorUtil_percent(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
+
+   #3. Peak release rate
+   peakReleaseRate_cfs = orificePeakRelease_cfs(dtime_est, Simulated_orifice_vol_ft3),
+
+   #4. Total orifice outflow volume (rounded for table format)
+   orifice_volume_ft3 = round(sum(Simulated_orifice_vol_ft3),0),
+
+   #5. Draindown time
+   draindown_time_hr = draindown_hr(dtime_est, rainfall_in, Simulated_depth_ft))
+   
+}
