@@ -375,17 +375,14 @@ peakStorUtil_percent <- function(waterlevel_ft, storage_depth_ft){
   
   max_storage <- storage_depth_ft - starting_level
   
-  #3. Calculate Peak Storage Ultilization
-  peak_util <- round((event_max_water_level/max_storage)*100, 1)
+  #3. Calculate Peak Storage Utilization
+  peak_util <- (event_max_water_level/max_storage)*100
   
   #4. Apply correction for overtopping
   peak_util <- ifelse(peak_util > 100, 100, peak_util)
   
   #5. Set to zero if negative
   peak_util <- ifelse(peak_util < 0, 0, peak_util)
-  
-  #6. Round to whole number
-  peak_util <- round(peak_util, 0)
   
   return(peak_util)
 }
