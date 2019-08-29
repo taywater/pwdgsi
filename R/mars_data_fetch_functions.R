@@ -281,7 +281,7 @@ marsInterpolateBaro <- function(baro_psi, smp_id, weight, target_id){
   if (target_id %in% smp_id){
     return(baro_psi[which(target_id == smp_id)])
   } else {
-    return(ifelse(length(baro_psi) >=5,
+    return(ifelse(length(baro_psi) >=4,
                   sum(baro_psi *weight)/sum(weight),
                   NA)
     )
