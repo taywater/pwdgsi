@@ -36,15 +36,15 @@ lookupPrivateSMPs <- function(con, tracking_numbers){
 
   #Rather than validating each individual tracking number and selecting them one at a time
   #We can grab the entire table and filter by our tracking numbers to find the valid ones
-  planreviewtable <- dbGetQuery(con, "select p.\"TrackingNumber\" as tracking_number, p.\"Projectname\" as project_name, p.\"SMPID\" as smp_id, p.\"Plan Label\" as plan_label from planreview_view_smpsummary_crosstab_asbuiltall p")
-  hits <- filter(planreviewtable, tracking_number %in% tracking_numbers)
+  planreviewtable <- odbc::dbGetQuery(con, "select p.\"TrackingNumber\" as tracking_number, p.\"Projectname\" as project_name, p.\"SMPID\" as smp_id, p.\"Plan Label\" as plan_label from planreview_view_smpsummary_crosstab_asbuiltall p")
+  hits <- dplyr::filter(planreviewtable, tracking_number %in% tracking_numbers)
 
   #If any of the tracking numbers weren't found, we can return an error message
   misses <- tracking_numbers[!(tracking_numbers %in% planreviewtable$tracking_number)]
   
   if(length(misses) > 0) {
     invalid <- data.frame(tracking_number = misses, project_name = "Tracking number not found. Did you type it wrong?", smp_id = NA, plan_label = NA)
-    privateSMPs <- bind_rows(hits, invalid)
+    privateSMPs <- dplyr::bind_rows(hits, invalid)
   } else {
     privateSMPs <- hits
   }

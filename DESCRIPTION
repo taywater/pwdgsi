@@ -16,10 +16,13 @@ License: Don't be a jerk
 Encoding: UTF-8
 LazyData: true
 Imports:
+  grid,
+  gridExtra,
   lubridate,
   magrittr, 
   odbc,
   padr,
+  rlang,
   scales,
   tidyverse,
   zoo

@@ -2,7 +2,7 @@
 % Please edit documentation in R/mars_rainfall_functions.R
 \name{minInterval_hr}
 \alias{minInterval_hr}
-\title{Calculate minimum measurement interval for use in other functions}
+\title{Minimum Measurement Interval}
 \usage{
 minInterval_hr(dtime_est)
 }
@@ -13,5 +13,5 @@ minInterval_hr(dtime_est)
 Minimum time measurement interval, in hours
 }
 \description{
-Calculate minimum measurement interval for use in other functions
+Calculate minimum measurement interval for use in other functions.
 }
