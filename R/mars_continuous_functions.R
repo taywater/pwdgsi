@@ -36,6 +36,24 @@
 #' @seealso \code{\link{obsRecessionRate_inhr}}, \code{\link{obsOrificeOutVol_cf}}
 #' 
 #' @export
+#' 
+#' @example
+#' obs_250_fill %>%
+#' filter(is.na(event) == FALSE) %>%
+#'   group_by(event) %>%
+#'   arrange(dtime_est)%>%
+#'   summarize( #Calculate performance metrics
+#'     #Observed infiltration rate
+#'     Infiltration_Rate_inhr = obsInfilRate_inhr(event, dtime_est,
+#'                                                rainfall_in,
+#'                                                infil_footprint_ft2,
+#'                                                dcia_ft2,
+#'                                                storage_depth_ft = storage_depth_ft,
+#'                                                storage_vol_ft3 = storage_vol_ft3,
+#'                                                orifice_diam_in,
+#'                                                orifice_height_ft,
+#'                                                waterlevel_ft = level_ft))
+#' 
 
 obsInfilRate_inhr <- function(event, #for warning messages
                               dtime_est,
@@ -207,6 +225,18 @@ obsInfilRate_inhr <- function(event, #for warning messages
 #' @seealso \code{\link{obsInfilRate_inhr}}, \code{\link{obsOrificeOutVol_cf}}
 #' 
 #' @export
+#' 
+#' @example
+#' obs_250_fill %>%
+#' filter(is.na(event) == FALSE) %>%
+#'   group_by(event) %>%
+#'   arrange(dtime_est)%>%
+#'   summarize( #Calculate performance metrics
+#'     
+#'     Observed recession rate
+#'     Recession_Rate_inhr = obsRecessionRate_inhr(event, dtime_est, rainfall_in, waterlevel_ft = level_ft))
+#' 
+#' 
 
 obsRecessionRate_inhr <- function(event, #for warning message
                                   dtime_est,
@@ -331,6 +361,27 @@ obsRecessionRate_inhr <- function(event, #for warning message
 #' @seealso \code{\link{obsInfilRate_inhr}}, \code{\link{obsRecessionRate_inhr}}
 #' 
 #' @export
+#' 
+#' @example
+#' obs_250_fill <- obs_250_all %>%  
+#' arrange(dtime_est)%>%
+#'   fill(event) %>% #Fill NA's
+#'   mutate( # Pull in system specs from smp_stats table    
+#'     storage_depth_ft = smp_stats$storage_depth_ft[7], 
+#'     storage_vol_ft3 = smp_stats$storage_vol_ft3[7],
+#'     infil_footprint_ft2 = smp_stats$infil_footprint_ft2[7],
+#'     dcia_ft2 =  smp_stats$dcia_ft2[7],
+#'     orifice_height_ft = smp_stats$orifice_height_ft[7],
+#'     orifice_diam_in = smp_stats$orifice_diam_in[7],
+#'     
+#'     # Calculate orifice flow, if applicable
+#'    orifice_vol_cf = obsOrificeOutVol_cf(dtime_est,
+#'                                         waterlevel_ft = level_ft,
+#'                                         orifice_height_ft,
+#'                                         orifice_diam_in)
+#'   )
+#' 
+#' 
 
 obsOrificeOutVol_cf <- function(dtime_est, 
                                 waterlevel_ft, 
