@@ -28,7 +28,62 @@
 #'
 #'
 
-marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interval = c("5 mins", "15 mins")){
+##### Front Matter #####
+library(tidyverse)
+library(lubridate)
+library(magrittr)
+library(padr)
+
+#Other Stuff
+library(odbc)
+library(assertthat)
+source("//pwdoows/oows/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Downloader Helper Functions/mars_downloader_helper.R")
+
+setwd("//pwdoows/oows/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro data downloader")
+options(stringsAsFactors=FALSE)
+
+##### Step 1: What SMP are you working with?
+# Change the SMP ID to tell the database what SMP you're using.
+########################
+smp_id <- "231-2-1"
+########################
+
+# Change the date boundaries to reflect the time period for which you want data
+# Data begins Jan 1 2016
+### 30 days hath September, April, June and November
+### All the rest have 31 (Except February)
+####################################
+start_date <- mdy("03-01-2019", tz = "EST")
+end_date <- mdy("06-01-2019", tz = "EST")
+####################################
+
+# What interval do you want for the final data?
+# Select 1 of "5 mins" or "15 mins"
+# It won't work if you type "Mins" or "minutes" or something like that.
+# So please don't do that.
+#################################
+data_interval <- "5 mins"
+#################################
+
+test <- dbConnect(odbc::odbc(), "mars")
+#dbListTables(test) #If that didn't work, your DSN isn't working.
+#dbDisconnect(test)
+
+mars <- dbConnect(odbc::odbc(), "mars")
+smplist <- dbGetQuery(mars, "SELECT * FROM smpid_facilityid_componentid")
+smplocations <- dbGetQuery(mars, "SELECT * FROM smp_loc")
+
+# If this assert_that statement doesn't return TRUE, the datbase doesn't know about your SMP.
+assert_that(smp_id %in% smplist$smp_id, msg = "SMP ID does not exist in MARS database")
+
+# If this assert_that statement doesn't return TRUE, there isn't a GIS location of your SMP.
+assert_that(smp_id %in% smplocations$smp_id, msg = "SMP ID does not have a lat/long location in MARS")
+
+##### Step 2: Find barometric data
+print(paste("Fetching baro data for SMP:", smp_id))
+
+#####
+#marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interval = c("5 mins", "15 mins")){
   
   con = mars
   target_id = smp_id
