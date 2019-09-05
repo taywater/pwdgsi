@@ -398,7 +398,8 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
               neighbors = ifelse(target_id %in% smp_id, NA, dplyr::n()))
 
   #Adding "neighbor" counts and instances to report
-  neighbors <- dplyr::group_by(interpolated_baro, neighbors) %>% dplyr::summarize(count = dplyr::n())
+  neighbors <- dplyr::group_by(interpolated_baro, neighbors) %>% 
+    dplyr::summarize(count = dplyr::n())
   write(paste("Neighbors: Count"), file = report_filename, append = TRUE)
   for(i in 1:nrow(neighbors)){
     write(paste(neighbors$neighbors[i], paste(neighbors$count[i]), sep = ":  "), file = report_filename, append = TRUE)
