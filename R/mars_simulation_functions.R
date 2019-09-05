@@ -20,14 +20,12 @@ NULL
 #' 
 #' @export
 
-
 vol.to.depth <- function(maxdepth_ft, maxvol_cf, vol_cf){
   return(maxdepth_ft[1] * vol_cf/maxvol_cf[1])
 }
 
 #' @rdname depth.volume
 #' 
-#' @export
 
 depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
   return(maxvol_cf[1] * depth_ft/maxdepth_ft[1])
