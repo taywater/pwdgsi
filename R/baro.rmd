@@ -1,0 +1,54 @@
+---
+title: "Composite Baro Data Generation Report"
+author: "Nicholas Manna"
+date: "`r lubridate::now()`" 
+output: html_document
+params:
+  smp_id: 1-1-1
+  start_date: 1/1/2019
+  end_date: 1/31/2019
+  data_interval: "5 mins"
+  neighbors: a
+  countNAs: b
+  p: p
+  
+  
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+sf <- stamp("1/30/1999")
+```
+
+## `r params$smp_id`
+
+On `r sf(lubridate::today())`, composite baro data was requested for SMP `r params$smp_id` from `r sf(params$start_date)` to `r sf(params$end_date)` at an interval of `r params$data_interval`. Table 1 shows how many times each amount of baros were available for interpolation; for example, only `r params$neighbors[1,1]` baro was available at `r params$neighbors[1,2]` timesteps. 
+
+`r if(data_interval == "5 mins"){paste("Data for baro sensors that collected at 15 minute intervals had to be adjusted to be useful for 5 minute intervals. Gaps were filled by Last Object Carried Foward (LOCF). Table 2 shows how often that occured for each baro location.")}`
+
+
+```{r tables, echo = FALSE}
+  params$neighbors %>% 
+    knitr::kable(caption = "Table 1: Frequency of Neighboring Baro Sensor Availability") %>% 
+    kableExtra::kable_styling(full_width = F, bootstrap_options = c("striped", "hover"), position = "float_left")
+
+if(data_interval == "5 mins"){
+      params$countNAs %>% 
+      knitr::kable(caption = "Table 2: Number of NAs that were replaced by Last Object Carried Forward (LOCF)") %>% 
+      kableExtra::kable_styling(full_width = F, 
+                                bootstrap_options = c("striped", "hover"))
+}
+
+params$p
+
+#ggsave("~/Reports/recentchart.png", plot = params$p, width = 8, height = 6, dpi = 300)
+
+```
+
+
+
+`r kableExtra::text_spec("Figure 1: Baro Raster Plot", color = "grey")`
+
+
