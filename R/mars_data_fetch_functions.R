@@ -346,7 +346,7 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 
   #Collect baro data
   #Get all baro data for the specified time period
-  baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "';"))
+  baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + days(1), "' order by dtime_est;")) %>% padr::thicken(interval = "5 mins", rounding = "down") %>% dplyr::group_by(dtime_est_5_min, smp_id) %>% dplyr::summarize(baro_psi = max(baro_psi, na.rm = TRUE)) %>% dplyr::ungroup %>% dplyr::select(dtime_est = dtime_est_5_min, smp_id, baro_psi)
   baro$dtime_est %<>% lubridate::force_tz(tz = "EST")
 
 
@@ -357,11 +357,11 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 
     #Spread data to have all baro measurements use the same dtime_est column
     #So we can pad every 15-minute time series at once
-    baro <- tidyr::spread(baro, "smp_id", "baro_psi")
+    baro_spread <- tidyr::spread(baro, "smp_id", "baro_psi")
 
     #Pad installs 5 minute intervals in our 15 minute dtime_est column. All other columns become NA
     #End value is 10 minutes after the final period because that 15 minute data point is good for 10 more minutes
-    baro_pad <- padr::pad(baro, start_val = min(baro$dtime_est), end_val = max(baro$dtime_est) + lubridate::minutes(10), interval = "5 mins")
+    baro_pad <- padr::pad(baro_spread, start_val = min(baro$dtime_est), end_val = max(baro$dtime_est) + lubridate::minutes(10), interval = "5 mins")
 
     #We report on the number of LOCF operations
     write("Number of LOCFs", file = report_filename, append = TRUE)
