@@ -3,6 +3,7 @@
 export("%--%")
 export("%<>%")
 export("%>%")
+export(baroRasterPlot)
 export(detectEvents)
 export(draindown_hr)
 export(hyetograph)

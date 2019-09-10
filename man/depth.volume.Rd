@@ -9,7 +9,7 @@ Input maximum depth and maximum volume of SMP, along with depth or volume, to re
 \usage{
 vol.to.depth(maxdepth_ft, maxvol_cf, vol_cf)
 
-\method{depth}{to.vol}(maxdepth_ft, maxvol_cf, depth_ft)
+depth.to.vol(maxdepth_ft, maxvol_cf, depth_ft)
 }
 \arguments{
 \item{maxdepth_ft}{depth of SMP when full, (ft)}

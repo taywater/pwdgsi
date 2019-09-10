@@ -33,6 +33,8 @@ Output will be a dataframe with four columns:
 \description{
 Returns a data frame with datetime, barometric pressure, smp id, and number of neighbors
   interpolated from to collect the data.
+  
+This is the developing one
 }
 \seealso{
 \code{\link{marsInterpolateBaro}}

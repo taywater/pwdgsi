@@ -24,7 +24,7 @@
 #'
 #' @export
 #' 
-#' @examples
+#' @example
 #' gage_temp <- mutate(marsSampleRain, 
 #'   event_id = detectEvents(dtime_edt = marsSampleRain$dtime_edt, 
 #'   rainfall_in = marsSampleRain$rainfall_in, 
@@ -706,6 +706,44 @@ obsPlot <- function(event, #group_by variable, simulated or observed event, for 
   } #if statement to confirm that data is loaded for plots 
 }# Function end
 
+
+
+
+# Baro Raster Plot --------------------------------------------------------
+#' Barometric Pressure Raster Plot
+#' 
+#' Create a plot of barometric pressurs from each sensor
+#' 
+#' @param baro a dataframe with columns: \code{smp_id, baro_psi, day, year}
+#' 
+#' @return p, a ggplot2 plot
+#' 
+#' @export
+#' 
+#' @example 
+#' marsSampleBaro_plot %<>% mutate("day" = lubridate::yday(marsSampleBaro_plot$dtime_est),
+#'                                "year" = lubridate::year(marsSampleBaro_plot$dtime_est))
+#' baroRasterPlot(marsSampleBaro_plot)
+#'
+
+baroRasterPlot <- function(baro){
+  p <- ggplot2::ggplot(baro, ggplot2::aes(x = day, y = smp_id)) +
+    ggplot2::facet_grid(. ~ year) +
+    ggplot2::geom_raster(ggplot2::aes(fill = baro_psi)) +
+    ggplot2::scale_fill_gradientn(colours = rev(RColorBrewer::brewer.pal(11, "RdBu")), name = "Pressure (psi)") +
+    ggplot2::theme(axis.text=ggplot2::element_text(colour="black", size=15),
+          axis.title.x=ggplot2::element_text(colour="black", size=15),
+          axis.title.y=ggplot2::element_text(colour="black", size=15),
+          legend.text=ggplot2::element_text(size=15),
+          legend.title=ggplot2::element_text(size = 15),
+          strip.text.x = ggplot2::element_text(size = 15),
+          legend.background = ggplot2::element_blank(),
+          panel.background = ggplot2::element_blank()) +
+    ggplot2::xlab("Day") + ggplot2::ylab("Baro Sites")
+  
+  return(p)
+  
+}
 
 # Simulated Water Levels Plot NOT CURRENTLY WORKING -------------------------------------------------
 #Description of the arguments:
