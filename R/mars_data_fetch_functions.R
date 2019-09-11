@@ -311,6 +311,9 @@ marsInterpolateBaro <- function(baro_psi, smp_id, weight, target_id){
 #'     If the target SMP has an on-site baro with data, the "neighbors" column will be NA.
 #'     If there are fewer than five baros to interprolate from, based on \code{\link{marsInterpolateBaro}},
 #'     all columns other than "dtime_est" will be NA.
+#'     
+#'     The function will also output and open an html document describe the data request, and including
+#'     a raster plot of barometric pressures. 
 #' 
 #' @export
 #'
@@ -364,8 +367,6 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
       dplyr::filter(!is.na(baro_psi))
   }
 
-
-
   #Calculate the distance between every baro location and the target SMP, then add weight
   baro_weights <- dplyr::filter(smp_loc, smp_id %in% baro_smp) %>%
     dplyr::mutate(lon_dist = lon_wgs84 - locus_loc$lon_wgs84,
@@ -384,6 +385,7 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   #Initialize Final Series
   finalseries <- interpolated_baro
   
+  
   #Give 5 or 15 minute data as appropriate
   if(data_interval == "15 mins"){
     clippedseries <- data.frame(dtime_est = seq.POSIXt(from = start_date, to = end_date + lubridate::days(1), by = data_interval) )
@@ -398,8 +400,10 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
     dplyr::summarize(count = dplyr::n()) %>%
     magrittr::set_colnames(c("Neighbors", "Count"))
   
+  ##finalseries is now ready, but return() must happen after plot and markdown are created
+  
   #Baro Raster Plot
-  #Get elevations
+  #Get elevations #This has been removed in favor of using distances to sort SMPs on plot. Code is left in case 
   #baro_elev <- odbc::dbGetQuery(con, "SELECT * FROM smp_elev") %>% filter(smp_id %in% baro$smp_id)
   
   #Bind all raw baro data with interpolated data, and add weights
@@ -423,8 +427,10 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   
   ######
   
-  rmarkdown::render(system.file("rmd", "baro.rmd", package = "pwdgsi"),
-                    params = list(smp_id = smp_id,
+  #render markdown document
+  #output file and output dir arguments do not work, so file is placed where markdown document is, and moved later
+  rmarkdown::render(system.file("rmd", "baro.rmd", package = "pwdgsi"), #find .rmd location on local cpu
+                    params = list(smp_id = smp_id,  #input parameters to be passed into markdown body
                                   start_date = start_date,
                                   end_date = end_date,
                                   data_interval = data_interval,
@@ -433,14 +439,17 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
                                   p = p,
                                   csv_name = paste0(paste(smp_id, start_date, "to", end_date, sep = "_"), ".csv")))
   
+  #give a new filename
   new_filename <- paste(lubridate::today(), smp_id, "baro_report.html", sep = "_")
   
+  #move file to Baro Data Downloader/Reports folder
   file.rename(from = paste0(system.file("rmd", "baro.html", package = "pwdgsi")), 
               to = paste0("O:/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader/Reports/", new_filename))
   
+  #open html 
   browseURL(paste0("O:/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader/Reports/", new_filename))
   
-  
+  #return Final Series. 
   return(finalseries)
   
 }

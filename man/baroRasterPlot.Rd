@@ -13,5 +13,11 @@ baroRasterPlot(baro)
 p, a ggplot2 plot
 }
 \description{
-Create a plot of barometric pressurs from each sensor
+Create a raster plot of barometric pressurs from each sensor for each day
+}
+\examples{
+marsSampleBaro_plot \%<>\% mutate("day" = lubridate::yday(marsSampleBaro_plot$dtime_est),
+                               "year" = lubridate::year(marsSampleBaro_plot$dtime_est))
+baroRasterPlot(marsSampleBaro_plot)
+
 }

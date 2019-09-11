@@ -21,6 +21,18 @@ Estimated recession rate (in/hr)
 \description{
 Estimated recession rate based on observed data
 }
+\examples{
+obs_250_fill \%>\%
+filter(is.na(event) == FALSE) \%>\%
+  group_by(event) \%>\%
+  arrange(dtime_est)\%>\%
+  summarize( #Calculate performance metrics
+    
+    Observed recession rate
+    Recession_Rate_inhr = obsRecessionRate_inhr(event, dtime_est, rainfall_in, waterlevel_ft = level_ft))
+
+
+}
 \seealso{
 \code{\link{obsInfilRate_inhr}}, \code{\link{obsOrificeOutVol_cf}}
 }

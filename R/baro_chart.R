@@ -1,4 +1,6 @@
-# 
+#Author: Nick Manna
+#This is a reprex not to be included in stable branch, intended to test and practice baroRasterPlot and rmarkdown::render() before being included in marsFetchBaroData. For devtools and installation to work properly, it need to be commented out. 
+
 # ##### Front Matter #####
 # library(tidyverse)
 # library(lubridate)

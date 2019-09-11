@@ -77,7 +77,7 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' 
 #' @seealso \code{\link{simulation.stats}}
 #' 
-#' @example 
+#' @examples 
 #' simulated_data <- simWaterLevel_ft(dtime_est = rain_data_filtered$dtime_est, 
 #'   rainfall_in = rain_data_filtered$rainfall_in, 
 #'   event = rain_data_filtered$event,

@@ -24,7 +24,7 @@
 #'
 #' @export
 #' 
-#' @example
+#' @examples
 #' gage_temp <- mutate(marsSampleRain, 
 #'   event_id = detectEvents(dtime_edt = marsSampleRain$dtime_edt, 
 #'   rainfall_in = marsSampleRain$rainfall_in, 
@@ -712,7 +712,7 @@ obsPlot <- function(event, #group_by variable, simulated or observed event, for 
 # Baro Raster Plot --------------------------------------------------------
 #' Barometric Pressure Raster Plot
 #' 
-#' Create a plot of barometric pressurs from each sensor
+#' Create a raster plot of barometric pressurs from each sensor for each day
 #' 
 #' @param baro a dataframe with columns: \code{smp_id, baro_psi, day, year}
 #' 
@@ -720,7 +720,7 @@ obsPlot <- function(event, #group_by variable, simulated or observed event, for 
 #' 
 #' @export
 #' 
-#' @example 
+#' @examples 
 #' marsSampleBaro_plot %<>% mutate("day" = lubridate::yday(marsSampleBaro_plot$dtime_est),
 #'                                "year" = lubridate::year(marsSampleBaro_plot$dtime_est))
 #' baroRasterPlot(marsSampleBaro_plot)

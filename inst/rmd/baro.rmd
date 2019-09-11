@@ -3,6 +3,7 @@ title: "Composite Baro Data Generation Report"
 author: "Nicholas Manna"
 date: "`r lubridate::now()`" 
 output: html_document
+#initialize params. the markdown document will not knit with these defaults; proper params must be passed through rmarkdown::render
 params:
   smp_id: 1-1-1
   start_date: 1/1/2019
@@ -17,6 +18,7 @@ params:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+#Create a date format to be used throughout document
 sf <- lubridate::stamp("1/30/1999")
 ```
 
@@ -26,20 +28,24 @@ On `r sf(lubridate::today())`, composite baro data was requested for SMP `r para
 
 The output file is named `r params$csv_name`.
 
+<!-- This text is included if the data interval is 5 minutes -->
 `r if(data_interval == "5 mins"){paste("Data for baro sensors that collected at 15 minute intervals had to be adjusted to be useful for 5 minute intervals. Gaps were filled by Last Object Carried Foward (LOCF). Table 2 shows how often that occured for each baro location.")}`
 
 
 ```{r tables, message=FALSE, echo = FALSE}
+#Create a table listing neighbors and counts
   params$neighbors %>% 
     knitr::kable(caption = "Table 1: Frequency of Neighboring Baro Sensor Availability", format = "html") %>% 
     kableExtra::kable_styling(full_width = F, bootstrap_options = c("striped", "hover"), position = "float_left")
 
+#Create a table listing LOCFs
 if(data_interval == "5 mins"){
       params$countNAs %>% 
       knitr::kable(caption = "Table 2: Number of NAs that were replaced by Last Object Carried Forward (LOCF)", format = "html") %>% 
       kableExtra::kable_styling(full_width = F, bootstrap_options = c("striped", "hover"))
 }
 
+#show raster plot
 params$p
 
 
