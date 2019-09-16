@@ -20,10 +20,12 @@ Imports:
   gridExtra,
   lubridate,
   magrittr, 
+  mapview,
   odbc,
   padr,
   rlang,
   scales,
+  sp,
   tidyverse,
   zoo
 RoxygenNote: 6.1.1

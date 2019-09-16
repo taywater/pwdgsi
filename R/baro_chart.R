@@ -1,6 +1,6 @@
-#Author: Nick Manna
-#This is a reprex not to be included in stable branch, intended to test and practice baroRasterPlot and rmarkdown::render() before being included in marsFetchBaroData. For devtools and installation to work properly, it need to be commented out. 
-
+# #Author: Nick Manna
+# #This is a reprex not to be included in stable branch, intended to test and practice baroRasterPlot and rmarkdown::render() before being included in marsFetchBaroData. For devtools and installation to work properly, it need to be commented out.
+# 
 # ##### Front Matter #####
 # library(tidyverse)
 # library(lubridate)
@@ -18,10 +18,10 @@
 # smp_id <- "250-1-1"
 # 
 # start_date <- lubridate::mdy("01-01-2019", tz = "EST")
-# end_date <- lubridate::mdy("01-03-2019", tz = "EST")
+# end_date <- lubridate::mdy("03-01-2019", tz = "EST")
 # 
 # # Select 1 of "5 mins" or "15 mins"
-# data_interval <- "15 mins"
+# data_interval <- "5 mins"
 # 
 # mars <- dbConnect(odbc::odbc(), "mars")
 # smplist <- dbGetQuery(mars, "SELECT * FROM smpid_facilityid_componentid")
@@ -54,6 +54,8 @@
 #   baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "';"))
 #   baro$dtime_est %<>% lubridate::force_tz(tz = "EST")
 # 
+#   #initialize countNAs_t in case the loop doesn't run. It is passed as a param to markdown so it needs to exist.
+#   countNAs_t <- 0
 #   #When the user requests data at a 5-minute resolution, we need to stretch our 15-minute data into 5-minute data
 #   #We can use tidyr::spread and padr::pad to generate the full 5 minute time series,
 #   #And then use zoo::na.locf (last observation carried forward) to fill the NAs with the most recent value
@@ -139,6 +141,14 @@
 #   #Create baro Raster Chart
 #   p <- baroRasterPlot(baro_p)
 # 
+#   #Create baro Map
+#   baro_loc <- smp_loc %>% filter(smp_id %in% baro$smp_id)
+#   rownames(baro_loc) <- NULL
+#   coords <- baro_loc[c("lon_wgs84", "lat_wgs84")]
+#   baro_sp <- sp::SpatialPointsDataFrame(coords, data = baro_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+#   coords <- locus_loc[c("lon_wgs84", "lat_wgs84")]
+#   smp_sp <- sp::SpatialPointsDataFrame(coords, data = locus_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+#   baro_map <- mapview::mapview(baro_sp, layer.name = "Baro") + mapview::mapview(smp_sp, color = "red", col.regions = "red", layer.name = "Target SMP")
 # ######
 # 
 # rmarkdown::render(system.file("rmd", "baro.rmd", package = "pwdgsi"),
@@ -149,7 +159,8 @@
 #                                 neighbors = neighbors,
 #                                 countNAs = countNAs_t,
 #                                 p = p,
-#                                 csv_name = paste0(paste(smp_id, start_date, "to", end_date, sep = "_"), ".csv")))
+#                                 csv_name = paste0(paste(smp_id, start_date, "to", end_date, sep = "_"), ".csv"),
+#                                 map = baro_map))
 # 
 # new_filename <- paste(lubridate::today(), smp_id, "baro_report.html", sep = "_")
 # 

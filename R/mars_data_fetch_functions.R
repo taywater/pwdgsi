@@ -336,7 +336,9 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   #Get all baro data for the specified time period
   baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "';"))
   baro$dtime_est %<>% lubridate::force_tz(tz = "EST")
-
+  
+  #initialize countNAs_t in case the loop doesn't run. It is passed as a param to markdown so it needs to exist. 
+  countNAs_t <- 0 
 
   #When the user requests data at a 5-minute resolution, we need to stretch our 15-minute data into 5-minute data
   #We can use tidyr::spread and padr::pad to generate the full 5 minute time series,
@@ -425,7 +427,14 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   #Create baro Raster Chart
   p <- baroRasterPlot(baro_p)
   
-  ######
+  #Create baro Map
+  baro_loc <- smp_loc %>% filter(smp_id %in% baro$smp_id)
+  rownames(baro_loc) <- NULL
+  coords <- baro_loc[c("lon_wgs84", "lat_wgs84")]
+  baro_sp <- sp::SpatialPointsDataFrame(coords, data = baro_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+  coords <- locus_loc[c("lon_wgs84", "lat_wgs84")]
+  smp_sp <- sp::SpatialPointsDataFrame(coords, data = locus_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+  baro_map <- mapview::mapview(baro_sp, layer.name = "Baro") + mapview::mapview(smp_sp, color = "red", col.regions = "red", layer.name = "Target SMP")
   
   #render markdown document
   #output file and output dir arguments do not work, so file is placed where markdown document is, and moved later
@@ -437,7 +446,8 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
                                   neighbors = neighbors,
                                   countNAs = countNAs_t,
                                   p = p,
-                                  csv_name = paste0(paste(smp_id, start_date, "to", end_date, sep = "_"), ".csv")))
+                                  csv_name = paste0(paste(smp_id, start_date, "to", end_date, sep = "_"), ".csv"),
+                                  map = baro_map))
   
   #give a new filename
   new_filename <- paste(lubridate::today(), smp_id, "baro_report.html", sep = "_")

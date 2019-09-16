@@ -13,6 +13,7 @@ params:
   countNAs: b
   p: p
   csv_name: csv
+  map: map
 ---
 
 ```{r setup, include=FALSE}
@@ -24,7 +25,7 @@ sf <- lubridate::stamp("1/30/1999")
 
 ## `r params$smp_id`
 
-On `r sf(lubridate::today())`, composite baro data was requested for SMP `r params$smp_id` from `r sf(params$start_date)` to `r sf(params$end_date)` at an interval of `r params$data_interval`. Table 1 shows how many times each amount of baros were available for interpolation; for example, only `r params$neighbors[1,1]` baro was available at `r params$neighbors[1,2]` timesteps. 
+On `r sf(lubridate::today())`, composite baro data was requested for SMP `r params$smp_id` from `r sf(params$start_date)` to `r sf(params$end_date)` at an interval of `r params$data_interval`. Table 1 shows how many times each amount of baros were available for interpolation; for example, `r params$neighbors[1,1]` baro(s) were available at `r params$neighbors[1,2]` timesteps. 
 
 The output file is named `r params$csv_name`.
 
@@ -53,4 +54,6 @@ params$p
 
 `r kableExtra::text_spec("Figure 1: Baro Raster Plot", color = "grey")`
 
+`r params$map`
 
+`r kableExtra::text_spec("Figure 2: Baro Map with Target SMP", color = "grey")`
