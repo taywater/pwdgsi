@@ -14,6 +14,8 @@ params:
   p: p
   csv_name: csv
   map: map
+  baro_latest_dtime: a
+  baro_latest_valid: b
 ---
 
 ```{r setup, include=FALSE}
@@ -25,9 +27,11 @@ sf <- lubridate::stamp("1/30/1999")
 
 ## `r params$smp_id`
 
-On `r sf(lubridate::today())`, composite baro data was requested for SMP `r params$smp_id` from `r sf(params$start_date)` to `r sf(params$end_date)` at an interval of `r params$data_interval`. Table 1 shows how many times each amount of baros were available for interpolation; for example, `r params$neighbors[1,1]` baro(s) were available at `r params$neighbors[1,2]` timesteps. 
+On `r sf(lubridate::today())`, composite baro data was requested for SMP `r params$smp_id` from `r sf(params$start_date)` to `r sf(params$end_date)` at an interval of `r params$data_interval`. Output baro data is a result of a interpolation based on distance from the target baro. A minimum of four neighbors are needed to interpolate. Table 1 shows how many times each amount of baros were available for interpolation; for example, `r params$neighbors[1,1]` baro(s) were available at `r params$neighbors[1,2]` timesteps. If NA, and there are no interpolated data in Figure 1, then the requested smp has a baro on-site. 
 
-The output file is named `r params$csv_name`.
+Within the request interval, the latest date with baro data is `r params$baro_latest_dtime`. The latest date with four or more neighbors is `r params$baro_latest_valid`. 
+
+The output file is "`r params$csv_name`".
 
 <!-- This text is included if the data interval is 5 minutes -->
 `r if(data_interval == "5 mins"){paste("Data for baro sensors that collected at 15 minute intervals had to be adjusted to be useful for 5 minute intervals. Gaps were filled by Last Object Carried Foward (LOCF). Table 2 shows how often that occured for each baro location.")}`

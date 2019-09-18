@@ -14,11 +14,12 @@
 # 
 # #setwd("//pwdoows/oows/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro data Downloader")
 # options(stringsAsFactors=FALSE)
+# rm(list=ls())
 # 
-# smp_id <- "250-1-1"
+# smp_id <- "326-1-1"
 # 
-# start_date <- lubridate::mdy("01-01-2019", tz = "EST")
-# end_date <- lubridate::mdy("03-01-2019", tz = "EST")
+# start_date <- lubridate::mdy("07-01-2019", tz = "EST")
+# end_date <- lubridate::mdy("08-01-2019", tz = "EST")
 # 
 # # Select 1 of "5 mins" or "15 mins"
 # data_interval <- "5 mins"
@@ -51,7 +52,7 @@
 # 
 #   #Collect baro data
 #   #Get all baro data for the specified time period
-#   baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "';"))
+#   baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "' order by dtime_est;")) %>% padr::thicken(interval = "5 mins", rounding = "down") %>% dplyr::group_by(dtime_est_5_min, smp_id) %>% dplyr::summarize(baro_psi = max(baro_psi, na.rm = TRUE)) %>% dplyr::select(dtime_est = dtime_est_5_min, smp_id, baro_psi) %>% dplyr::ungroup()
 #   baro$dtime_est %<>% lubridate::force_tz(tz = "EST")
 # 
 #   #initialize countNAs_t in case the loop doesn't run. It is passed as a param to markdown so it needs to exist.
@@ -148,7 +149,7 @@
 #   baro_sp <- sp::SpatialPointsDataFrame(coords, data = baro_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
 #   coords <- locus_loc[c("lon_wgs84", "lat_wgs84")]
 #   smp_sp <- sp::SpatialPointsDataFrame(coords, data = locus_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
-#   baro_map <- mapview::mapview(baro_sp, layer.name = "Baro") + mapview::mapview(smp_sp, color = "red", col.regions = "red", layer.name = "Target SMP")
+#   baro_map <- mapview::mapview(baro_sp, layer.name = "Baro") + mapview::mapview(smp_sp, color = "red", col.regions = NA, layer.name = "Target SMP")
 # ######
 # 
 # rmarkdown::render(system.file("rmd", "baro.rmd", package = "pwdgsi"),

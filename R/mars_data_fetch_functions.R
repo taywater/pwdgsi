@@ -278,6 +278,7 @@ gapFillEventID <- function(event_low, event_high){
 
 marsInterpolateBaro <- function(baro_psi, smp_id, weight, target_id){
 
+ # browser()
   if (target_id %in% smp_id){
     return(baro_psi[which(target_id == smp_id)])
   } else {
@@ -287,6 +288,29 @@ marsInterpolateBaro <- function(baro_psi, smp_id, weight, target_id){
     )
   }
 }
+
+
+
+# yday_decimal ------------------------------------------------------------
+
+#' Fetch a decimal day from a datetime
+#'
+#' Return the day of the year, with hours and seconds as the decimal
+#'
+#' @param dtime_est POSIXct, format: "POSIXct, format: "YYYY-MM-DD HH:MM:SS""
+#' 
+#' @return Output with be a day with a decimal
+#' 
+#' @export
+
+
+
+yday_decimal <- function(dtime_est){
+
+  lubridate::yday(dtime_est) + lubridate::hour(dtime_est)/24 + lubridate::minute(dtime_est)/(24*60) + lubridate::second(dtime_est)/(24*60*60)
+}
+
+
 
 # marsFetchBaroData --------------------------------
 
@@ -332,9 +356,33 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   locus_loc <- dplyr::filter(smp_loc, smp_id == target_id)
   baro_smp <- odbc::dbGetQuery(con, "SELECT DISTINCT smp_id FROM public.baro_rawfile;") %>% dplyr::pull(smp_id)
 
+  #browser()
   #Collect baro data
   #Get all baro data for the specified time period
-  baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "';"))
+  baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "' order by dtime_est;"))
+  
+  baro_latest_dtime <- odbc::dbGetQuery(con, paste0("SELECT max(dtime_est) FROM baro WHERE dtime_est < '", end_date + lubridate::days(1), "'")) %>% dplyr::pull()
+  baro_latest_valid <- odbc::dbGetQuery(con, paste0("SELECT max(dtime_est) FROM barodata_neighbors WHERE neighbors >= 4 and dtime_est < '", end_date + lubridate::days(1), "'")) %>% dplyr::pull()
+  
+  if(length(baro$dtime_est) == 0){
+    stop (paste0("No data available in the reqested interval. The latest available baro data is from ", baro_latest_dtime, "."))
+  }
+  
+  #browser()
+  #this is a seperate pipe so that it could be stopped before the error
+  needs_thickening <- baro$dtime_est %>% lubridate::second() %>% {. > 0} %>% any() == TRUE
+  if(needs_thickening == TRUE){
+    baro %<>% padr::thicken(interval = "5 mins", rounding = "down") 
+  
+    baro %<>% dplyr::group_by(dtime_est_5_min, smp_id)
+  
+    baro %<>% dplyr::summarize(baro_psi = max(baro_psi, na.rm = TRUE)) %>% dplyr::select(dtime_est = dtime_est_5_min, smp_id, baro_psi) %>% dplyr::ungroup()
+  }else{
+    baro %<>% dplyr::group_by(dtime_est, smp_id)
+    
+    baro %<>% dplyr::summarize(baro_psi = max(baro_psi, na.rm = TRUE)) %>% dplyr::select(dtime_est, smp_id, baro_psi) %>% dplyr::ungroup()
+  }
+  
   baro$dtime_est %<>% lubridate::force_tz(tz = "EST")
   
   #initialize countNAs_t in case the loop doesn't run. It is passed as a param to markdown so it needs to exist. 
@@ -412,15 +460,15 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   baro_p <- dplyr::bind_rows(baro, finalseries)
   baro_p <- dplyr::left_join(baro_p, baro_weights, by = "smp_id") 
   
-  #Set NA weights to -10 so interpolated data plots at the top of the chart
-  baro_p$weight[is.na(baro_p$weight)] <- -10
+  #Set NA weights to max weight +1 so interpolated data plots at the top of the chart
+  baro_p$weight[is.na(baro_p$weight)] <- max(baro_p$weight)+1
   
   #Add year and day for chart
-  baro_p %<>% dplyr::mutate("day" = lubridate::yday(baro_p$dtime_est),
+  baro_p %<>% dplyr::mutate("day" = yday_decimal(baro_p$dtime_est),
                      "year" = lubridate::year(baro_p$dtime_est))
   
   #Sort SMP IDs by elevation
-  baro_p$smp_id <- factor(baro_p$smp_id, levels = rev(unique(baro_p$smp_id[order(baro_p$weight)])))
+  baro_p$smp_id <- factor(baro_p$smp_id, levels = unique(baro_p$smp_id[order(baro_p$weight)]))
   
   baro_p$smp_id %<>% as.factor
   
@@ -428,13 +476,16 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   p <- baroRasterPlot(baro_p)
   
   #Create baro Map
-  baro_loc <- smp_loc %>% filter(smp_id %in% baro$smp_id)
+  baro_loc <- smp_loc %>% dplyr::filter(smp_id %in% baro$smp_id)
   rownames(baro_loc) <- NULL
   coords <- baro_loc[c("lon_wgs84", "lat_wgs84")]
   baro_sp <- sp::SpatialPointsDataFrame(coords, data = baro_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
   coords <- locus_loc[c("lon_wgs84", "lat_wgs84")]
   smp_sp <- sp::SpatialPointsDataFrame(coords, data = locus_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
-  baro_map <- mapview::mapview(baro_sp, layer.name = "Baro") + mapview::mapview(smp_sp, color = "red", col.regions = "red", layer.name = "Target SMP")
+  baro_map <- mapview::mapview(baro_sp, layer.name = "Baro") + mapview::mapview(smp_sp, color = "red", col.regions = NA, layer.name = "Target SMP")
+  
+  downloader_folder <- ("//pwdoows/oows/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader")
+  
   
   #render markdown document
   #output file and output dir arguments do not work, so file is placed where markdown document is, and moved later
@@ -446,18 +497,21 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
                                   neighbors = neighbors,
                                   countNAs = countNAs_t,
                                   p = p,
-                                  csv_name = paste0(paste(smp_id, start_date, "to", end_date, sep = "_"), ".csv"),
-                                  map = baro_map))
+                                  csv_name = paste0(downloader_folder, "/", paste(smp_id, start_date, "to", end_date, sep = "_"), ".csv"),
+                                  map = baro_map, 
+                                  baro_latest_dtime = baro_latest_dtime, 
+                                  baro_latest_valid = baro_latest_valid))
   
-  #give a new filename
-  new_filename <- paste(lubridate::today(), smp_id, "baro_report.html", sep = "_")
+  #give a new filename and path
+  new_filename <- paste0(downloader_folder, "/Reports/", paste(smp_id, start_date, "to", end_date, sep = "_"), "_baro_report.html")
   
   #move file to Baro Data Downloader/Reports folder
   file.rename(from = paste0(system.file("rmd", "baro.html", package = "pwdgsi")), 
-              to = paste0("O:/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader/Reports/", new_filename))
+              to = new_filename)
   
+  new_filename_drive <- paste0("O:/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader/Reports/", paste(smp_id, start_date, "to", end_date, sep = "_"), "_baro_report.html")
   #open html 
-  browseURL(paste0("O:/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader/Reports/", new_filename))
+  browseURL(new_filename_drive)
   
   #return Final Series. 
   return(finalseries)
