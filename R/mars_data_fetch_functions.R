@@ -346,9 +346,29 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 
   #Collect baro data
   #Get all baro data for the specified time period
-  baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + days(1), "' order by dtime_est;")) %>% padr::thicken(interval = "5 mins", rounding = "down") %>% dplyr::group_by(dtime_est_5_min, smp_id) %>% dplyr::summarize(baro_psi = max(baro_psi, na.rm = TRUE)) %>% dplyr::ungroup %>% dplyr::select(dtime_est = dtime_est_5_min, smp_id, baro_psi)
+  baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "' order by dtime_est;"))
+  
+  baro_latest_dtime <- odbc::dbGetQuery(con, paste0("SELECT max(dtime_est) FROM baro WHERE dtime_est < '", end_date + lubridate::days(1), "'")) %>% dplyr::pull()
+  
+  if(length(baro$dtime_est) == 0){
+    stop (paste0("No data available in the reqested interval. The latest available baro data is from ", baro_latest_dtime, "."))
+  }
+  
+  #thicken() does not work if the data does not need to be thickened, so we check:
+  needs_thickening <- baro$dtime_est %>% lubridate::second() %>% {. > 0} %>% any() == TRUE
+  if(needs_thickening == TRUE){
+    baro %<>% padr::thicken(interval = "5 mins", rounding = "down") 
+    
+    baro %<>% dplyr::group_by(dtime_est_5_min, smp_id)
+    
+    baro %<>% dplyr::summarize(baro_psi = max(baro_psi, na.rm = TRUE)) %>% dplyr::select(dtime_est = dtime_est_5_min, smp_id, baro_psi) %>% dplyr::ungroup()
+  }else{
+    baro %<>% dplyr::group_by(dtime_est, smp_id)
+    
+    baro %<>% dplyr::summarize(baro_psi = max(baro_psi, na.rm = TRUE)) %>% dplyr::select(dtime_est, smp_id, baro_psi) %>% dplyr::ungroup()
+  }
+  
   baro$dtime_est %<>% lubridate::force_tz(tz = "EST")
-
 
   #When the user requests data at a 5-minute resolution, we need to stretch our 15-minute data into 5-minute data
   #We can use tidyr::spread and padr::pad to generate the full 5 minute time series,
