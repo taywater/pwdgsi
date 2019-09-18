@@ -136,7 +136,6 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
     #If gap is > 15 mins, put a zero 15 minutes after the gap starts
     if(k > 15){
 
-      #browser()
 
       zeroFillIndex <- nrow(zeroFills)+1
 
@@ -241,8 +240,7 @@ gapFillEventID <- function(event_low, event_high){
 #roxygen2
 #' Interpolate barometric pressure with inverse distance weighting
 #'
-#' Returns an on-site barometric pressure reading, an interpolated barometric pressure reading, \code{NA},
-#'  or a combination.
+#' Returns an interpolated barometric pressure reading or \code{NA}
 #'
 #' @seealso \itemize{
 #'      \code{\link{marsFetchBaroData}},
@@ -255,11 +253,10 @@ gapFillEventID <- function(event_low, event_high){
 #' @param target_id chr, single SMP ID where the user has requested data
 #'
 #' @return Output will be a single barometric pressure reading.
-#'   If there is a baro at the target SMP, the reading will be from that baro.
-#'   If not, and there are more than 5 baros with data,
+#'   If there are 4 or greater baros with data,
 #'   the reading will be an inverse distance-weighted
 #'   interpolation of those readings.
-#'   If there are fewer than 5 readings, return \code{NA}.
+#'   If there are fewer than 4 readings, return \code{NA}.
 #'
 #' @export
 #' 
@@ -278,17 +275,12 @@ gapFillEventID <- function(event_low, event_high){
 
 marsInterpolateBaro <- function(baro_psi, smp_id, weight, target_id){
 
- # browser()
-  if (target_id %in% smp_id){
-    return(baro_psi[which(target_id == smp_id)])
-  } else {
-    return(ifelse(length(baro_psi) >=4,
-                  sum(baro_psi *weight)/sum(weight),
-                  NA)
-    )
-  }
+ if(length(baro_psi) >= 4){
+   return(sum(baro_psi*weight)/sum(weight))
+ }else{
+   return(NA)
+ }
 }
-
 
 
 # yday_decimal ------------------------------------------------------------
@@ -317,7 +309,7 @@ yday_decimal <- function(dtime_est){
 #' Fetch barometric pressure data for a target SMP, date range, and interval
 #'
 #' Returns a data frame with datetime, barometric pressure, smp id, and number of neighbors
-#'   interpolated from to collect the data.
+#'   interpolated from to collect the data. 
 #'   
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param target_id chr, single SMP ID where the user has requested data
@@ -336,7 +328,7 @@ yday_decimal <- function(dtime_est){
 #'     If there are fewer than five baros to interprolate from, based on \code{\link{marsInterpolateBaro}},
 #'     all columns other than "dtime_est" will be NA.
 #'     
-#'     The function will also output and open an html document describe the data request, and including
+#'     The function will also output and open an html document describing the data request and including
 #'     a raster plot of barometric pressures. 
 #' 
 #' @export
@@ -356,7 +348,6 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   locus_loc <- dplyr::filter(smp_loc, smp_id == target_id)
   baro_smp <- odbc::dbGetQuery(con, "SELECT DISTINCT smp_id FROM public.baro_rawfile;") %>% dplyr::pull(smp_id)
 
-  #browser()
   #Collect baro data
   #Get all baro data for the specified time period
   baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "' order by dtime_est;"))
@@ -368,7 +359,6 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
     stop (paste0("No data available in the reqested interval. The latest available baro data is from ", baro_latest_dtime, "."))
   }
   
-  #browser()
   #this is a seperate pipe so that it could be stopped before the error
   needs_thickening <- baro$dtime_est %>% lubridate::second() %>% {. > 0} %>% any() == TRUE
   if(needs_thickening == TRUE){
@@ -416,7 +406,7 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
     baro <- tidyr::gather(baro_pad, "smp_id", "baro_psi", -dtime_est) %>%
       dplyr::filter(!is.na(baro_psi))
   }
-
+  
   #Calculate the distance between every baro location and the target SMP, then add weight
   baro_weights <- dplyr::filter(smp_loc, smp_id %in% baro_smp) %>%
     dplyr::mutate(lon_dist = lon_wgs84 - locus_loc$lon_wgs84,
@@ -426,11 +416,15 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
     dplyr::select(smp_id, weight) %>%
     dplyr::arrange(smp_id)
   
+  #Cap weight at 1000
+  baro_weights$weight <- replace(baro_weights$weight, baro_weights$weight > 1000, 1000)
+  
   interpolated_baro <- dplyr::left_join(baro, baro_weights, by = "smp_id") %>% #join baro and weights
     dplyr::group_by(dtime_est) %>% #group datetimes, then calculate weighting effect for each datetime
     dplyr::summarize(baro_psi = marsInterpolateBaro(baro_psi, smp_id, weight, target_id),
-                     smp_id = ifelse(target_id %in% smp_id, target_id, "Interpolated"),
-                     neighbors = ifelse(target_id %in% smp_id, NA, dplyr::n()))
+                     smp_id =  "Interpolated",
+                     neighbors = dplyr::n()) %>% 
+    zoo::na.trim(sides = "right") #trim trailing NAs
   
   #Initialize Final Series
   finalseries <- interpolated_baro
@@ -484,8 +478,8 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   smp_sp <- sp::SpatialPointsDataFrame(coords, data = locus_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
   baro_map <- mapview::mapview(baro_sp, layer.name = "Baro") + mapview::mapview(smp_sp, color = "red", col.regions = NA, layer.name = "Target SMP")
   
-  downloader_folder <- ("//pwdoows/oows/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader")
-  
+  downloader_folder <- "//pwdoows/oows/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader"
+  downloader_folder_csv <- "\\\\\\\\pwdoows\\\\oows\\\\Watershed Sciences\\\\GSI Monitoring\\07 Databases and Tracking Spreadsheets\\13 MARS Analysis Database\\\\Scripts\\\\Downloader\\\\Baro Data Downloader\\\\"
   
   #render markdown document
   #output file and output dir arguments do not work, so file is placed where markdown document is, and moved later
@@ -497,7 +491,7 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
                                   neighbors = neighbors,
                                   countNAs = countNAs_t,
                                   p = p,
-                                  csv_name = paste0(downloader_folder, "/", paste(smp_id, start_date, "to", end_date, sep = "_"), ".csv"),
+                                  csv_name = paste0(downloader_folder_csv, paste(smp_id, start_date, "to", end_date, sep = "_"), ".csv"),
                                   map = baro_map, 
                                   baro_latest_dtime = baro_latest_dtime, 
                                   baro_latest_valid = baro_latest_valid))

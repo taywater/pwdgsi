@@ -31,7 +31,8 @@ On `r sf(lubridate::today())`, composite baro data was requested for SMP `r para
 
 Within the request interval, the latest date with baro data is `r params$baro_latest_dtime`. The latest date with four or more neighbors is `r params$baro_latest_valid`. 
 
-The output file is "`r params$csv_name`".
+The output file is below:  
+`r params$csv_name`
 
 <!-- This text is included if the data interval is 5 minutes -->
 `r if(data_interval == "5 mins"){paste("Data for baro sensors that collected at 15 minute intervals had to be adjusted to be useful for 5 minute intervals. Gaps were filled by Last Object Carried Foward (LOCF). Table 2 shows how often that occured for each baro location.")}`

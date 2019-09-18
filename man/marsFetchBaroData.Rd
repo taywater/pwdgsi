@@ -30,7 +30,7 @@ Output will be a dataframe with four columns:
     If there are fewer than five baros to interprolate from, based on \code{\link{marsInterpolateBaro}},
     all columns other than "dtime_est" will be NA.
     
-    The function will also output and open an html document describe the data request, and including
+    The function will also output and open an html document describing the data request and including
     a raster plot of barometric pressures.
 }
 \description{
