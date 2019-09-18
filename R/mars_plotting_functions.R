@@ -721,7 +721,7 @@ obsPlot <- function(event, #group_by variable, simulated or observed event, for 
 #' @export
 #' 
 #' @examples 
-#' marsSampleBaro_plot %<>% mutate("day" = lubridate::yday(marsSampleBaro_plot$dtime_est),
+#' marsSampleBaro_plot %<>% dplyr::mutate("day" = yday_decimal(marsSampleBaro_plot$dtime_est),
 #'                                "year" = lubridate::year(marsSampleBaro_plot$dtime_est))
 #' baroRasterPlot(marsSampleBaro_plot)
 #'
