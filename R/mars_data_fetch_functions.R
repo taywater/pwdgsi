@@ -362,15 +362,16 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   #this is a seperate pipe so that it could be stopped before the error
   needs_thickening <- baro$dtime_est %>% lubridate::second() %>% {. > 0} %>% any() == TRUE
   if(needs_thickening == TRUE){
-    baro %<>% padr::thicken(interval = "5 mins", rounding = "down") 
-  
-    baro %<>% dplyr::group_by(dtime_est_5_min, smp_id)
-  
-    baro %<>% dplyr::summarize(baro_psi = max(baro_psi, na.rm = TRUE)) %>% dplyr::select(dtime_est = dtime_est_5_min, smp_id, baro_psi) %>% dplyr::ungroup()
+    baro %<>% padr::thicken(interval = "5 mins", rounding = "down") %>% 
+      dplyr::group_by(dtime_est_5_min, smp_id) %>% 
+      dplyr::summarize(baro_psi = max(baro_psi, na.rm = TRUE)) %>% 
+      dplyr::select(dtime_est = dtime_est_5_min, smp_id, baro_psi) %>% 
+      dplyr::ungroup()
   }else{
-    baro %<>% dplyr::group_by(dtime_est, smp_id)
-    
-    baro %<>% dplyr::summarize(baro_psi = max(baro_psi, na.rm = TRUE)) %>% dplyr::select(dtime_est, smp_id, baro_psi) %>% dplyr::ungroup()
+    baro %<>% dplyr::group_by(dtime_est, smp_id) %>% 
+      dplyr::summarize(baro_psi = max(baro_psi, na.rm = TRUE)) %>% 
+      dplyr::select(dtime_est, smp_id, baro_psi) %>% 
+      dplyr::ungroup()
   }
   
   baro$dtime_est %<>% lubridate::force_tz(tz = "EST")
