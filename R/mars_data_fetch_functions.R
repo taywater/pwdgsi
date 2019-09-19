@@ -458,12 +458,13 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   #Set NA weights to max weight +1 so interpolated data plots at the top of the chart
   baro_p$weight[is.na(baro_p$weight)] <- max(baro_p$weight)+1
   
+  #Sort SMP IDs by elevation
+  baro_p$smp_id <- factor(baro_p$smp_id, levels = unique(baro_p$smp_id[order(baro_p$weight)]))
+  
   #Add year and day for chart
   baro_p %<>% dplyr::mutate("day" = yday_decimal(baro_p$dtime_est),
                      "year" = lubridate::year(baro_p$dtime_est))
   
-  #Sort SMP IDs by elevation
-  baro_p$smp_id <- factor(baro_p$smp_id, levels = unique(baro_p$smp_id[order(baro_p$weight)]))
   
   baro_p$smp_id %<>% as.factor
   

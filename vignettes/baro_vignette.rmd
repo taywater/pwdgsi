@@ -54,7 +54,7 @@ A data downloader script wraps `marsFetchBaroData()` and passes arguments, runs 
 
 The list `marsSampleBaro()` contains data from nine baro sensors at the same timestep, with data needed for interpolation, and the name of target smp, `r marsSampleBaro[[2]]`: 
 
-```{r table}
+```{r table, echo = FALSE}
 knitr::kable(marsSampleBaro[[1]], caption = "Table 1: Sample Baro Data", digits = 2)
 ```
 
@@ -72,9 +72,9 @@ marsInterpolateBaro(
 
 The following table is a snapshot of three days of baro data, which can be plotted with `baroRasterPlot()`. The custom function `yday_decimal()` adds days to each value, so the x-axis can be cleanly labeled with days instead of dates. 
 
-```{r raster_data}
+```{r raster_data, echo = FALSE}
 marsSampleBaro_plot %>% {.[sample(nrow(.)),]} %>% head(5) %>% 
-  knitr::kable(caption = "Table 2: Sample Baro Plot Data", row.names = FALSE) 
+  knitr::kable(caption = "Table 2: Sample Baro Plot Data", row.names = FALSE, digits = 2) 
 marsSampleBaro_plot %<>% dplyr::mutate("day" = yday_decimal(marsSampleBaro_plot$dtime_est),
                                "year" = lubridate::year(marsSampleBaro_plot$dtime_est))
 ```
