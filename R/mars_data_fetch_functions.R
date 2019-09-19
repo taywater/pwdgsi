@@ -470,6 +470,7 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   #Create baro Raster Chart
   p <- baroRasterPlot(baro_p)
   
+  
   #Create baro Map
   baro_loc <- smp_loc %>% dplyr::filter(smp_id %in% baro$smp_id)
   rownames(baro_loc) <- NULL
