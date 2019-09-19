@@ -29,6 +29,9 @@ Output will be a dataframe with four columns:
     If the target SMP has an on-site baro with data, the "neighbors" column will be NA.
     If there are fewer than five baros to interprolate from, based on \code{\link{marsInterpolateBaro}},
     all columns other than "dtime_est" will be NA.
+    
+    The function will also output and open an html document describing the data request and including
+    a raster plot of barometric pressures.
 }
 \description{
 Returns a data frame with datetime, barometric pressure, smp id, and number of neighbors

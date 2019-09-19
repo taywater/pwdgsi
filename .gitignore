@@ -7,3 +7,6 @@ update_baro_tables/output
 update_ow_data/output
 update_rainfall_tables/output
 update_smp_tables/output
+inst/doc
+doc
+Meta

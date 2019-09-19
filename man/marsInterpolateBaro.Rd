@@ -17,15 +17,13 @@ marsInterpolateBaro(baro_psi, smp_id, weight, target_id)
 }
 \value{
 Output will be a single barometric pressure reading.
-  If there is a baro at the target SMP, the reading will be from that baro.
-  If not, and there are more than 5 baros with data,
+  If there are 4 or greater baros with data,
   the reading will be an inverse distance-weighted
   interpolation of those readings.
-  If there are fewer than 5 readings, return \code{NA}.
+  If there are fewer than 4 readings, return \code{NA}.
 }
 \description{
-Returns an on-site barometric pressure reading, an interpolated barometric pressure reading, \code{NA},
- or a combination.
+Returns an interpolated barometric pressure reading or \code{NA}
 }
 \examples{
 

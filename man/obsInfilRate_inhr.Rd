@@ -38,6 +38,24 @@ Output is estimated infiltration rate (in/hr)
 \description{
 Estimated infiltration rate based on observed data
 }
+\examples{
+obs_250_fill \%>\%
+filter(is.na(event) == FALSE) \%>\%
+  group_by(event) \%>\%
+  arrange(dtime_est)\%>\%
+  summarize( #Calculate performance metrics
+    #Observed infiltration rate
+    Infiltration_Rate_inhr = obsInfilRate_inhr(event, dtime_est,
+                                               rainfall_in,
+                                               infil_footprint_ft2,
+                                               dcia_ft2,
+                                               storage_depth_ft = storage_depth_ft,
+                                               storage_vol_ft3 = storage_vol_ft3,
+                                               orifice_diam_in,
+                                               orifice_height_ft,
+                                               waterlevel_ft = level_ft))
+
+}
 \seealso{
 \code{\link{obsRecessionRate_inhr}}, \code{\link{obsOrificeOutVol_cf}}
 }

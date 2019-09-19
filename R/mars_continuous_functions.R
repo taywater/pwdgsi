@@ -37,7 +37,7 @@
 #' 
 #' @export
 #' 
-#' @example
+#' @examples
 #' obs_250_fill %>%
 #' filter(is.na(event) == FALSE) %>%
 #'   group_by(event) %>%
@@ -226,7 +226,7 @@ obsInfilRate_inhr <- function(event, #for warning messages
 #' 
 #' @export
 #' 
-#' @example
+#' @examples
 #' obs_250_fill %>%
 #' filter(is.na(event) == FALSE) %>%
 #'   group_by(event) %>%
@@ -362,7 +362,7 @@ obsRecessionRate_inhr <- function(event, #for warning message
 #' 
 #' @export
 #' 
-#' @example
+#' @examples
 #' obs_250_fill <- obs_250_all %>%  
 #' arrange(dtime_est)%>%
 #'   fill(event) %>% #Fill NA's

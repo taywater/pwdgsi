@@ -43,6 +43,20 @@ Output is a dataframe with the following columns: dtime_est, rainfall_in, event,
 \description{
 Simulates water level in subsurface stormwater infiltration system with underdrain
 }
+\examples{
+simulated_data <- simWaterLevel_ft(dtime_est = rain_data_filtered$dtime_est, 
+  rainfall_in = rain_data_filtered$rainfall_in, 
+  event = rain_data_filtered$event,
+  infil_footprint_ft2 = smp_stats$infil_footprint_ft2[7], 
+  dcia_ft2 = smp_stats$dcia_ft2[7],
+  orifice_height_ft = smp_stats$orifice_height_ft[7],
+  orifice_diam_in = smp_stats$orifice_diam_in[7],
+  storage_depth_ft = smp_stats$storage_depth_ft[7],
+  storage_vol_ft3 = smp_stats$storage_vol_ft3[7],
+  infil_rate_inhr = smp_stats$infil_rate_inhr[7])
+
+
+}
 \seealso{
 \code{\link{simulation.stats}}
 }

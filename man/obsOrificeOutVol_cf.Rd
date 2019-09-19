@@ -26,6 +26,27 @@ Output is total observed orifice outflow volume (cf)
 \description{
 Total observed orifice outflow volume (cf)
 }
+\examples{
+obs_250_fill <- obs_250_all \%>\%  
+arrange(dtime_est)\%>\%
+  fill(event) \%>\% #Fill NA's
+  mutate( # Pull in system specs from smp_stats table    
+    storage_depth_ft = smp_stats$storage_depth_ft[7], 
+    storage_vol_ft3 = smp_stats$storage_vol_ft3[7],
+    infil_footprint_ft2 = smp_stats$infil_footprint_ft2[7],
+    dcia_ft2 =  smp_stats$dcia_ft2[7],
+    orifice_height_ft = smp_stats$orifice_height_ft[7],
+    orifice_diam_in = smp_stats$orifice_diam_in[7],
+    
+    # Calculate orifice flow, if applicable
+   orifice_vol_cf = obsOrificeOutVol_cf(dtime_est,
+                                        waterlevel_ft = level_ft,
+                                        orifice_height_ft,
+                                        orifice_diam_in)
+  )
+
+
+}
 \seealso{
 \code{\link{obsInfilRate_inhr}}, \code{\link{obsRecessionRate_inhr}}
 }
