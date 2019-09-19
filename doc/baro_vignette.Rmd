@@ -1,0 +1,88 @@
+---
+title: "Retrieving Barometric Pressure Data"
+author: "Nicholas Manna"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Retrieving Barometric Pressure Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+fig_caption: yes
+---
+
+```{r setup, include = FALSE}
+library(pwdgsi)
+library(magrittr)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This vignette describes improvements made by pwdgsi in the utility, accuracy, and confidence of barometric pressure data during QA/QC of water level data. 
+
+## Background
+ 
+The GSI Monitoring Analysis Research and Support (MARS) group uses pressure sensors to measure water level at stormwater management practices (SMPs). A sensor tracks pressure and temperature where water level changes in the SMP, and another sensor outside the SMP tracks barometric pressure (baro). The data from these two sensors are used in conjuction to calculate water level. There is not a baro at each site (Figure 1), so data from nearby baro(s) are used to calculate water level. Each baro is at an SMP. 
+
+Sensors save data at 5- or 15-minute intervals. The data is saved saved a .csv file, and users can copy and paste that data into a Microsoft Excel sheet that has a pre-formatted template, taking care to match the datetimes of both sensors. The water level calculation is done in this sheet, and once QA/QC is completed for a quarter, the sheet is moved into an Access Database, and read into the mars postgreSQL database. The baro data from all collected files is also read into a table in the mars database, with smp_id, datetime, and pressure.
+
+![](baro_map.png){width=600px}  
+Figure 1: Map of Baro Sensors
+
+In the past, data from the barometric pressure sensor (baro data) was taken from the baro closest to the target SMP. This reliance on just one baro resulted in artificial jumps in calculated water level when baros were changed, due to varying elevations and sensor calibrations. This methold also would not account for any outliers in the data, and resulted in more work where the dataset needed to be adjusted for 5 or 15 minute data. 
+
+## Retrieving Data with `marsFetchBaroData()`
+
+The package pwdgsi contains functions that create a smoother and more accurate workflow. When a user requests baro data for QA/QC, they will use the function `marsFetchBaroData()`. Input arguments include a database connection, target SMP ID, start and end dates, and the data interval. 
+The function `marsFetchBaroData()` queries this baro data in the mars database. The function also queries other tables that provide information like SMP location. Distances between the target SMP and the baro sensors are calculated, and each baro is assigned a weight based on that distance. 
+
+The functions `marsInterpolateBaro()` and `baroRasterPlot()` run within `marsFetchBaroData`. Users should understand these functions, but direct interaction will be minimal. `marsInterpolateBaro` averages the weights and pressures of the sensors to output a pressure reading for the target SMP at the requested datetime. This is run for every timestep in the requested datarange. An output dataset is created. 
+
+`baroRasterPlot()` creates a raster of pressures for each baro in the requested timeframe. This plot, along with request information and summary tables, is passed into the markdown document `baro.rmd()`, which is rendered to .html and opened by `marsFetchBaroData()`. 
+
+A data downloader script wraps `marsFetchBaroData()` and passes arguments, runs it, and writes a .csv.
+
+```{r map, fig.height=4, fig.width=4.5, include = FALSE}
+#leaving this here for now in case the map needs to be modified. 
+# baro_map <- mapview::mapview(baro_spdf, legend = FALSE)
+# mapview::mapshot(baro_map, file = "C:/Users/nicholas.manna/Documents/R/pwdgsi/vignettes/baro_map.png")
+
+```
+
+### Interpolating data with `marsInterpolateBaro`
+
+The list `marsSampleBaro()` contains data from nine baro sensors at the same timestep, with data needed for interpolation, and the name of target smp, `r marsSampleBaro[[2]]`: 
+
+```{r table, echo = FALSE}
+knitr::kable(marsSampleBaro[[1]], caption = "Table 1: Sample Baro Data", digits = 2)
+```
+
+`marsInterpolateBaro()` sums the products of each weight and pressure, and divides by the sum of the weights to get a resultant pressure.
+```{r data}
+marsInterpolateBaro(
+   baro_psi = marsSampleBaro[[1]]$baro_psi, 
+   smp_id = marsSampleBaro[[1]]$smp_id, 
+   weight = marsSampleBaro[[1]]$weight, 
+   target_id = marsSampleBaro[[2]]
+   )
+```
+
+### Visualizing Data with `baroRasterPlot`
+
+The following table is a snapshot of three days of baro data, which can be plotted with `baroRasterPlot()`. The custom function `yday_decimal()` adds days to each value, so the x-axis can be cleanly labeled with days instead of dates. 
+
+```{r raster_data, echo = FALSE}
+marsSampleBaro_plot %>% {.[sample(nrow(.)),]} %>% head(5) %>% 
+  knitr::kable(caption = "Table 2: Sample Baro Plot Data", row.names = FALSE, digits = 2) 
+marsSampleBaro_plot %<>% dplyr::mutate("day" = yday_decimal(marsSampleBaro_plot$dtime_est),
+                               "year" = lubridate::year(marsSampleBaro_plot$dtime_est))
+```
+
+The plot shows pressures as they diverage from the median. High pressures are red and lower pressures are blue. 
+
+```{r raster_plot, fig.width=7, fig.height=5, message=FALSE, fig.cap="Figure 2: Raster Plot of Barometric Pressures from Jan. 1 to Jan. 4, 2019"}
+baroRasterPlot(marsSampleBaro_plot)
+```
+
+Users can view the plot and assess any outliers or gaps in the barometric pressure data. 
