@@ -19,6 +19,7 @@ Imports:
   grid,
   gridExtra,
   knitr,
+  kableExtra,
   lubridate,
   magrittr, 
   mapview,
