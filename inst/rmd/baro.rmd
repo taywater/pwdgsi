@@ -38,7 +38,7 @@ The output file is below:
 `r if(data_interval == "5 mins"){paste("Data for baro sensors that collected at 15 minute intervals had to be adjusted to be useful for 5 minute intervals. Gaps were filled by Last Object Carried Foward (LOCF). Table 2 shows how often that occured for each baro location.")}`
 
 
-```{r tables, message=FALSE, echo = FALSE}
+```{r tables, message=FALSE, echo = FALSE, fig.width = 12, fig.height=6}
 #Create a table listing neighbors and counts
   params$neighbors %>% 
     knitr::kable(caption = "Table 1: Frequency of Neighboring Baro Sensor Availability", format = "html") %>% 
