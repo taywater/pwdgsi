@@ -513,3 +513,109 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   return(finalseries)
   
 }
+
+# marsFetchSMPSnapshot --------------------------------
+
+#' Fetch data snapshot for an SMP
+#'
+#' Returns a data frame with requested snapshote date, SMP ID, OW suffix, and SMP snapshot
+#'   
+#' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
+#' @param smp_id vector of chr, SMP ID, where the user has requested data
+#' @param ow_suffix vector of chr, SMP ID, where the user has requested data
+#' @param request_date single date or vector the length of SMP ID, either "YYYY-MM-DD" or "today", of the request data
+#'
+#' @return Output will be a dataframe with the following columns: 
+#'   
+#'     \item{smp_id}{chr, requested SMP ID}
+#'     \item{ow_suffix}{chr, request OW suffix}
+#'     \item{ow_uid}{num, ow_uid derived from smp_id and ow_suffix} 
+#'     \item{request_date}{chr, date of requested snapshot, format: "YYYY-MM-DD}
+#'     \item{snapshot_uid}{num}
+#'     \item{dcia_ft2}{num}
+#'     \item{storage_footprint_ft2}{num}
+#'     \item{orifice_diam_in}{num}
+#'     \item{infil_footprint_ft2}{num}
+#'     \item{assumption_orificeheight_ft}{num}
+#'     \item{storage_depth_ft}{num}
+#'     \item{sumpdepth_ft}{num}
+#'     \item{lined}{chr, 0 or 1 for unlined or lined, respectively}
+#'     \item{surface}{chr, 0 or 1 for subsurface or surface, respectively}
+#'     
+#'     If a requested smp_id and ow_suffix combination is not valid, the function will return NAs for that snapshot.
+#'     Function queries the SQL function "insert_snapshot", which inserts rows into the MARS table "snapshot", and, in turn, "snapshot_metadata".
+#'     
+#' @export
+#'
+
+marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date = lubridate::today()){
+  
+  #1 Argument Validation
+  #1.1 Check database connection
+  if(!odbc::dbIsValid(con)){
+    stop("Argument 'con' is not an open ODBC channel")
+  }
+  
+  #1.2 check argument lengths
+  if(length(smp_id) != length(ow_suffix)){
+    stop("smp_id and ow_suffix must be of equal length")
+  }
+  
+  if(length(smp_id) != length(request_date) & length(request_date) != 1){
+    stop("request_date must be a single date, or equal length to smp_id and ow_suffix")
+  }
+  
+  #1.3 Assign today() to 'today'
+  request_date <- stringr::str_replace(request_date, "today", as.character(lubridate::today()))
+  
+  #1.4 Check if smp_id and ow_suffix combination are valid
+  #1.4.1 Create dataframe
+  request_df <- data.frame(smp_id, ow_suffix, request_date, stringsAsFactors = FALSE)
+  
+  #1.4.2 Query ow_validity and check if each smp id and observation well are there
+  # Initialize dataframe
+  ow_validity <- data.frame(ow_uid = numeric(), 
+                            smp_id =  character(),  
+                            ow_suffix = character(), 
+                            stringsAsFactors = FALSE)
+  
+  # Check if smp_id and ow_suffix are in the MARS table "ow_validity"
+  # Return matches
+  for(i in 1:length(request_df$smp_id)){
+    ow_valid_check <- odbc::dbGetQuery(con, "SELECT * FROM ow_validity") %>% dplyr::select(-facility_id) %>%  dplyr::filter(smp_id == request_df$smp_id[i] & ow_suffix == request_df$ow_suffix[i])
+    ow_validity <- dplyr::bind_rows(ow_validity, ow_valid_check)
+  }
+  
+  # Join dates back to observation wells and ow_uids back to request criteria
+  ow_validity %<>% dplyr::left_join(request_df, by = c("smp_id", "ow_suffix")) 
+  request_df_validity <- dplyr::left_join(request_df  %>% dplyr::select(-request_date), ow_validity, by = c("smp_id", "ow_suffix"))
+  
+  #2 Query
+  #2.1 initialize dataframe
+  result <- data.frame("snapshot_uid" = numeric(),
+                       "ow_uid" = numeric(),
+                       "dcia_ft2" = numeric(),
+                       "storage_footprint_ft2" = numeric(), 
+                       "orifice_diam_in" = numeric(),
+                       "infil_footprint_ft2" = numeric(),
+                       "assumption_orificeheight_ft" = numeric(),
+                       "storage_depth_ft" = numeric(),
+                       "sumpdepth_ft" = numeric(),
+                       "lined" = logical(), 
+                       "surface" = logical(), 
+                       stringsAsFactors = FALSE)
+  
+  #2.2 Run get_arbitrary_snapshot in a loop and bind results
+  for(i in 1:length(ow_validity$smp_id)){
+    snapshot_query <- paste0("SELECT * FROM get_arbitrary_snapshot('", ow_validity$smp_id[i], "','", ow_validity$ow_suffix[i], "','", ow_validity$request_date[i], "')")
+    new_result <- odbc::dbGetQuery(con, snapshot_query)
+    result <- dplyr::bind_rows(result, new_result)
+  }
+  
+  #3 Join and return
+  #3.1 Join results to request criteria
+  snapshot_results <- request_df_validity %>% dplyr::left_join(result, by = "ow_uid") 
+  
+  #3.2 Return results
+  return(snapshot_results)
+}
