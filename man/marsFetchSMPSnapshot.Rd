@@ -4,8 +4,7 @@
 \alias{marsFetchSMPSnapshot}
 \title{Fetch data snapshot for an SMP}
 \usage{
-marsFetchSMPSnapshot(con, smp_id, ow_suffix,
-  request_date = lubridate::today())
+marsFetchSMPSnapshot(con, smp_id, ow_suffix, request_date)
 }
 \arguments{
 \item{con}{An ODBC connection to the MARS Analysis database returned by odbc::dbConnect}

@@ -121,6 +121,8 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
     gage_temp$dtime_edt[dst_index] <- gage_temp$dtime_edt[dst_index] - lubridate::hours(1)
   }
 
+  gage_temp %<>% dplyr::arrange(dtime_edt)
+
   gage_temp %<>% dplyr::mutate(event_id = detectEvents(dtime_est = dtime_edt, rainfall_in = rainfall_in, iet_hr = 6, mindepth_in = 0.10))
 
   #Punctuate data with zeroes to prevent linear interpolation when plotting
@@ -548,7 +550,7 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 #' @export
 #'
 
-marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date = lubridate::today()){
+marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
   
   #1 Argument Validation
   #1.1 Check database connection
@@ -619,3 +621,182 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date = lubridat
   #3.2 Return results
   return(snapshot_results)
 }
+
+# marsFetchLevelData --------------------------------
+
+#' Fetch water level data for an SMP
+#'
+#' Returns a data frame with requested SMP water level data
+#'   
+#' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
+#' @param target_id vector of chr, SMP ID, where the user has requested data
+#' @param ow_suffix vector of chr, SMP ID, where the user has requested data
+#' @param start_date POSIXct, format: "YYYY-MM-DD", start of data request range
+#' @param end_date POSIXct, format: "YYYY-MM-DD", end of data request range
+#' @param sump_correct logical, TRUE if water level should be corrected for to account for sump depth
+#'
+#' @return Output will be a dataframe with the following columns: 
+#' 
+#'     \item{ow_leveldata_uid}{int}
+#'     \item{dtime_est}{POSIXct datetime}
+#'     \item{level_ft}{num, recorded water level in feet}
+#'     \item{ow_uid}{num, ow_uid derived from smp_id and ow_suffix} 
+#'     
+#' @export
+#' 
+#' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchRainEventData}}, \code{\link{marsFetchMonitoringData}}
+#' 
+marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, sump_correct){
+  
+  #1 Argument Validation
+  #1.1 Check database connection
+  if(!odbc::dbIsValid(con)){
+    stop("Argument 'con' is not an open ODBC channel")
+  }
+  
+  #1.2 Check if smp_id and ow_suffix are in the MARS table "ow_validity"
+  # Return match
+  validity_query <- paste0("select * from get_ow_uid('",target_id,"','",ow_suffix,"')")
+  ow_uid <- odbc::dbGetQuery(con, validity_query)
+  
+  #1.3 Pick which table to query
+  if(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")){
+    level_table <- "gw_depthdata"
+  }else if(!(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")) & sump_correct == TRUE){
+    level_table <- "ow_leveldata_sumpcorrected"
+  }else if(!(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")) & sump_correct == FALSE){
+    level_table <- "ow_leveldata_raw"
+  }
+  
+  #1.4 Add buffer to requested dates
+  start_date <- lubridate::ymd(start_date) - lubridate::days(1)
+  end_date <- lubridate::ymd(end_date) + lubridate::days(1)
+  
+  #2 Query database for level data
+  leveldata_query <- paste0("select * from ", level_table, "
+                                WHERE ow_uid = '", ow_uid, "'
+                                AND dtime_est BETWEEN '",start_date,"' AND '", end_date, "'")
+  
+  leveldata <- odbc::dbGetQuery(con, leveldata_query)
+  
+  #3 Return level data
+  return(leveldata)
+}
+
+# marsFetchRainEventData --------------------------------
+
+#' Fetch rain event data for an SMP
+#'
+#' Returns a data frame with rain event data from the rain gage closest to the request SMP
+#'   
+#' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
+#' @param target_id vector of chr, SMP ID, where the user has requested data
+#' @param start_date POSIXct, format: "YYYY-MM-DD", start of data request range
+#' @param end_date POSIXct, format: "YYYY-MM-DD", end of data request range
+#'
+#' @return Output will be a dataframe with the following columns: 
+#' 
+#'     \item{rainfall_gage_event_uid}{int}
+#'     \item{gage_uid}{int, rain gage number}
+#'     \item{eventdatastart_edt}{POSIXct datetime}
+#'     \item{eventdataend_edt}{POSIXct datetime}
+#'     \item{eventduration_hr}{num, duration of event}
+#'     \item{eventpeakintensity_inhr}{num, peak intensity of rain event} 
+#'     \item{eventavgintensity_inhr}{num, average intensity of rain event} 
+#'     \item{eventdepth_in}{num, average intensity of rain event} 
+#'     
+#' @export
+#' 
+#' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchMonitoringData}}
+#' 
+marsFetchRainEventData <- function(con, target_id, start_date, end_date){
+  
+  #1 Argument validation
+  #1.1 Check database connection
+  if(!odbc::dbIsValid(con)){
+    stop("Argument 'con' is not an open ODBC channel")
+  }
+  
+  #Sanitize start and end date
+  start_date %<>% lubridate::ymd()
+  end_date %<>% lubridate::ymd()
+  
+  #2 Get closest rain gage
+  smp_gage <- odbc::dbGetQuery(con, "SELECT * FROM public.smp_gage") %>% dplyr::filter(smp_id == target_id)
+  
+  #2.1 Query gage data
+  event_query <- paste("SELECT * FROM public.rainfall_gage_event",
+                       "WHERE gage_uid = CAST('", smp_gage$gage_uid, "' as int)",
+                       "AND eventdatastart_edt >= Date('", start_date, "')",
+                       "AND eventdataend_edt <= Date('", end_date + lubridate::days(1), "');")
+  
+  events <- odbc::dbGetQuery(con, event_query)
+  
+  #3 return event data
+  return(events)
+}
+
+# marsFetchMonitoringData --------------------------------
+
+#' Fetch monitoring data for an SMP
+#'
+#' Returns a data frame with rain event data from the rain gage closest to the request SMP
+#'   
+#' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
+#' @param target_id vector of chr, SMP ID, where the user has requested data
+#' @param ow_suffix vector of chr, SMP ID, where the user has requested data
+#' @param start_date POSIXct, format: "YYYY-MM-DD", start of data request range
+#' @param end_date POSIXct, format: "YYYY-MM-DD", end of data request range
+#' @param sump_correct logical, TRUE if water level should be corrected for to account for sump depth
+#' @param rain_events logical, TRUE if rain event data should be included in result
+#' @param rainfall logical, TRUE if rainfall data should be included in result
+#' @param level logical, TRUE if water level should be included in result
+#'
+#' @return Output will be a list consisting of a combination of the following:
+#' 
+#'     \item{Rain Event Data}{dataframe, output from \code{\link{marsFetchRainEventData}}}
+#'     \item{Rain Gage Data}{dataframe, output from \code{\link{marsFetchRainGageData}}}
+#'     \item{Level Data}{dataframe, output from \code{\link{marsFetchLevelData}}}
+#'     
+#' @export
+#' 
+#' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchRainEventData}}
+#' 
+
+marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_date, 
+                                    sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE){
+  
+  #1 Argument validation
+  #1.1 Check database connection
+  if(!odbc::dbIsValid(con)){
+    stop("Argument 'con' is not an open ODBC channel")
+  }
+  
+  #2 Initialize list
+  results <- list()
+  
+  #3 Add rain events
+  if(rain_events == TRUE){
+    results[["Rain Event Data"]] <- marsFetchRainEventData(con, target_id, start_date, end_date)
+    start_date <- min(results[["Rain Event Data"]]$eventdatastart_edt)
+    end_date <- max(results[["Rain Event Data"]]$eventdataend_edt)
+  }
+  
+  #4 Add rain gage
+  if(rainfall == TRUE){
+    results[["Rain Gage Data"]] <- pwdgsi::marsFetchRainGageData(con, target_id, start_date, end_date, FALSE)
+    start_date <- min(results[["Rain Gage Data"]]$dtime_est - lubridate::days(1))
+    end_date <- max(results[["Rain Gage Data"]]$dtime_est + lubridate::days(1))
+  }
+  
+  #5 Add level data
+  if(level == TRUE){
+    results[["Level Data"]] <- marsFetchLevelData(con, target_id, ow_suffix, start_date, end_date, sump_correct)
+  }
+  
+  #6 Return resulst
+  return(results)
+}
+
+
+
