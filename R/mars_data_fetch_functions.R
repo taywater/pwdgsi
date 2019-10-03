@@ -654,6 +654,7 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
     stop("Argument 'con' is not an open ODBC channel")
   }
   
+  
   #1.2 Check if smp_id and ow_suffix are in the MARS table "ow_validity"
   # Return match
   validity_query <- paste0("select * from get_ow_uid('",target_id,"','",ow_suffix,"')")
@@ -669,8 +670,8 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
   }
   
   #1.4 Add buffer to requested dates
-  start_date <- lubridate::ymd(start_date) - lubridate::days(1)
-  end_date <- lubridate::ymd(end_date) + lubridate::days(1)
+  start_date <- lubridate::round_date(start_date) - lubridate::days(1)
+  end_date <- lubridate::round_date(end_date) + lubridate::days(1)
   
   #2 Query database for level data
   leveldata_query <- paste0("select * from ", level_table, "
