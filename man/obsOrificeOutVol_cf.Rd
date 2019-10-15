@@ -17,8 +17,6 @@ obsOrificeOutVol_cf(dtime_est, waterlevel_ft, orifice_height_ft,
 \item{orifice_diam_in}{Orifice diameter (in)}
 
 \item{discharge_coeff}{Orifice discharge coefficient}
-
-\item{rainfall_in}{Rainfall depths during periods corresponding to times in  dtime_est (in)}
 }
 \value{
 Output is total observed orifice outflow volume (cf)

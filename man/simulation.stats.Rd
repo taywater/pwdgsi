@@ -2,19 +2,19 @@
 % Please edit documentation in R/mars_simulation_functions.R
 \name{simulation.stats}
 \alias{simulation.stats}
-\alias{overtoppingCheck_bool}
-\alias{peakStorUtil_percent}
-\alias{orificePeakRelease_cfs}
-\alias{draindown_hr}
+\alias{marsOvertoppingCheck_bool}
+\alias{marsPeakStorage_percent}
+\alias{marsPeakReleaseRate_cfs}
+\alias{marsDraindown_hr}
 \title{Simulation Stats}
 \usage{
-overtoppingCheck_bool(waterlevel_ft, storage_depth_ft)
+marsOvertoppingCheck_bool(waterlevel_ft, storage_depth_ft)
 
-peakStorUtil_percent(waterlevel_ft, storage_depth_ft)
+marsPeakStorage_percent(waterlevel_ft, storage_depth_ft)
 
-orificePeakRelease_cfs(dtime_est, orifice_outflow_ft3)
+marsPeakReleaseRate_cfs(dtime_est, orifice_outflow_ft3)
 
-draindown_hr(dtime_est, rainfall_in, waterlevel_ft)
+marsDraindown_hr(dtime_est, rainfall_in, waterlevel_ft)
 }
 \arguments{
 \item{waterlevel_ft}{Water Level (ft)}
@@ -31,19 +31,19 @@ draindown_hr(dtime_est, rainfall_in, waterlevel_ft)
 }
 \value{
 \describe{
-     \item{\code{overtoppingCheck_bool}}{Output is true or false based on overtopping evaluation}
+     \item{\code{marsOvertoppingCheck_bool}}{Output is true or false based on overtopping evaluation}
 }
 
 \describe{
-     \item{\code{peakStorUtil_percent}}{Output is a percentage of peak storage filled, by depth}
+     \item{\code{marsPeakStorage_percent}}{Output is a percentage of peak storage filled, by depth}
 }
 
 \describe{
-     \item{\code{orificePeakRelease_cfs}}{Output is peak orifice release rate (cfs)}
+     \item{\code{marsPeakReleaseRate_cfs}}{Output is peak orifice release rate (cfs)}
 }
 
 \describe{
-     \item{\code{draindown_hr}}{Output is Calculated Draindown time (hr)}
+     \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr)}
 }
 }
 \description{
@@ -56,18 +56,18 @@ simulation_summary <- simulated_data \%>\%
   dplyr::summarize(startdate = min(dtime_est), #add start date of event to summary table,
                   
    #1. Overtopping check
-   overtopping = overtoppingCheck_bool(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
+   overtopping = marsOvertoppingCheck_bool(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
 
    #2. Simulated storage utilization
-   peakUtilization = peakStorUtil_percent(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
+   peakUtilization = marsPeakStorage_percent(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
 
    #3. Peak release rate
-   peakReleaseRate_cfs = orificePeakRelease_cfs(dtime_est, Simulated_orifice_vol_ft3),
+   peakReleaseRate_cfs = marsPeakReleaseRate_cfs(dtime_est, Simulated_orifice_vol_ft3),
 
    #4. Total orifice outflow volume (rounded for table format)
    orifice_volume_ft3 = round(sum(Simulated_orifice_vol_ft3),0),
 
    #5. Draindown time
-   draindown_time_hr = draindown_hr(dtime_est, rainfall_in, Simulated_depth_ft))
+   draindown_time_hr = marsDraindown_hr(dtime_est, rainfall_in, Simulated_depth_ft))
    
 }

@@ -115,12 +115,12 @@ obsInfilRate_inhr <- function(event, #for warning messages
   # before the level drops below the threshold. This value may not represent the value closest to the 
   # threshold, however, this approach ensures that the values are taken from receding limbs.
   
-  #2.1 Re-rerun detectEvents to identify overlapping events (if joined with synthetic recession period)
+  #2.1 Re-rerun marsDetectEvents to identify overlapping events (if joined with synthetic recession period)
   overlapping <- df %>%
     dplyr::mutate(rainfall_in = tidyr::replace_na(rainfall_in, 0)) %>%
     dplyr::filter(rainfall_in != 0) %>%
     dplyr::arrange(dtime_est) %>% #confirm that dtime is in ascending order
-    dplyr::mutate(rain_event = detectEvents(dtime_est, rainfall_in)) %>%
+    dplyr::mutate(rain_event = marsDetectEvents(dtime_est, rainfall_in)) %>%
     dplyr::filter(rain_event > 1) %>%
     dplyr::slice(dplyr::n()) #pull last row (corresponds to end of first rainfall event)
   
@@ -233,8 +233,11 @@ obsInfilRate_inhr <- function(event, #for warning messages
 #'   arrange(dtime_est)%>%
 #'   summarize( #Calculate performance metrics
 #'     
-#'     Observed recession rate
-#'     Recession_Rate_inhr = obsRecessionRate_inhr(event, dtime_est, rainfall_in, waterlevel_ft = level_ft))
+#'     #Observed recession rate
+#'     Recession_Rate_inhr = obsRecessionRate_inhr(event, 
+#'                                                 dtime_est, 
+#'                                                 rainfall_in, 
+#'                                                 waterlevel_ft = level_ft))
 #' 
 #' 
 
@@ -258,13 +261,12 @@ obsRecessionRate_inhr <- function(event, #for warning message
   # before the level drops below the threshold. This value may not represent the value closest to the 
   # threshold, however, this approach ensures that the values are taken from receding limbs.
   
-  
-  #2.1 Re-rerun detectEvents to identify overlapping events (if joined with synthetic recession period)
+  #2.1 Re-rerun marsDetectEvents to identify overlapping events (if joined with synthetic recession period)
   overlapping <- df %>%
     dplyr::mutate(rainfall_in = tidyr::replace_na(rainfall_in, 0)) %>%
     dplyr::filter(rainfall_in != 0) %>%
     dplyr::arrange(dtime_est) %>% #confirm that dtime is in ascending order
-    dplyr::mutate(rain_event = detectEvents(dtime_est, rainfall_in)) %>%
+    dplyr::mutate(rain_event = marsDetectEvents(dtime_est, rainfall_in)) %>%
     dplyr::filter(rain_event > 1) %>%
     dplyr::slice(dplyr::n()) #pull last row (corresponds to end of first rainfall event)
   
@@ -338,7 +340,6 @@ obsRecessionRate_inhr <- function(event, #for warning message
 
 #IN:  dtime_est            A vector of POSIXct date times, in ascending order
 #IN:  waterlevel_ft        Observed water level data, in feet
-#IN:  rainfall_in          Rainfall depths during periods corresponding to times in  dtime_est, in inches
 #IN:  orifice_height_ft    Orifice height, in feet
 #IN:  orifice_diam_in      Orifice diameter, in inches
 #IN:  discharge_coeff      Orifice discharge coefficient
@@ -351,7 +352,6 @@ obsRecessionRate_inhr <- function(event, #for warning message
 #' 
 #' @param  dtime_est            A vector of POSIXct date times, in ascending order
 #' @param  waterlevel_ft        Observed water level data (ft)
-#' @param  rainfall_in          Rainfall depths during periods corresponding to times in  dtime_est (in)
 #' @param  orifice_height_ft    Orifice height (ft)
 #' @param  orifice_diam_in      Orifice diameter (in)
 #' @param  discharge_coeff      Orifice discharge coefficient

@@ -31,7 +31,7 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
   return(maxvol_cf[1] * depth_ft/maxdepth_ft[1])
 }
 
-# simWaterLevel_ft -------------------------------------------------
+# marsSimulatedLevelSeries_ft -------------------------------------------------
 # NOTES: Based on a time series simulation function written by Taylor Heffernan (4/5/2018) and Dwayne Myers (6/13/2018), modified by Katie Swanson (March 2019), then modified by Nick Manna (July 2019)
 #        Function generates simulated water level in subsurface stormwater infiltration tank with underdrain (orifice outlet)
 #        Updated to include option for orifice flow.
@@ -78,7 +78,7 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' @seealso \code{\link{simulation.stats}}
 #' 
 #' @examples 
-#' simulated_data <- simWaterLevel_ft(dtime_est = rain_data_filtered$dtime_est, 
+#' simulated_data <- marsSimulatedLevelSeries_ft(dtime_est = rain_data_filtered$dtime_est, 
 #'   rainfall_in = rain_data_filtered$rainfall_in, 
 #'   event = rain_data_filtered$event,
 #'   infil_footprint_ft2 = smp_stats$infil_footprint_ft2[7], 
@@ -92,7 +92,7 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' 
 #' @export
 
-simWaterLevel_ft <- function(dtime_est,
+marsSimulatedLevelSeries_ft <- function(dtime_est,
                              rainfall_in,
                              event,
                              infil_footprint_ft2, #footprint of the SMP that is open to infiltration
@@ -301,7 +301,7 @@ NULL
 #' @param storage_depth_ft Total storage Depth (ft)
 #' 
 #' @return \describe{
-#'      \item{\code{overtoppingCheck_bool}}{Output is true or false based on overtopping evaluation}
+#'      \item{\code{marsOvertoppingCheck_bool}}{Output is true or false based on overtopping evaluation}
 #' }
 #' 
 #' @examples
@@ -311,25 +311,25 @@ NULL
 #'   dplyr::summarize(startdate = min(dtime_est), #add start date of event to summary table,
 #'                   
 #'    #1. Overtopping check
-#'    overtopping = overtoppingCheck_bool(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
+#'    overtopping = marsOvertoppingCheck_bool(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
 #' 
 #'    #2. Simulated storage utilization
-#'    peakUtilization = peakStorUtil_percent(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
+#'    peakUtilization = marsPeakStorage_percent(Simulated_depth_ft,smp_stats$storage_depth_ft[7]),
 #' 
 #'    #3. Peak release rate
-#'    peakReleaseRate_cfs = orificePeakRelease_cfs(dtime_est, Simulated_orifice_vol_ft3),
+#'    peakReleaseRate_cfs = marsPeakReleaseRate_cfs(dtime_est, Simulated_orifice_vol_ft3),
 #' 
 #'    #4. Total orifice outflow volume (rounded for table format)
 #'    orifice_volume_ft3 = round(sum(Simulated_orifice_vol_ft3),0),
 #' 
 #'    #5. Draindown time
-#'    draindown_time_hr = draindown_hr(dtime_est, rainfall_in, Simulated_depth_ft))
+#'    draindown_time_hr = marsDraindown_hr(dtime_est, rainfall_in, Simulated_depth_ft))
 #'    
 #' @export
 
 
 
-overtoppingCheck_bool <- function(waterlevel_ft, storage_depth_ft){
+marsOvertoppingCheck_bool <- function(waterlevel_ft, storage_depth_ft){
   
   #1. Pull max water level
   max_water_level <- max(waterlevel_ft, na.rm = TRUE)
@@ -355,12 +355,12 @@ overtoppingCheck_bool <- function(waterlevel_ft, storage_depth_ft){
 #' @rdname simulation.stats
 #' 
 #' @return \describe{
-#'      \item{\code{peakStorUtil_percent}}{Output is a percentage of peak storage filled, by depth}
+#'      \item{\code{marsPeakStorage_percent}}{Output is a percentage of peak storage filled, by depth}
 #' }
 #' 
 #' @export
 
-peakStorUtil_percent <- function(waterlevel_ft, storage_depth_ft){
+marsPeakStorage_percent <- function(waterlevel_ft, storage_depth_ft){
   
   #1. Pull starting water level
   starting_level <- ifelse(waterlevel_ft[1] < 0, 0, waterlevel_ft[1])
@@ -400,13 +400,13 @@ peakStorUtil_percent <- function(waterlevel_ft, storage_depth_ft){
 #' @param orifice_outflow_ft3 Orifice outflow volume (cf)
 #' 
 #' @return \describe{
-#'      \item{\code{orificePeakRelease_cfs}}{Output is peak orifice release rate (cfs)}
+#'      \item{\code{marsPeakReleaseRate_cfs}}{Output is peak orifice release rate (cfs)}
 #' }
 #' 
 #' @export
 
 
-orificePeakRelease_cfs <- function(dtime_est,
+marsPeakReleaseRate_cfs <- function(dtime_est,
                                    orifice_outflow_ft3){
   
   #1. Prepare data
@@ -454,12 +454,12 @@ orificePeakRelease_cfs <- function(dtime_est,
 #' @param rainfall_in Rainfall depths during periods corresponding to times in  dtime_est (in)
 #' 
 #' @return \describe{
-#'      \item{\code{draindown_hr}}{Output is Calculated Draindown time (hr)}
+#'      \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr)}
 #' }
 #' 
 #' @export
 
-draindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
+marsDraindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
   
   #1. Process data
   #1.1 Initialize dataframe
@@ -470,12 +470,12 @@ draindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
     rainfall_in = rainfall_in,
     waterlevel_ft  = waterlevel_ft)
   
-  #1.2 Re-run detectEvents to pull rain event endtime
+  #1.2 Re-run marsDetectEvents to pull rain event endtime
   rain_end <- combined_data %>%
     dplyr::mutate(rainfall_in = tidyr::replace_na(rainfall_in, 0)) %>%
     dplyr::filter(rainfall_in != 0) %>%
     dplyr::arrange(dtime_est) %>% #confirm that dtime is in ascending order
-    dplyr::mutate(rain_event = detectEvents(dtime_est, rainfall_in)) %>%
+    dplyr::mutate(rain_event = marsDetectEvents(dtime_est, rainfall_in)) %>%
     dplyr::filter(rain_event == 1) %>%
     dplyr::arrange(dtime_est) %>% #confirm that dtime is in ascending order
     dplyr::slice(dplyr::n()) #pull last row (corresponds to end of rainfall event)

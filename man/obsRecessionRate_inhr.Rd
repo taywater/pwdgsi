@@ -28,8 +28,11 @@ filter(is.na(event) == FALSE) \%>\%
   arrange(dtime_est)\%>\%
   summarize( #Calculate performance metrics
     
-    Observed recession rate
-    Recession_Rate_inhr = obsRecessionRate_inhr(event, dtime_est, rainfall_in, waterlevel_ft = level_ft))
+    #Observed recession rate
+    Recession_Rate_inhr = obsRecessionRate_inhr(event, 
+                                                dtime_est, 
+                                                rainfall_in, 
+                                                waterlevel_ft = level_ft))
 
 
 }

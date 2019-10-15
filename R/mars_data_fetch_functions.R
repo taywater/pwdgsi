@@ -4,7 +4,7 @@
 #Function based on steps to identify private SMPs for 1 tracking number, created by Taylor Heffernan
 
 
-#lookupPrivateSMPs---------------------
+#marsFetchPrivateSMPRecords---------------------
 #Rogygen
 #' Return query results of private SMPs
 #'
@@ -28,7 +28,7 @@
 #' 
 
 
-lookupPrivateSMPs <- function(con, tracking_numbers){
+marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
   #Validate DB connection
   if(!odbc::dbIsValid(con)){
     stop("Argument 'con' is not an open ODBC channel")
@@ -72,7 +72,7 @@ lookupPrivateSMPs <- function(con, tracking_numbers){
 #'   \item{event_id}{event number during this timestep}
 #' 
 #' 
-#' @seealso \code{\link[pwdgsi]{gapFillEventID}}, \code{\link{detectEvents}}
+#' @seealso \code{\link[pwdgsi]{marsGapFillEventID}}, \code{\link{marsDetectEvents}}
 #'
 #' @export
 
@@ -149,7 +149,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
       zeroFills[zeroFillIndex, 3] <- smp_gage$gage_uid[1]   #gage_uid
       
       #print(paste("Gap-filling event ID. Before:", gage_temp$event[i], "After:", gage_temp$event[i+1]))
-      zeroFills[zeroFillIndex, 5] <- pwdgsi:::gapFillEventID(event_low = gage_temp$rainfall_gage_event_uid[i], event_high = gage_temp$rainfall_gage_event_uid[i+1]) #event
+      zeroFills[zeroFillIndex, 5] <- pwdgsi:::marsGapFillEventID(event_low = gage_temp$rainfall_gage_event_uid[i], event_high = gage_temp$rainfall_gage_event_uid[i+1]) #event
       
       #If the boundary is longer than 30 minutes, we need a second zero
       if(k > 30){
@@ -161,7 +161,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
         zeroFills[zeroFillIndex + 1, 3] <- smp_gage$gage_uid[1]   #gage_uid
         
         #print(paste("Gap-filling event ID. Before:", gage_temp$rainfall_gage_event_uid[i], "After:", gage_temp$rainfall_gage_event_uid[i+1]))
-        zeroFills[zeroFillIndex + 1, 5] <- pwdgsi:::gapFillEventID(event_low = gage_temp$rainfall_gage_event_uid[i], event_high = gage_temp$rainfall_gage_event_uid[i+1]) #event
+        zeroFills[zeroFillIndex + 1, 5] <- pwdgsi:::marsGapFillEventID(event_low = gage_temp$rainfall_gage_event_uid[i], event_high = gage_temp$rainfall_gage_event_uid[i+1]) #event
         
       }
       
@@ -187,7 +187,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
   return(finalseries)
 }
 
-# gapFillEventID -----------------------
+# marsGapFillEventID -----------------------
 #When determining the appropriate event ID for zero-punctuated timestamps in a rainfall series, use this function
 #Zeroes that appear within an event (ie less than 6 hours of time has elapsed between measurements) should have the event ID of the event they occur in
 #Zeroes that appear at event boundaries should have event NA
@@ -203,7 +203,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
 #' Return a dataset with event IDs for zero-punctuated timesteps.
 #'
 #' Each rainfall event must be zero-punctuated. These zeroes are given event IDs based on the IDs of the
-#' rainfall that precede and follow them, given by \code{\link{detectEvents}}.
+#' rainfall that precede and follow them, given by \code{\link{marsDetectEvents}}.
 #'
 #' @param event_low num, event ID of preceding rainfall.
 #' @param event_high num, event ID of following rainfall.
@@ -212,7 +212,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
 #' \code{NA}, return {NA}. If the event IDs are not equal, return \code{NA}, since this is a boundary between
 #' events. If the event IDs are equal, return \code{event low}.
 
-gapFillEventID <- function(event_low, event_high){
+marsGapFillEventID <- function(event_low, event_high){
   if(is.na(event_low) | is.na(event_high)){
     #print("One or both events are NA. Returning NA")
     return(NA) #This is a boundary adjacent to, or a hole within, an event of less than the minimum depth, and should not be counted
@@ -467,7 +467,7 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   baro_p$smp_id %<>% as.factor
   
   #Create baro Raster Chart
-  p <- baroRasterPlot(baro_p)
+  p <- marsBaroRasterPlot(baro_p)
   
   
   #Create baro Map
@@ -664,6 +664,9 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
   }else if(!(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")) & sump_correct == FALSE){
     level_table <- "ow_leveldata_raw"
   }
+  
+  start_date %<>% as.POSIXct()
+  end_date %<>% as.POSIXct()
   
   #1.4 Add buffer to requested dates
   start_date <- lubridate::round_date(start_date) - lubridate::days(1)

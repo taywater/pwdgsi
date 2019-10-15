@@ -42,8 +42,8 @@ minInterval_hr <- function(dtime_est) {
   return(min_interval_hr)
 }
 
-# detectEvents -----------------------------------------
-# NOTES: Based on a function written by Taylor Heffernan (see "detectEvents.r" and related email from 4/5/18,
+# marsDetectEvents -----------------------------------------
+# NOTES: Based on a function written by Taylor Heffernan (see "marsDetectEvents.r" and related email from 4/5/18,
 # modified by Katie Swanson 2/4/2019) returns a dataset of event IDs for a rainfall time
 # series. Additional edits after review from Taylor Heffernan by Tim Adams and Katie Swanson (3/4/2019)
 #
@@ -72,11 +72,11 @@ minInterval_hr <- function(dtime_est) {
 #' 
 #' @examples
 #' gage_temp <- mutate(marsSampleRain, 
-#'   event_id = detectEvents(dtime_est = marsSampleRain$dtime_est, 
+#'   event_id = marsDetectEvents(dtime_est = marsSampleRain$dtime_est, 
 #'   rainfall_in = marsSampleRain$rainfall_in, 
 #'   iet_hr = 6, mindepth_in = 0.10))
 
-detectEvents <- function(dtime_est, rainfall_in, 
+marsDetectEvents <- function(dtime_est, rainfall_in, 
                          #DEFAULT VALUES
                          iet_hr = 6, mindepth_in = 0.10) {
 
@@ -157,8 +157,8 @@ detectEvents <- function(dtime_est, rainfall_in,
   return(output$event_id)
 }
 
-# stormDepth_in ------------------------------------
-# NOTES: Function to export storm depth from events processed using detectEvents function
+# marsStormDepth_in ------------------------------------
+# NOTES: Function to export storm depth from events processed using marsDetectEvents function
 #
 # IN: rainfall_in A vector of rainfall depths for one storm
 # OUT: The total rainfall depth, in inches
@@ -166,7 +166,7 @@ detectEvents <- function(dtime_est, rainfall_in,
 #'
 #' Return storm attributes
 #'
-#' Return storm depth, duration, average intensity, and peak intensity of an event processed using \code{\link{detectEvents}}.
+#' Return storm depth, duration, average intensity, and peak intensity of an event processed using \code{\link{marsDetectEvents}}.
 #'
 #'
 #'
@@ -180,7 +180,7 @@ NULL
 #' @param dtime_est vector, POSIXct date times representing a single rain event
 #'
 #' @return \describe{
-#'        \item{\code{stormDepth_in}}{Output will be total rainfall depth for the event, in inches.}
+#'        \item{\code{marsStormDepth_in}}{Output will be total rainfall depth for the event, in inches.}
 #' }
 #'
 #' @seealso \code{\link[dplyr]{group_by}}, \code{\link[dplyr]{arrange}},
@@ -193,17 +193,17 @@ NULL
 #' rain_newevents <- marsSampleRain %>%  #use dplyr pipe to update dataframe
 #'  group_by(gage_uid) %>% 
 #'   arrange(dtime_est) %>% 
-#'   mutate(event_id = detectEvents(dtime_est, rainfall_in)) %>%
+#'   mutate(event_id = marsDetectEvents(dtime_est, rainfall_in)) %>%
 #'   group_by(gage_uid, event_id) %>%
 #'   summarize(eventdatastart_edt = first(dtime_est),
 #'             eventdataend_edt = last(dtime_est),
-#'             eventduration_hr = stormDuration_hr(dtime_est),
-#'             eventpeakintensity_inhr = stormPeakIntensity_inhr(dtime_est, rainfall_in),
-#'             eventavgintensity_inhr = stormAvgIntensity_inhr(dtime_est, rainfall_in),
-#'             eventdepth_in = stormDepth_in(rainfall_in))
+#'             eventduration_hr = marsStormDuration_hr(dtime_est),
+#'             eventpeakintensity_inhr = marsStormPeakIntensity_inhr(dtime_est, rainfall_in),
+#'             eventavgintensity_inhr = marsStormAverageIntensity_inhr(dtime_est, rainfall_in),
+#'             eventdepth_in = marsStormDepth_in(rainfall_in))
  
 
-stormDepth_in <- function(rainfall_in) {
+marsStormDepth_in <- function(rainfall_in) {
 
   if(length(rainfall_in) == 0){
     return(NA)
@@ -219,7 +219,7 @@ stormDepth_in <- function(rainfall_in) {
 }
 
 # stormDuration ------------------
-# NOTES: Function to export storm duration from events processed using detectEvents function
+# NOTES: Function to export storm duration from events processed using marsDetectEvents function
 
 #IN: A vector of times at which rainfall was collected in the storm
 #OUT: The total rainfall duration, in hours
@@ -227,12 +227,12 @@ stormDepth_in <- function(rainfall_in) {
 #' @rdname storm
 #'
 #' @return \describe{
-#'        \item{\code{stormDuration_hr}}{Output will be a double with the duration of the event, in hours.}
+#'        \item{\code{marsStormDuration_hr}}{Output will be a double with the duration of the event, in hours.}
 #' }
 #'
 #' @export
 
-stormDuration_hr <- function(dtime_est) {
+marsStormDuration_hr <- function(dtime_est) {
 
   if(length(dtime_est) == 0){
     return(NA)
@@ -265,7 +265,7 @@ stormDuration_hr <- function(dtime_est) {
 
 
 # stormPeakIntensity -----------------------------
-# NOTES: Function to export storm peak intensity from events processed using detectEvents function
+# NOTES: Function to export storm peak intensity from events processed using marsDetectEvents function
 #
 # IN:dtime_est A vector of times at which rainfall was collected in the storm
 # IN:  rainfall_in The depth of water that fell at each time, in inches
@@ -274,12 +274,12 @@ stormDuration_hr <- function(dtime_est) {
 #' @rdname storm
 #'
 #' @return \describe{
-#'        \item{\code{stormPeakIntensity_inhr}}{Output will be a number representing the event's peak intensity in inches/hour.}
+#'        \item{\code{marsStormPeakIntensity_inhr}}{Output will be a number representing the event's peak intensity in inches/hour.}
 #' }
 #'
 #' @export
 
-stormPeakIntensity_inhr <- function(dtime_est, rainfall_in) {
+marsStormPeakIntensity_inhr <- function(dtime_est, rainfall_in) {
 
   if(length(dtime_est) == 0 | length(rainfall_in) == 0){
     return(NA)
@@ -329,7 +329,7 @@ stormPeakIntensity_inhr <- function(dtime_est, rainfall_in) {
 }
 
 # stormAvgIntensity -------------------------------
-# NOTES: Function to export storm average intensity from events processed using detectEvents function
+# NOTES: Function to export storm average intensity from events processed using marsDetectEvents function
 
 # IN: dtime_est A vector of times at which rainfall was collected in the storm
 # IN: rainfall_in The depth of water that fell at each time, in inches
@@ -338,12 +338,12 @@ stormPeakIntensity_inhr <- function(dtime_est, rainfall_in) {
 #' @rdname storm
 #'
 #' @return \describe{
-#'        \item{\code{stormAvgIntensity_inhr}}{Output will be a number representing the event's average intensity in inches/hour.}
+#'        \item{\code{marsStormAverageIntensity_inhr}}{Output will be a number representing the event's average intensity in inches/hour.}
 #' }
 #'
 #' @export
 
-stormAvgIntensity_inhr <- function(dtime_est, rainfall_in) {
+marsStormAverageIntensity_inhr <- function(dtime_est, rainfall_in) {
 
   if(length(dtime_est) == 0 | length(rainfall_in) == 0){
     return(NA)
@@ -355,7 +355,7 @@ stormAvgIntensity_inhr <- function(dtime_est, rainfall_in) {
   }
 
   # 2. Calculate average intensity
-  result <- stormDepth_in(rainfall_in) / stormDuration_hr(dtime_est)
+  result <- marsStormDepth_in(rainfall_in) / marsStormDuration_hr(dtime_est)
   return(result)
 }
 

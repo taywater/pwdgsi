@@ -31,5 +31,5 @@ Output will be a data frame with four columns, which corresponds to the specifie
 Return data from the rain gage nearest a target SMP, for a specified date range.
 }
 \seealso{
-\code{\link[pwdgsi]{gapFillEventID}}, \code{\link{detectEvents}}
+\code{\link[pwdgsi]{marsGapFillEventID}}, \code{\link{marsDetectEvents}}
 }
