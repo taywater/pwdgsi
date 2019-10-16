@@ -257,14 +257,6 @@ marsStormPeakIntensity_inhr <- function(dtime_est, rainfall_in) {
     stop("dtime_est and rainfall_in must be the same length")
   }
 
-  # 2. Calculate minimum interval
-  min <- minInterval_hr(dtime_est)
-  
-  # alert user if minimum interval is not 15 minutes
-  if (min != 0.25){
-    message("Assumed minimum measurement interval is 15 minutes.")
-  } 
-  
   # Alert user if event only contains one measurement 
   if(length(dtime_est) == 1){
     message("Datetime data only contains one measurement.")
