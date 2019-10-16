@@ -1,47 +1,3 @@
-# minInterval_hr ----------------------------------------------------------
-# Function to calculate minimum measurement interval for use in other functions
-
-# Arguments:
-# IN:  dtime_est        A vector of POSIXct date times, in ascending order
-
-# OUT: min_interval_hr  Minimum time measurement interval, in hours
-
-# Not exported from package
-
-#' Minimum Measurement Interval
-#'
-#' Calculate minimum measurement interval for use in other functions.
-#' 
-#' @param dtime_est  vector, POSIXct date times, in ascending order
-#' 
-#' @return Minimum time measurement interval, in hours
-#' 
-
-
-minInterval_hr <- function(dtime_est) {
-  #1.1  Check for unsorted datetime data
-  if(!(identical(order(dtime_est), 1:length(dtime_est)))) {
-    stop("Datetime data is not sorted in ascending order")
-  }
-  
-  #1.2 Check to make sure that event duration is greater than one measurement, assume 15 minute increment if not
-  if(length(dtime_est) == 1) {
-    message("Datetime data only contains one measurement. Assumed minimum measurement interval is 15 minutes.")
-    # assume 15 minute increments
-    return(0.25)
-  }
-  
-  #2. Calculate minimum interval
-  time <- data.frame(dtime_est) %>%
-    dplyr::mutate(start_est = dplyr::lag(dtime_est, 1),
-                  gap_hr = difftime(dtime_est, start_est, unit = "hours"))
-  
-  min_interval_hr <- min(time$gap_hr, na.rm = TRUE)
-  
-  #3. Return value
-  return(min_interval_hr)
-}
-
 # marsDetectEvents -----------------------------------------
 # NOTES: Based on a function written by Taylor Heffernan (see "marsDetectEvents.r" and related email from 4/5/18,
 # modified by Katie Swanson 2/4/2019) returns a dataset of event IDs for a rainfall time
@@ -104,11 +60,6 @@ marsDetectEvents <- function(dtime_est, rainfall_in,
   # 1.5 Check to make sure paired data matches
   if(!(length(dtime_est) == length(rainfall_in))) {
     stop("dtime_est and rainfall_in must be the same length")
-  }
-  # 1.6 Check that data is in 15-minute increments
-  min_interval <- minInterval_hr(dtime_est)
-  if(min_interval  != 0.25) {
-    message("Function assumes that data aggregation interval is 15 minutes. User should check to confirm.")
   }
   
   # Assumed interval
