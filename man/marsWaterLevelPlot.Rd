@@ -2,36 +2,29 @@
 % Please edit documentation in R/mars_plotting_functions.R
 \name{marsWaterLevelPlot}
 \alias{marsWaterLevelPlot}
-\title{Observed and Simulated Water Levels Plot}
+\title{Observed or Simulated Water Levels Plot}
 \usage{
-marsWaterLevelPlot(event, df, raingage_colname_or_value,
-  system_colname_or_value, datetime_colname, rainfall_colname,
-  storage_depth_colname_or_value_ft, obswaterlevel_colname,
-  orifice_show = FALSE, orifice_height_colname_or_value_ft = NULL)
+marsWaterLevelPlot(event, structure_name, datetime, storage_depth_ft,
+  level_ft, orifice_show = FALSE, orifice_height_ft = NULL)
 }
 \arguments{
-\item{event}{Rainfall event ID (grouping variable)}
+\item{event}{Rainfall gage event ID}
 
-\item{df}{Dataframe passed from nested group in dplyr. The user must specify the column names 
-in the function arguments, though the data is already stored in the dataframe}
+\item{structure_name}{SMP ID and OW Suffix}
 
-\item{raingage_colname_or_value}{Raingage ID, or name of the column containing the Raingage ID information}
+\item{datetime}{Vector of POSIXct datetimes}
 
-\item{system_colname_or_value}{SMP ID, or name of the column containing the system ID}
+\item{storage_depth_ft}{Maximum storage depth of system (ft)}
 
-\item{datetime_colname}{Name of the column containing the datetime data}
-
-\item{rainfall_colname}{Name of the column heading containing the rainfall data, in inches}
-
-\item{obswaterlevel_colname}{Name of the column containing the observed water level data}
+\item{level_ft}{Vector of water level data (ft), corresponding to \code{datetime}}
 
 \item{orifice_show}{TRUE if user wants to include the orifice height as dashed line on plot (optional)}
 
-\item{orifice_height_ft}{Orifice height, in feet, OR column name containing data}
+\item{orifice_height_ft}{Orifice height, in feet (optional)}
 }
 \value{
-Output is a plot of simulated and observed water depth and volume with rainfall
+Output is a plot of water level depth
 }
 \description{
-Create a plot of observed depth  with rainfall
+Create a plot of water level depth
 }
