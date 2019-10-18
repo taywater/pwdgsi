@@ -19,9 +19,7 @@ marsRainfallPlot(dtime_est, rainfall_in, raingage, event,
 \item{reverse_y}{logical, whether the Y axes should be reversed}
 }
 \value{
-Output will be a ggplot2 object of the hyetograph. Currently,
-   the graphical parameters are hard coded and the legend is deleted.
-   This may change in future versions.
+Output is a ggplot2 object of the hyetograph.
 }
 \description{
 Return hyetograph of events processed by \code{\link{marsDetectEvents}}

@@ -23,7 +23,7 @@ marsWaterLevelPlot(event, structure_name, datetime, storage_depth_ft,
 \item{orifice_height_ft}{Orifice height, in feet (optional)}
 }
 \value{
-Output is a plot of water level depth
+Output is a ggplot2 object of the water level plot.
 }
 \description{
 Create a plot of water level depth
