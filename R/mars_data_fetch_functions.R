@@ -182,8 +182,8 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
       dplyr::select(-dtime_edt)
     finalseries <- dplyr::select(finalseries, dtime_est, rainfall_in, gage_uid, rainfall_gage_event_uid)
   }
-
-
+  
+  
   return(finalseries)
 }
 
@@ -664,7 +664,6 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
   }else if(!(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")) & sump_correct == FALSE){
     level_table <- "ow_leveldata_raw"
   }
-  
   start_date %<>% as.POSIXct()
   end_date %<>% as.POSIXct()
   
@@ -763,8 +762,9 @@ marsFetchRainEventData <- function(con, target_id, start_date, end_date){
 #' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchRainEventData}}
 #' 
 
-marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_date, 
-                                    sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE){
+
+marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_date,
+                                    sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE, daylight_savings){
   
   #1 Argument validation
   #1.1 Check database connection
@@ -775,26 +775,93 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
   #2 Initialize list
   results <- list()
   
+  #Get closest gage
+  smp_gage <- odbc::dbGetQuery(con, "SELECT * FROM public.smp_gage") %>% dplyr::filter(smp_id %in% target_id)
+  ow_validity <- odbc::dbGetQuery(con, "SELECT * FROM ow_validity")
+  ow_uid_gage <- ow_validity %>% dplyr::right_join(smp_gage, by = "smp_id")
+  
+  #Set datetime date types
+  start_date %<>% as.POSIXct()
+  end_date %<>% as.POSIXct()
+  
   #3 Add rain events
   if(rain_events == TRUE){
-    results[["Rain Event Data"]] <- marsFetchRainEventData(con, target_id, start_date, end_date)
-    start_date <- min(results[["Rain Event Data"]]$eventdatastart_edt)
-    end_date <- max(results[["Rain Event Data"]]$eventdataend_edt)
+    for(i in 1:length(target_id)){
+      results[["Rain Event Data step"]] <- marsFetchRainEventData(con, target_id[i], start_date[i], end_date[i])
+      start_date[i] <- min(results[["Rain Event Data step"]]$eventdatastart_edt)
+      end_date[i] <- max(results[["Rain Event Data step"]]$eventdataend_edt)
+      results[["Rain Event Data"]] <- dplyr::bind_rows(results[["Rain Event Data"]], results[["Rain Event Data step"]])
+      results[["Rain Event Data step"]] <- NULL
+      lubridate::tz(results[["Rain Event Data"]]$eventdatastart_edt) <- "America/New_York" #add timezone
+      lubridate::tz(results[["Rain Event Data"]]$eventdataend_edt) <- "America/New_York"
+    }
   }
   
   #4 Add rain gage
   if(rainfall == TRUE){
-    results[["Rain Gage Data"]] <- pwdgsi::marsFetchRainGageData(con, target_id, start_date, end_date, FALSE)
-    start_date <- min(results[["Rain Gage Data"]]$dtime_est - lubridate::days(1))
-    end_date <- max(results[["Rain Gage Data"]]$dtime_est + lubridate::days(1))
+    for(i in 1:length(target_id)){
+      results[["Rain Gage Data step"]] <- marsFetchRainGageData(con, target_id[i], start_date[i], end_date[i], FALSE)
+      start_date[i] <- min(results[["Rain Gage Data step"]]$dtime_est - lubridate::days(1))
+      end_date[i] <- max(results[["Rain Gage Data step"]]$dtime_est + lubridate::days(1))
+      results[["Rain Gage Data"]] <- dplyr::bind_rows(results[["Rain Gage Data"]], results[["Rain Gage Data step"]])
+      results[["Rain Gage Data step"]] <- NULL
+      lubridate::tz(results[["Rain Gage Data"]]$dtime_est) <- "America/New_York" #add timezone
+    }
   }
-  
+  #####
   #5 Add level data
   if(level == TRUE){
-    results[["Level Data"]] <- marsFetchLevelData(con, target_id, ow_suffix, start_date, end_date, sump_correct)
+    for(i in 1:length(target_id)){
+      results[["Level Data step"]] <- marsFetchLevelData(con, target_id[i], ow_suffix[i], start_date[i], end_date[i], sump_correct) %>% 
+        dplyr::left_join(ow_uid_gage, by = "ow_uid") %>%  #join rain gage uid
+        dplyr::select(-smp_gage_uid, -facility_id, -smp_id, -ow_suffix) #remove extra columns
+      if(rain_events == TRUE){
+        level_data_step <- results[["Level Data step"]] #coerce to data frame for entry in sqldf 
+        
+        #add a column with datetime to use dependent on dst
+        results_event_data <- results[["Rain Event Data"]] %>% 
+          dplyr::mutate("start_est" = dplyr::case_when(lubridate::dst(eventdatastart_edt) == TRUE
+                                                       ~ eventdatastart_edt - lubridate::hours(1), 
+                                                       lubridate::dst(eventdatastart_edt) == FALSE  
+                                                       ~ eventdatastart_edt))
+        
+        level_data_step$dtime_est %<>% lubridate::round_date("minute")
+        lubridate::tz(level_data_step$dtime_est) <- "America/New_York"
+        
+        #select relevant columns from the results
+        results_event_data %<>% dplyr::select(rainfall_gage_event_uid, gage_uid, start_est)
+        
+        #join by gage uid and by start time, to give a rainfal gage event uid at the start of each event
+        level_data_step %<>% dplyr::left_join(results_event_data, 
+                                              by = c("gage_uid", "dtime_est" = "start_est"))   
+        
+        #carry event uids forward from event start to start of next event
+        level_data_step$rainfall_gage_event_uid %<>% zoo::na.locf(na.rm = FALSE)
+        
+        #isolate event data needed for assuring that the rainfall gage event uid isn't assigned too far past the event end
+        event_data <- results[["Rain Event Data"]]  %>% 
+          dplyr::select(rainfall_gage_event_uid, eventdataend_edt)
+        
+        #join event end times to level data by event uid
+        #check that any dtime that has that event uid does not exceed the end time by greater than three days
+        #if it does, reassign NA to event uid
+        level_data_step %<>% dplyr::left_join(event_data, by = "rainfall_gage_event_uid") %>% 
+          mutate(new_event_uid = dplyr::case_when(dtime_est >= (eventdataend_edt + lubridate::days(3)) ~ NA_integer_, 
+                                                  TRUE ~ rainfall_gage_event_uid)) %>% 
+          dplyr::select(-rainfall_gage_event_uid, -eventdataend_edt) %>% 
+          dplyr::rename(rainfall_gage_event_uid = new_event_uid)
+        
+        
+        results[["Level Data step"]] <- NULL
+        results[["Level Data step"]] <- level_data_step
+      }
+      
+      results[["Level Data"]] <- dplyr::bind_rows(results[["Level Data"]], results[["Level Data step"]])
+      results[["Level Data step"]] <- NULL
+    }
   }
   
-  #6 Return resulst
+  #6 Return results
   return(results)
 }
 

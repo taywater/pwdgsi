@@ -39,25 +39,25 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
   if(length(dtime_est) != length(rainfall_in)){
     stop("Datetime and rainfall lengths must be equal")
   }
-
+  
   if(length(event) > 1){
     stop("Argument 'event' must be of length 1")
   }
-
+  
   #1.1 Process data
   rain_data <- data.frame(dtimeEST = lubridate::force_tz(dtime_est, tz = "EST"),
                           rainIN = rainfall_in)
-
+  
   if(nrow(rain_data) == 0){
     stop("No data loaded")
   }
-
+  
   #1.3 Assume minimum interval
   min_interval <- lubridate::minutes(15)
-
+  
   #1.4  Calculate cumulative rainfall
   rain_data <- rain_data %>% dplyr::mutate(cumulative = cumsum(rainIN))
-
+  
   #1.5 Generat title block
   startdate <- min(rain_data$dtimeEST) - min_interval
   title_text <- paste0("Hyetograph\nRaingage: ", raingage[1],
@@ -65,13 +65,13 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
                        " | Start Date and Time: ",
                        scales::date_format("%Y-%m-%d %H:%M", tz = "EST")(startdate),
                        sep = "")
-
+  
   #1.6 Shift timestep to beginning of measurement interval
   rain_data$dtimeEST <- rain_data$dtimeEST - min_interval
-
-
+  
+  
   #2. Calculate plotting parameters
-
+  
   #2.1 Calculate plotting limits
   #Calculate minimum and maximum data values
   min_date <- min(rain_data$dtimeEST, na.rm = TRUE)
@@ -80,24 +80,24 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
   max_rain <- max(rain_data$rain, na.rm = TRUE)
   #calculate scaling factor for secondary y-axis for cumulative rainfall
   max_cumulative_scaling <- max(1.1*rain_data$cumulative, na.rm = TRUE)/max_rain
-
+  
   #Calculate ranges in values to set axis breaks by category
   event_duration <- max_date - min_date
   range_rainfall <- max_rain - min_rain
-
-
+  
+  
   if(range_rainfall < 0.1){
     max_rain <- 0.1 #set minimum rainfall range to 0.1 inches
     range_rainfall <- max_rain - min_rain #recalculate if necessary
     max_cumulative_scaling<- max(1.1*rain_data$cumulative, na.rm = TRUE)/max_rain #recalculate scaling secondary
   }
-
+  
   ##Scale fix for events with only one measurement interval
   if(nrow(rain_data)==1){
     max_cumulative_scaling <- max(rain_data$cumulative, na.rm = TRUE)/max_rain #recalculate scaling secondary
-
+    
   }
-
+  
   #2.2 Calculate break intervals for y-axis
   #rainfall categories: <0.15, 0.2, 0.5, >0.5
   if(range_rainfall > 0.5){
@@ -111,7 +111,7 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
       rain_major_interval <- 0.05
       rain_minor_interval <- 0.01
     }}
-
+  
   #2.3 Calculate break intervals for x-axis
   if(units(event_duration) == "days"){
     #if event duration is greater than 1 day, set x-axis major breaks to 12-hour intervals
@@ -126,20 +126,20 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
         x <- "2 hours"
       }else{
         #for events shorter than 8 hours, set x-axis major breaks to 1-hour intervals
-      x <- "hour"
-    }}}
-
+        x <- "hour"
+      }}}
+  
   #2.4 Calculations for dashed vertical line at day boundaries
   day_strip <- lubridate::date(min_date)
   day_marker <- lubridate::force_tz(seq.POSIXt(as.POSIXlt(day_strip, tz = "EST"), by = "day", length.out = 14), tz = "EST")
-
+  
   #2.5 Calculate axis breaks based on plotting limits
   #Select major x-axis breaks based on event duration
   major_date_breaks <- lubridate::force_tz(seq.POSIXt(day_marker[1], max_date, by = x), tz = "EST")
-
+  
   #All plots use one-hour interval for minor x-axis breaks
   minor_date_breaks <- lubridate::force_tz(seq.POSIXt(day_marker[1], max_date + lubridate::hours(6), by = "hour"), tz = "EST")
-
+  
   #2.6 Add row for cumulative rainfall
   #Note - this row forces cumulative rainfall to plot throughout full extent shown, otherwise
   #       the cumulative rainfall would end at the last rainfall measurement
@@ -147,8 +147,8 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
                     rainIN = c(0,0),
                     cumulative = c(max(rain_data$cumulative),max(rain_data$cumulative)))
   rain_data <- rbind(rain_data, end)
-
-
+  
+  
   #Which scale function are we using?
   if(reverse_y == TRUE){
     y_scale_function <- ggplot2::scale_y_reverse
@@ -156,59 +156,40 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
     y_scale_function <- ggplot2::scale_y_continuous  
   }
   
-  
   #3. Plot
   hyetograph <-
     ggplot2::ggplot(data = rain_data,
-           ggplot2::aes(x = dtimeEST,
-               y = cumulative/max_cumulative_scaling)
-
+                    ggplot2::aes(x = dtimeEST,
+                                 y = cumulative/max_cumulative_scaling)
+                    
     ) +
-
-    ggplot2::geom_area(color = "grey32",
-              fill = "slateblue1",
-              alpha = 0.2
-    ) +
-
-    ggplot2::geom_bar(data = rain_data,
-             ggplot2::aes(x = dtimeEST,
-                 y = rainIN),
-      fill = "cornflowerblue", # set the line color
-      stat="identity"
-    ) +
-
-    ggplot2::geom_area(ggplot2::aes(fill = "Cumulative Rainfall"), 
-                      color = "grey32", 
-                      alpha = 0.2)+
+    
+    ggplot2::geom_area(ggplot2::aes(fill = "Cumulative Rainfall "), 
+                       color = "grey32", 
+                       alpha = 0.2)+
     
     ggplot2::geom_bar(data = rain_data, 
-                     ggplot2::aes(fill = "Rainfall"), 
-                     stat = "identity") +
+                      ggplot2::aes(x = dtimeEST, y = rainIN, fill = "Rainfall"), 
+                      stat = "identity") +
     
     ggplot2::scale_fill_manual(values = c("slateblue1", "cornflowerblue"), 
                                guide = ggplot2::guide_legend(title = NULL, 
-                                                    override.aes = list(
-                                                      alpha = c(0.2,1))))+
+                                                             override.aes = list(
+                                                               alpha = c(0.2,1))))+
     
-                                                    
+    
     #Day boundaries
     ggplot2::geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", size = 1.2) + #date boundaries
-
-    ggplot2::annotate("rect", xmin = day_marker-0.03*event_duration,
-             xmax = day_marker - 0.01*event_duration,
-             ymin = 0.7*max_rain,
-             ymax = 0.9*max_rain,
-             alpha = 0.8,
-             fill = "white")+
-
-    ggplot2::annotate("text", x = day_marker-0.02*event_duration,
-             y = 0.8*max_rain,
-             label = day_marker,
-             angle = 90,
-             size = 5)+
-
+    
+    # ggplot2::annotate("rect", xmin = day_marker-0.03*event_duration,
+    #                   xmax = day_marker - 0.01*event_duration,
+    #                   ymin = 0.7*max_rain,
+    #                   ymax = 0.9*max_rain,
+    #                   alpha = 0.8,
+    #                   fill = "white")+
+    
     ggplot2::theme_bw() + # a basic black and white theme
-
+    
     ggplot2::scale_x_datetime(
       name = " ", # x axis label
       labels = scales::date_format("%H:%M", "EST"),
@@ -217,23 +198,22 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
       minor_breaks = minor_date_breaks
       #expand = c(0.03,0) # control where y axis crosses - first number is fraction of plot left as white space
     ) +
-
+    
     y_scale_function(
       #expand = c(0.03,0), # control where x axis crosses - first number is fraction left as white space
       #limits = c(min_rain, max_rain), # set y axis limits
       breaks = seq(min_rain, max_rain, by = rain_major_interval),
       minor_breaks = seq(min_rain, max_rain, by = rain_minor_interval),
       sec.axis = ggplot2::sec_axis(~.*max_cumulative_scaling, name = "Cumulative Rainfall (in)")
-
+      
     ) +
-
+    
     ggplot2::labs(
       y = "Rainfall (in)",
       title = title_text
     ) +
-
+    
     ggplot2::theme(
-      text = ggplot2::element_text(size = 16),
       axis.text.x = ggplot2::element_text(size = 14, color = "black"), # set font size and color of x axis text
       axis.text.y = ggplot2::element_text(size = 14, color = "black"), # set font size and color of y axis text
       panel.background =  ggplot2::element_rect(fill = "white", colour = NA), # set white background
@@ -241,11 +221,11 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
       panel.grid.major =  ggplot2::element_line(colour = "grey70", size = 0.2), # set major grid lines
       panel.grid.minor =  ggplot2::element_line(colour = "grey90", size = 0.5), # set minor grid lines
       legend.position = "bottom",
+      legend.text = ggplot2::element_text(size = 10),
       legend.title=ggplot2::element_blank()
     )
   return(hyetograph)
 }
-
 # Pull legend from separate ggplots for combined plot ----------------------
 # Function used for created combined legend in gridExtra
 # Copied directly from this wiki (accessed May 8, 2019):
@@ -463,9 +443,6 @@ marsWaterLevelPlot <- function(event,
 }
 
 
-
-
-
 # marsCombinedPlot --------------------------------------------------------
 #' Plot hyetograph and water level plot on the same chart
 #'
@@ -487,13 +464,17 @@ marsWaterLevelPlot <- function(event,
 #' @export
 
 marsCombinedPlot <- function(event, 
-                             structure_name, 
-                             level_datetime, 
-                             storage_depth_ft, 
-                             level_ft,
-                             rainfall_datetime,
-                             rainfall_in,
-                             raingage){
+                         structure_name, 
+                         level_datetime, 
+                         storage_depth_ft, 
+                         level_ft,
+                         rainfall_datetime,
+                         rainfall_in,
+                         raingage){
+  
+  #Add a last date so the hyetograph looks better
+  rainfall_in <- append(rainfall_in, 0)
+  rainfall_datetime <- append(rainfall_datetime, max(level_datetime)) %>% lubridate::force_tz(tzone = "EST")
   
   #1 Run functions for individual plots
   level_plot <- pwdgsi::marsWaterLevelPlot(event = event, 
@@ -502,11 +483,11 @@ marsCombinedPlot <- function(event,
                                            storage_depth_ft = storage_depth_ft,
                                            level_ft = level_ft)
   
-  rainfall_plot <- marsRainfallPlot(event = event, 
-                                       dtime_est = rainfall_datetime, 
-                                       rainfall_in = rainfall_in,
-                                       raingage = raingage, 
-                                       reverse_y = TRUE)
+  rainfall_plot <- pwdgsi::marsRainfallPlot(event = event, 
+                                            dtime_est = rainfall_datetime, 
+                                            rainfall_in = rainfall_in,
+                                            raingage = raingage, 
+                                            reverse_y = TRUE)
   
   
   #2 Combine Plots
@@ -554,14 +535,14 @@ marsCombinedPlot <- function(event,
     ggplot2::theme(legend.position = "none", 
                    plot.title = ggplot2::element_blank(), 
                    axis.title = ggplot2::element_text(size = ggplot2::rel(1)), 
-                   axis.text = ggplot2::element_text(size = ggplot2::rel(1)))
+                   axis.text = ggplot2::element_text(size = ggplot2::rel(.95)))
   rainfall_plot <- rainfall_plot + 
     ggplot2::theme(legend.position = "none", 
-                   plot.title = ggplot2::element_text(size = ggplot2::rel(1.2)),
+                   plot.title = ggplot2::element_text(size = ggplot2::rel(1.35)),
                    axis.title.x = ggplot2::element_blank(),
                    axis.text.x = ggplot2::element_blank(), 
-                   axis.text.y = ggplot2::element_text(size = ggplot2::rel(1)), 
-                   axis.title.y = ggplot2::element_text(size = ggplot2::rel(1))) +
+                   axis.text.y = ggplot2::element_text(size = ggplot2::rel(1.25)), 
+                   axis.title.y = ggplot2::element_text(size = ggplot2::rel(1.25))) +
     ggplot2::scale_x_datetime(
       name = " ", # x axis label
       labels = scales::date_format("%H:%M", "EST"),
