@@ -52,6 +52,8 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
     stop("No data loaded")
   }
   
+  
+  
   #1.3 Assume minimum interval
   min_interval <- lubridate::minutes(15)
   
@@ -75,7 +77,7 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
   #2.1 Calculate plotting limits
   #Calculate minimum and maximum data values
   min_date <- min(rain_data$dtimeEST, na.rm = TRUE)
-  max_date <- max(rain_data$dtimeEST, na.rm = TRUE) + lubridate::hours(6)
+  max_date <- max(rain_data$dtimeEST, na.rm = TRUE)
   min_rain <- 0
   max_rain <- max(rain_data$rain, na.rm = TRUE)
   #calculate scaling factor for secondary y-axis for cumulative rainfall
@@ -143,10 +145,10 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
   #2.6 Add row for cumulative rainfall
   #Note - this row forces cumulative rainfall to plot throughout full extent shown, otherwise
   #       the cumulative rainfall would end at the last rainfall measurement
-  end <- data.frame(dtimeEST = c(max_date-min_interval,max_date),
-                    rainIN = c(0,0),
-                    cumulative = c(max(rain_data$cumulative),max(rain_data$cumulative)))
-  rain_data <- rbind(rain_data, end)
+  # end <- data.frame(dtimeEST = c(max_date-min_interval,max_date),
+  #                   rainIN = c(0,0),
+  #                   cumulative = c(max(rain_data$cumulative),max(rain_data$cumulative)))
+  # rain_data <- rbind(rain_data, end)
   
   
   #Which scale function are we using?
@@ -164,12 +166,12 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
                     
     ) +
     
-    ggplot2::geom_area(ggplot2::aes(fill = "Cumulative Rainfall "), 
+    ggplot2::geom_area(ggplot2::aes(fill = "  Cumulative Rainfall                      "), 
                        color = "grey32", 
                        alpha = 0.2)+
     
     ggplot2::geom_bar(data = rain_data, 
-                      ggplot2::aes(x = dtimeEST, y = rainIN, fill = "Rainfall"), 
+                      ggplot2::aes(x = dtimeEST, y = rainIN, fill = "  Rainfall"), 
                       stat = "identity") +
     
     ggplot2::scale_fill_manual(values = c("slateblue1", "cornflowerblue"), 
@@ -390,7 +392,7 @@ marsWaterLevelPlot <- function(event,
     
     ggplot2::geom_label(ggplot2::aes(x = min_date + event_duration/4, 
                    y = storage_depth_ft*1.04, 
-                   label = "Maximumum Storage Depth"),
+                   label = "Maximum Storage Depth"),
                size = ggplot2::rel(5),
                fill = "white", 
                label.size = 0) +
@@ -409,14 +411,14 @@ marsWaterLevelPlot <- function(event,
     ggplot2::scale_x_datetime(
       name = " ", # x axis label
       labels = scales::date_format("%H:%M", "EST"),
-      limits = c(min_date - lubridate::minutes(15), max_date), # set x axis limits
+      limits = c(min_date - lubridate::minutes(15), max_date + lubridate::minutes(60)), # set x axis limits
       breaks = major_date_breaks,
       minor_breaks = minor_date_breaks
     ) +
     
     ggplot2::scale_y_continuous(
       breaks = seq(0, storage_depth_ft+1, by = 0.5),
-      minor_breaks = seq(-0.5,2*storage_depth_ft, by = 0.1),
+      minor_breaks = seq(-0.5,2*storage_depth_ft, by = 0.1)
     ) +
     
     
@@ -490,6 +492,7 @@ marsCombinedPlot <- function(event,
                                             reverse_y = TRUE)
   
   
+
   #2 Combine Plots
   
   #Save out legends
@@ -546,7 +549,7 @@ marsCombinedPlot <- function(event,
     ggplot2::scale_x_datetime(
       name = " ", # x axis label
       labels = scales::date_format("%H:%M", "EST"),
-      limits = c(min(level_datetime) - lubridate::minutes(15), max_date),
+      limits = c(min(level_datetime) - lubridate::minutes(15), max_date + lubridate::minutes(60)),
       breaks = major_date_breaks,
       minor_breaks = minor_date_breaks)  +
     ggplot2::labs(title = title_text)
