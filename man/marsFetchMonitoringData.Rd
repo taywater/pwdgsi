@@ -6,7 +6,7 @@
 \usage{
 marsFetchMonitoringData(con, target_id, ow_suffix, start_date, end_date,
   sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE,
-  level = TRUE)
+  level = TRUE, daylight_savings)
 }
 \arguments{
 \item{con}{An ODBC connection to the MARS Analysis database returned by odbc::dbConnect}

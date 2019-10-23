@@ -81,7 +81,6 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
     stop("Argument 'con' is not an open RODBC channel")
   }
   
-  
   #Get closest gage
   smp_gage <- odbc::dbGetQuery(con, "SELECT * FROM public.smp_gage") %>% dplyr::filter(smp_id == target_id)
   
@@ -167,7 +166,6 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
       
     }
   }
-  
   #Replace UIDs with SMP IDs
   gages <- odbc::dbGetQuery(con, "SELECT * FROM public.gage")
   finalseries <- dplyr::bind_rows(gage_temp, zeroFills) %>%
@@ -765,7 +763,7 @@ marsFetchRainEventData <- function(con, target_id, start_date, end_date){
 
 marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_date,
                                     sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE, daylight_savings){
-  
+
   #1 Argument validation
   #1.1 Check database connection
   if(!odbc::dbIsValid(con)){
@@ -827,6 +825,7 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
         
         level_data_step$dtime_est %<>% lubridate::round_date("minute")
         lubridate::tz(level_data_step$dtime_est) <- "America/New_York"
+        level_data_step <- level_data_step[(!is.na(level_data_step$dtime_est)),]
         
         #select relevant columns from the results
         results_event_data %<>% dplyr::select(rainfall_gage_event_uid, gage_uid, start_est)

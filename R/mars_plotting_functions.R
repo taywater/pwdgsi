@@ -46,12 +46,11 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
   
   #1.1 Process data
   rain_data <- data.frame(dtimeEST = lubridate::force_tz(dtime_est, tz = "EST"),
-                          rainIN = rainfall_in)
+                          rainIN = rainfall_in) %>% dplyr::arrange(dtimeEST)
   
   if(nrow(rain_data) == 0){
     stop("No data loaded")
   }
-  
   
   
   #1.3 Assume minimum interval
@@ -158,6 +157,7 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
     y_scale_function <- ggplot2::scale_y_continuous  
   }
   
+  rain_data <- rain_data %>% dplyr::distinct(dtimeEST, .keep_all = TRUE)
   #3. Plot
   hyetograph <-
     ggplot2::ggplot(data = rain_data,
