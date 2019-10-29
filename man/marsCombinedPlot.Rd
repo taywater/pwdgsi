@@ -4,19 +4,29 @@
 \alias{marsCombinedPlot}
 \title{Plot hyetograph and water level plot on the same chart}
 \usage{
-marsCombinedPlot(event, structure_name, level_datetime, storage_depth_ft,
-  level_ft, rainfall_datetime, rainfall_in, raingage)
+marsCombinedPlot(event, structure_name, obs_datetime, obs_level_ft,
+  sim_datetime = NA, sim_level_ft = NA, storage_depth_ft,
+  orifice_show = FALSE, orifice_height_ft = NULL, rainfall_datetime,
+  rainfall_in, raingage)
 }
 \arguments{
 \item{event}{chr, rain gage event UID}
 
 \item{structure_name}{chr, SMP ID and OW Suffix}
 
-\item{level_datetime}{vector, POSIXct datetimes corresponding to \code{level_ft}}
+\item{obs_datetime}{vector, POSIXct datetimes corresponding to \code{obs_level_ft}}
+
+\item{obs_level_ft}{vector, water level data (ft), corresponding to \code{obs_datetime}}
+
+\item{sim_datetime}{vector, POSIXct datetimes corresponding to \code{sim_level_ft} (optional)}
+
+\item{sim_level_ft}{vector, water level data (ft), corresponding to \code{sim_datetime} (optional)}
 
 \item{storage_depth_ft}{num, maximum storage depth of system (ft)}
 
-\item{level_ft}{vector, water level data (ft), corresponding to \code{level_datetime}}
+\item{orifice_show}{TRUE if user wants to include the orifice height as dashed line on plot (optional)}
+
+\item{orifice_height_ft}{Orifice height, in feet (optional)}
 
 \item{rainfall_datetime}{vector, POSIXct datetimes corresponding to \code{rainfall_in}}
 
@@ -28,7 +38,7 @@ marsCombinedPlot(event, structure_name, level_datetime, storage_depth_ft,
 Output will be a gridExtra object of the two plots
 }
 \description{
-Return hyetograph and water level plot for the same rain event on the same chart
+Return hyetograph and observed and simulated (optional) water level plot for the same rain event on the same chart
 }
 \seealso{
 \code{\link{marsRainfallPlot}}, \code{\link{marsWaterLevelPlot}}

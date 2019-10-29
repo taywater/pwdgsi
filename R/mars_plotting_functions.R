@@ -166,7 +166,7 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
                     
     ) +
     
-    ggplot2::geom_area(ggplot2::aes(fill = "  Cumulative Rainfall                      "), 
+    ggplot2::geom_area(ggplot2::aes(fill = "  Cumulative Rainfall    "), 
                        color = "grey32", 
                        alpha = 0.2)+
     
@@ -257,15 +257,17 @@ get_legend<-function(myggplot){
 
 # marsWaterLevelPlot ----------------------------------
 
-#' Observed or Simulated Water Levels Plot
+#' Observed and Simulated Water Level Plot
 #'
-#' Create a plot of water level depth
+#' Create a plot of observed and simulated (optional) water level
 #' 
 #' @param  event                              Rainfall gage event ID 
 #' @param  structure_name                     SMP ID and OW Suffix
-#' @param  datetime                           Vector of POSIXct datetimes
+#' @param  obs_datetime                       Vector of POSIXct datetimes for observed dataset
+#' @param  obs_level_ft                       Vector of water level data (ft), corresponding to \code{obs_datetime}
+#' @param  sim_datetime                       Vector of POSIXct datetimes for simulated dataset (optional)
+#' @param  sim_level_ft                       Vector of water level data (ft), corresponding to \code{sim_datetime} (optional)
 #' @param  storage_depth_ft                   Maximum storage depth of system (ft)
-#' @param  level_ft                           Vector of water level data (ft), corresponding to \code{datetime}
 #' @param  orifice_show                       TRUE if user wants to include the orifice height as dashed line on plot (optional)
 #' @param  orifice_height_ft                  Orifice height, in feet (optional)
 #' 
@@ -276,9 +278,11 @@ get_legend<-function(myggplot){
 
 marsWaterLevelPlot <- function(event, 
                                structure_name, 
-                               datetime, 
                                storage_depth_ft, 
-                               level_ft,
+                               obs_datetime, 
+                               obs_level_ft,
+                               sim_datetime = NA,
+                               sim_level_ft = NA,
                                orifice_show = FALSE,
                                orifice_height_ft = NULL){
   
@@ -292,20 +296,25 @@ marsWaterLevelPlot <- function(event,
   
   #1.2
   #Set negative water levels to zero
-  level_ft[which(level_ft < 0)] <- 0
+  obs_level_ft[which(obs_level_ft < 0)] <- 0
+  
+  # if(!is.na(sim_level_ft[1])){
+  #   sim_level_ft[which(sim_level_ft < 0)] <- 0
+  # }
+  
   
   #1.3
   #Check that data is associated with event
-  if(length(level_ft) == 0){
-    stop(paste0("No data loaded in Event", event, "."))
+  if(length(obs_level_ft) == 0){
+    stop(paste0("No data loaded in observed Event", event, "."))
   }
   
   #1.4 QC check for observed data record
   #Using code from marsDetectEvents
-  prepseries <- datetime %>%
+  prepseries <- obs_datetime %>%
     data.frame() %>% 
-    dplyr::mutate(lag_time = dplyr::lag(datetime, 1)) %>%
-    dplyr::mutate(gap_hr = difftime(datetime, lag_time, unit = "hours")) %>%
+    dplyr::mutate(lag_time = dplyr::lag(obs_datetime, 1)) %>%
+    dplyr::mutate(gap_hr = difftime(obs_datetime, lag_time, unit = "hours")) %>%
     dplyr::filter(gap_hr > 6)
   
   if(nrow(prepseries) > 0){
@@ -314,6 +323,7 @@ marsWaterLevelPlot <- function(event,
   }else{
     warning_label <- ""
   }
+  
   
   #1.5
   #Check is orifice should be shown
@@ -327,8 +337,16 @@ marsWaterLevelPlot <- function(event,
   
   #2.1 Calculate date plotting limits(x-axis) 
   #Calculate minimum and maximum data values
-  min_date <- min(datetime, na.rm = TRUE)
-  max_date <- max(datetime, na.rm = TRUE) #+ hours(6)
+  
+  
+  if(!is.na(sim_level_ft[1])){
+    sim_datetime %<>% lubridate::force_tz("America/New_York")
+    min_date <- min(obs_datetime, sim_datetime, na.rm = TRUE)
+    max_date <- max(obs_datetime, sim_datetime, na.rm = TRUE)
+  }else{
+    min_date <- min(obs_datetime, na.rm = TRUE)
+    max_date <- max(obs_datetime, na.rm = TRUE) #+ hours(6)
+  }
   
   #Calculate ranges in values to set axis breaks by category
   event_duration <- max_date - min_date
@@ -352,35 +370,39 @@ marsWaterLevelPlot <- function(event,
   minor_date_breaks <- lubridate::force_tz(seq.POSIXt(day_marker[1] - lubridate::hours(12), max_date + lubridate::hours(6), by = "hour"), tz = "EST") 
   
   #2.5 Generate title block
-  title_text <- paste0("Observed Water Level\nSMP ID: ", structure_name,
+  title_text <- paste0("Water Level\nSMP ID: ", structure_name,
                        " | Event: ", event[1],
                        " | Start Date and Time: ", 
                        scales::date_format("%Y-%m-%d %H:%M", tz = "EST")(min_date),
                        sep = "")
   
-  df <- data.frame(datetime, level_ft)
+  obs_df <- data.frame(obs_datetime, obs_level_ft)
+  
+  if(!is.na(sim_level_ft[1])){
+    sim_df <- data.frame(sim_datetime, sim_level_ft)
+  }
   
   #3. Generate plot
   #3.1 Water Level (observed)
   level_plot <- 
-    ggplot2::ggplot(data = df) +
+    ggplot2::ggplot(data = obs_df) +
     
     #Day boundaries
     ggplot2::geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", size = 1.2) + #date boundaries
     
     ggplot2::annotate("text", x = day_marker-marker_scale*event_duration, 
-             y = 0.8*storage_depth_ft, 
-             label = day_marker,
-             angle = 90, 
-             size = ggplot2::rel(5))+ #5
+                      y = 0.8*storage_depth_ft, 
+                      label = day_marker,
+                      angle = 90, 
+                      size = ggplot2::rel(5))+ #5
     
     #Warning message for data gaps in observed record
     ggplot2::annotate("text", x = day_marker[1]+1,
-             y = 0.5*storage_depth_ft,
-             label = warning_label, #empty if no warning
-             hjust = 0,
-             color = "red",
-             size = ggplot2::rel(5))+
+                      y = 0.5*storage_depth_ft,
+                      label = warning_label, #empty if no warning
+                      hjust = 0,
+                      color = "red",
+                      size = ggplot2::rel(5))+
     
     #orifice (covered by structure bottom if option is not selected)
     ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, size = 1.2) +
@@ -391,18 +413,18 @@ marsWaterLevelPlot <- function(event,
     ggplot2::geom_hline(yintercept = storage_depth_ft, color = "orange", size = 1.2)+ #top
     
     ggplot2::geom_label(ggplot2::aes(x = min_date + event_duration/4, 
-                   y = storage_depth_ft*1.04, 
-                   label = "Maximum Storage Depth"),
-               size = ggplot2::rel(5),
-               fill = "white", 
-               label.size = 0) +
+                                     y = storage_depth_ft*1.04, 
+                                     label = "Maximum Storage Depth"),
+                        size = ggplot2::rel(5),
+                        fill = "white", 
+                        label.size = 0) +
     
     #Observed water level
-    ggplot2::geom_line(data = df,
-                       ggplot2::aes(x = datetime,
-                  y = level_ft,
-                  color = "Observed Water Level"),
-              size = 2
+    ggplot2::geom_line(data = obs_df,
+                       ggplot2::aes(x = obs_datetime,
+                                    y = obs_level_ft,
+                                    color = "Observed Water Level  "),
+                       size = 2
     ) +
     
     #Formatting
@@ -440,6 +462,17 @@ marsWaterLevelPlot <- function(event,
       legend.title=ggplot2::element_blank())
   
   
+  if(!is.na(sim_level_ft[1])){
+    level_plot <- level_plot +     
+      #Simulated water level
+      ggplot2::geom_line(data = sim_df,
+                         ggplot2::aes(x = sim_datetime,
+                                      y = sim_level_ft,
+                                      color = "Simulated Water Level"),
+                         size = 2
+      )
+  }
+  
   return(level_plot)
   
 }
@@ -448,13 +481,17 @@ marsWaterLevelPlot <- function(event,
 # marsCombinedPlot --------------------------------------------------------
 #' Plot hyetograph and water level plot on the same chart
 #'
-#' Return hyetograph and water level plot for the same rain event on the same chart
+#' Return hyetograph and observed and simulated (optional) water level plot for the same rain event on the same chart
 #'
 #' @param event chr, rain gage event UID
 #' @param structure_name   chr, SMP ID and OW Suffix
-#' @param level_datetime vector, POSIXct datetimes corresponding to \code{level_ft}
+#' @param obs_datetime vector, POSIXct datetimes corresponding to \code{obs_level_ft}
+#' @param obs_level_ft vector, water level data (ft), corresponding to \code{obs_datetime}
+#' @param sim_datetime vector, POSIXct datetimes corresponding to \code{sim_level_ft} (optional)
+#' @param sim_level_ft vector, water level data (ft), corresponding to \code{sim_datetime} (optional)
 #' @param storage_depth_ft num, maximum storage depth of system (ft)
-#' @param level_ft vector, water level data (ft), corresponding to \code{level_datetime}
+#' @param orifice_show TRUE if user wants to include the orifice height as dashed line on plot (optional)
+#' @param orifice_height_ft Orifice height, in feet (optional)
 #' @param rainfall_datetime vector, POSIXct datetimes corresponding to \code{rainfall_in}
 #' @param rainfall_in vector, num, rainfall in inches corresponding to \code{rainfall_datetime}
 #' @param raingage chr, Label for the hyetograph for what rain gage the data came from
@@ -466,24 +503,37 @@ marsWaterLevelPlot <- function(event,
 #' @export
 
 marsCombinedPlot <- function(event, 
-                         structure_name, 
-                         level_datetime, 
-                         storage_depth_ft, 
-                         level_ft,
-                         rainfall_datetime,
-                         rainfall_in,
-                         raingage){
+                             structure_name, 
+                             obs_datetime, 
+                             obs_level_ft,
+                             sim_datetime = NA,
+                             sim_level_ft = NA,
+                             storage_depth_ft, 
+                             orifice_show = FALSE,
+                             orifice_height_ft = NULL,
+                             rainfall_datetime,
+                             rainfall_in,
+                             raingage){
   
   #Add a last date so the hyetograph looks better
   rainfall_in <- append(rainfall_in, 0)
-  rainfall_datetime <- append(rainfall_datetime, max(level_datetime)) %>% lubridate::force_tz(tzone = "EST")
+  if(!is.na(sim_level_ft[1])){
+    sim_datetime %<>% lubridate::force_tz("America/New_York")
+    rainfall_datetime <- append(rainfall_datetime, max(obs_datetime, sim_datetime))
+  }else{
+    rainfall_datetime <- append(rainfall_datetime, max(obs_datetime))
+  }
   
   #1 Run functions for individual plots
   level_plot <- pwdgsi::marsWaterLevelPlot(event = event, 
                                            structure_name = structure_name, 
-                                           datetime = level_datetime,
+                                           obs_datetime = obs_datetime,
+                                           obs_level_ft = obs_level_ft,
+                                           sim_datetime = sim_datetime,
+                                           sim_level_ft = sim_level_ft,
                                            storage_depth_ft = storage_depth_ft,
-                                           level_ft = level_ft)
+                                           orifice_show = orifice_show,
+                                           orifice_height_ft = orifice_height_ft)
   
   rainfall_plot <- pwdgsi::marsRainfallPlot(event = event, 
                                             dtime_est = rainfall_datetime, 
@@ -492,7 +542,7 @@ marsCombinedPlot <- function(event,
                                             reverse_y = TRUE)
   
   
-
+  
   #2 Combine Plots
   
   #Save out legends
@@ -501,8 +551,14 @@ marsCombinedPlot <- function(event,
   
   #Calculate date plotting limits(x-axis) 
   #Calculate minimum and maximum data values
-  min_date <- min(level_datetime, na.rm = TRUE)
-  max_date <- max(level_datetime, na.rm = TRUE) #+ hours(6)
+  if(!is.na(sim_level_ft[1])){
+    sim_datetime %<>% lubridate::force_tz("America/New_York")
+    min_date <- min(obs_datetime, sim_datetime, na.rm = TRUE)
+    max_date <- max(obs_datetime, sim_datetime, na.rm = TRUE)
+  }else{
+    min_date <- min(obs_datetime, na.rm = TRUE)
+    max_date <- max(obs_datetime, na.rm = TRUE) #+ hours(6)
+  }
   
   #Calculate ranges in values to set axis breaks by category
   event_duration <- max_date - min_date
@@ -549,7 +605,7 @@ marsCombinedPlot <- function(event,
     ggplot2::scale_x_datetime(
       name = " ", # x axis label
       labels = scales::date_format("%H:%M", "EST"),
-      limits = c(min(level_datetime) - lubridate::minutes(15), max_date + lubridate::minutes(60)),
+      limits = c(min_date - lubridate::minutes(15), max_date + lubridate::minutes(60)),
       breaks = major_date_breaks,
       minor_breaks = minor_date_breaks)  +
     ggplot2::labs(title = title_text)

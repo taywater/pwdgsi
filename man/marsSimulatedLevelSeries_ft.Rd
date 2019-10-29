@@ -38,7 +38,7 @@ marsSimulatedLevelSeries_ft(dtime_est, rainfall_in, event,
 \item{discharge_coeff}{Orifice discharge coefficient (Defauly = 0.62)}
 }
 \value{
-Output is a dataframe with the following columns: dtime_est, rainfall_in, event, Simulated_depth_ft, Simulated_vol_ft3, Simulated_orifice_vol_ft3
+Output is a dataframe with the following columns: dtime_est, rainfall_in, rainfall_gage_event_uid, Simulated_depth_ft, Simulated_vol_ft3, Simulated_orifice_vol_ft3
 }
 \description{
 Simulates water level in subsurface stormwater infiltration system with underdrain
