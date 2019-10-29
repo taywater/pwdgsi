@@ -46,5 +46,5 @@ arrange(dtime_est)\%>\%
 
 }
 \seealso{
-\code{\link{obsInfilRate_inhr}}, \code{\link{obsRecessionRate_inhr}}
+\code{\link{marsSaturatedPerformance_inhr}}
 }

@@ -6,7 +6,6 @@
 #' @param  event                Rainfall event ID (grouping variable)
 #' @param  dtime_est            A vector of POSIXct date times, in ascending order
 #' @param  rainfall_in          Rainfall depths during periods corresponding to times in  dtime_est (in)
-#' @param  infil_footprint_ft2  Total area of the system that is open to infiltration (sf)
 #' @param  dcia_ft2             Directly connected impervious area (sf)
 #' @param  orifice_height_ft    Orifice height (ft)
 #' @param  orifice_diam_in      Orifice diameter (in)
@@ -31,7 +30,6 @@
 #'     #Observed infiltration rate
 #'     Infiltration_Rate_inhr = saturatedPerformance(event, dtime_est,
 #'                                                rainfall_in,
-#'                                                infil_footprint_ft2,
 #'                                                dcia_ft2,
 #'                                                storage_depth_ft = storage_depth_ft,
 #'                                                storage_vol_ft3 = storage_vol_ft3,
@@ -45,7 +43,6 @@
 marsSaturatedPerformance_inhr <- function(event, #for warning messages
                                           dtime_est,
                                           rainfall_in, #for removing overlapping events
-                                          infil_footprint_ft2, #footprint of the system that is open to infiltration
                                           dcia_ft2, #directly connected impervious area
                                           orifice_height_ft = NA, #default to NA if no orifice outlet
                                           orifice_diam_in = NA, #default to NA if no orifice outlet
@@ -55,7 +52,6 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
                                           discharge_coeff = 0.62, #Orifice discharge coefficient
                                           type #"infiltration" or "recession"
 ){
-  
   
   #1. Prepare data
   #1.1 Initialize data frame
@@ -70,11 +66,11 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
   df$vol_ft3 <- pwdgsi:::depth.to.vol(maxdepth_ft = storage_depth_ft[1],
                                       maxvol_cf = storage_vol_ft3[1],
                                       depth_ft = df$depth_ft)
-  
+
   #1.3 Calculate orifice flow
   # If orifice dimensions are not provided, slow_release_ft = 0 (1.1)
-  if(is.na(orifice_diam_in[1]) == FALSE ){ 
-    slow_release_ft3 <- obsOrificeOutVol_cf(dtime_est,
+  if(!is.na(orifice_diam_in[1])){ 
+    df$slow_release_ft3 <- obsOrificeOutVol_cf(dtime_est,
                                             waterlevel_ft,
                                             orifice_height_ft,
                                             orifice_diam_in)
@@ -168,9 +164,6 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
         recession_rate_inhr <- NA
       }else{
         
-        
-        
-        
         #3. Calculate infiltration and recession rate
         
         #3.1 Recession rate
@@ -182,11 +175,14 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
         
         
         #3.3 Calculate total change storage
-        change_storage <- tempseries$vol_ft3[1] - tempseries$vol_ft3[nrow(tempseries)] - total_orifice_ft3
+        change_storage_ft3 <- tempseries$vol_ft3[1] - tempseries$vol_ft3[nrow(tempseries)] - total_orifice_ft3
         
+        change_depth_in <- vol.to.depth(maxdepth_ft = storage_depth_ft,
+                                     maxvol_cf = storage_vol_ft3,
+                                    vol_cf = change_storage_ft3)*12
         
         #3.4 Calculate infiltration
-        infiltration_rate_inhr <- round(change_storage/infil_footprint_ft2[1]*12/ #inches
+        infiltration_rate_inhr <- round(change_depth_in/ #inches
                                           as.numeric(difftime(last_depth5$dtime_est, last_depth7$dtime_est, units = "hours")),3)
       }}}
   
@@ -226,7 +222,7 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
 #' 
 #' @return Output is total observed orifice outflow volume (cf)
 #' 
-#' @seealso \code{\link{obsInfilRate_inhr}}, \code{\link{obsRecessionRate_inhr}}
+#' @seealso \code{\link{marsSaturatedPerformance_inhr}}
 #' 
 #' @export
 #' 

@@ -73,7 +73,7 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' @param  runoff_coeff            Rational method coefficient (Default = 1)
 #' @param  discharge_coeff         Orifice discharge coefficient (Defauly = 0.62)
 #' 
-#' @return Output is a dataframe with the following columns: dtime_est, rainfall_in, event, Simulated_depth_ft, Simulated_vol_ft3, Simulated_orifice_vol_ft3
+#' @return Output is a dataframe with the following columns: dtime_est, rainfall_in, rainfall_gage_event_uid, Simulated_depth_ft, Simulated_vol_ft3, Simulated_orifice_vol_ft3
 #' 
 #' @seealso \code{\link{simulation.stats}}
 #' 
@@ -110,7 +110,6 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
 
   #Prepare data
   #Initialize data frames
-  
   collected_data <- data.frame(dtime_est, rainfall_in, event)
   simseries_total <- tibble::tibble(dtime_est = lubridate::force_tz(dtime_est, tz = "EST"),
                                     rainfall_in = 0, 
@@ -123,6 +122,7 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
                                     end_vol_ft3 = 0) 
   simseries_total <- simseries_total[0,]
   unique_events <- unique(collected_data$event) #vector of unique event IDs
+  unique_events <- unique_events[!is.na(unique_events)]
   
   #Filter to create a separate dataframe, and run analysis, for each unique event
   for(j in 1:length(unique_events)){
@@ -265,7 +265,7 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
   
   colnames(simseries_total) <- c("dtime_est", 
                                  "rainfall_in", 
-                                 "event", 
+                                 "rainfall_gage_event_uid", 
                                  "Simulated_depth_ft", 
                                  "Simulated_vol_ft3", 
                                  "Simulated_orifice_vol_ft3")

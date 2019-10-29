@@ -603,7 +603,7 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
   
   #2.2 Run get_arbitrary_snapshot in a loop and bind results
   for(i in 1:length(ow_validity$smp_id)){
-    snapshot_query <- paste0("SELECT * FROM get_arbitrary_snapshot('", ow_validity$smp_id[i], "','", ow_validity$ow_suffix[i], "','", ow_validity$request_date[i], "')")
+    snapshot_query <- paste0("SELECT * FROM get_arbitrary_snapshot('", ow_validity$smp_id[i], "','", ow_validity$ow_suffix[i], "','", ow_validity$request_date[i], "') ORDER BY snapshot_uid DESC LIMIT 1")
     new_result <- odbc::dbGetQuery(con, snapshot_query)
     result <- dplyr::bind_rows(result, new_result)
   }
@@ -812,7 +812,7 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
     for(i in 1:length(target_id)){
       results[["Level Data step"]] <- marsFetchLevelData(con, target_id[i], ow_suffix[i], start_date[i], end_date[i], sump_correct) %>% 
         dplyr::left_join(ow_uid_gage, by = "ow_uid") %>%  #join rain gage uid
-        dplyr::select(-smp_gage_uid, -facility_id, -smp_id, -ow_suffix) #remove extra columns
+        dplyr::select(dtime_est, level_ft, ow_uid, gage_uid) #remove extra columns
       if(rain_events == TRUE){
         level_data_step <- results[["Level Data step"]] #coerce to data frame for entry in sqldf 
         
@@ -845,7 +845,7 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
         #check that any dtime that has that event uid does not exceed the end time by greater than three days
         #if it does, reassign NA to event uid
         level_data_step %<>% dplyr::left_join(event_data, by = "rainfall_gage_event_uid") %>% 
-          mutate(new_event_uid = dplyr::case_when(dtime_est >= (eventdataend_edt + lubridate::days(3)) ~ NA_integer_, 
+          dplyr::mutate(new_event_uid = dplyr::case_when(dtime_est >= (eventdataend_edt + lubridate::days(3)) ~ NA_integer_, 
                                                   TRUE ~ rainfall_gage_event_uid)) %>% 
           dplyr::select(-rainfall_gage_event_uid, -eventdataend_edt) %>% 
           dplyr::rename(rainfall_gage_event_uid = new_event_uid)

@@ -4,10 +4,9 @@
 \alias{marsSaturatedPerformance_inhr}
 \title{Saturated Performance}
 \usage{
-marsSaturatedPerformance_inhr(event, dtime_est, rainfall_in,
-  infil_footprint_ft2, dcia_ft2, orifice_height_ft = NA,
-  orifice_diam_in = NA, storage_depth_ft, storage_vol_ft3, waterlevel_ft,
-  discharge_coeff = 0.62, type)
+marsSaturatedPerformance_inhr(event, dtime_est, rainfall_in, dcia_ft2,
+  orifice_height_ft = NA, orifice_diam_in = NA, storage_depth_ft,
+  storage_vol_ft3, waterlevel_ft, discharge_coeff = 0.62, type)
 }
 \arguments{
 \item{event}{Rainfall event ID (grouping variable)}
@@ -15,8 +14,6 @@ marsSaturatedPerformance_inhr(event, dtime_est, rainfall_in,
 \item{dtime_est}{A vector of POSIXct date times, in ascending order}
 
 \item{rainfall_in}{Rainfall depths during periods corresponding to times in  dtime_est (in)}
-
-\item{infil_footprint_ft2}{Total area of the system that is open to infiltration (sf)}
 
 \item{dcia_ft2}{Directly connected impervious area (sf)}
 
@@ -49,7 +46,6 @@ obs_250_fill \%>\%
     #Observed infiltration rate
     Infiltration_Rate_inhr = saturatedPerformance(event, dtime_est,
                                                rainfall_in,
-                                               infil_footprint_ft2,
                                                dcia_ft2,
                                                storage_depth_ft = storage_depth_ft,
                                                storage_vol_ft3 = storage_vol_ft3,
