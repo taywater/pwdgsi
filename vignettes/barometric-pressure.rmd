@@ -1,7 +1,7 @@
 ---
 title: "Retrieving Barometric Pressure Data"
 author: "Nicholas Manna"
-date: "`r Sys.Date()`"
+date: "2019-10-29"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Retrieving Barometric Pressure Data}
@@ -37,9 +37,9 @@ In the past, data from the barometric pressure sensor (baro data) was taken from
 The package pwdgsi contains functions that create a smoother and more accurate workflow. When a user requests baro data for QA/QC, they will use the function `marsFetchBaroData()`. Input arguments include a database connection, target SMP ID, start and end dates, and the data interval. 
 The function `marsFetchBaroData()` queries this baro data in the mars database. The function also queries other tables that provide information like SMP location. Distances between the target SMP and the baro sensors are calculated, and each baro is assigned a weight based on that distance. 
 
-The functions `marsInterpolateBaro()` and `baroRasterPlot()` run within `marsFetchBaroData`. Users should understand these functions, but direct interaction will be minimal. `marsInterpolateBaro` averages the weights and pressures of the sensors to output a pressure reading for the target SMP at the requested datetime. This is run for every timestep in the requested datarange. An output dataset is created. 
+The functions `marsInterpolateBaro()` and `marsBaroRasterPlot()` run within `marsFetchBaroData`. Users should understand these functions, but direct interaction will be minimal. `marsInterpolateBaro` averages the weights and pressures of the sensors to output a pressure reading for the target SMP at the requested datetime. This is run for every timestep in the requested datarange. An output dataset is created. 
 
-`baroRasterPlot()` creates a raster of pressures for each baro in the requested timeframe. This plot, along with request information and summary tables, is passed into the markdown document `baro.rmd()`, which is rendered to .html and opened by `marsFetchBaroData()`. 
+`marsBaroRasterPlot()` creates a raster of pressures for each baro in the requested timeframe. This plot, along with request information and summary tables, is passed into the markdown document `baro.rmd()`, which is rendered to .html and opened by `marsFetchBaroData()`. 
 
 A data downloader script wraps `marsFetchBaroData()` and passes arguments, runs it, and writes a .csv.
 
@@ -68,9 +68,9 @@ marsInterpolateBaro(
    )
 ```
 
-### Visualizing Data with `baroRasterPlot`
+### Visualizing Data with `marsBaroRasterPlot`
 
-The following table is a snapshot of three days of baro data, which can be plotted with `baroRasterPlot()`. The custom function `yday_decimal()` adds days to each value, so the x-axis can be cleanly labeled with days instead of dates. 
+The following table is a snapshot of three days of baro data, which can be plotted with `marsBaroRasterPlot()`. The custom function `yday_decimal()` adds days to each value, so the x-axis can be cleanly labeled with days instead of dates. 
 
 ```{r raster_data, echo = FALSE}
 marsSampleBaro_plot %>% {.[sample(nrow(.)),]} %>% head(5) %>% 
@@ -82,7 +82,7 @@ marsSampleBaro_plot %<>% dplyr::mutate("day" = yday_decimal(marsSampleBaro_plot$
 The plot shows pressures as they diverage from the median. High pressures are red and lower pressures are blue. 
 
 ```{r raster_plot, fig.width=7, fig.height=5, message=FALSE, fig.cap="Figure 2: Raster Plot of Barometric Pressures from Jan. 1 to Jan. 4, 2019"}
-baroRasterPlot(marsSampleBaro_plot)
+marsBaroRasterPlot(marsSampleBaro_plot)
 ```
 
 Users can view the plot and assess any outliers or gaps in the barometric pressure data. 
