@@ -15,7 +15,12 @@
 #' @param  discharge_coeff      Orifice discharge coefficient
 #' @param  type                 "infiltration" or "recession"
 #' 
-#' @return Output is estimated infiltration rate (in/hr)
+#' @return Output is estimated infiltration rate (in/hr). These outputs are codes for the following messages: 
+#'  \describe{
+#'        \item{\code{-900}}{Event does not include observation data that approximately equals 5 or 7 in. water depth}
+#'        \item{\code{-910}}{Code captures rising limb in event.}
+#'        \item{\code{-920}}{Rainfall occurs during recession period between 7 in. and 5in. }
+#'  }
 #' 
 #' @seealso \code{\link{obsRecessionRate_inhr}}, \code{\link{obsOrificeOutVol_cf}}
 #' 
@@ -75,25 +80,6 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
                                             orifice_height_ft,
                                             orifice_diam_in)
     
-    # orifice_area_ft2 <- pi*((orifice_diam_in[1]/12)^2)/4
-    # 
-    # df <- df %>%
-    #   dplyr::mutate(#1.4.1 calculate elapsed time (hrs) 
-    #     elapsed_time_hr = difftime(dtime_est, dplyr::lag(dtime_est), unit = "hours"),
-    #     
-    #     #1.4.2 Calculate height of water above orifice (ft)
-    #     WL_above_orifice_ft = depth_ft - orifice_height_ft[1],
-    #     
-    #     #1.4.3 Set height of water to 0 if below elevation of orifice
-    #     WL_correction = ifelse(WL_above_orifice_ft < 0,0, WL_above_orifice_ft),
-    #     
-    #     #1.4.4 Calculate total discharge through orifice
-    #     slow_release_ft3 = discharge_coeff*
-    #       orifice_area_ft2*
-    #       sqrt(2 * 32.2 * WL_correction) * 
-    #       60*60 * #convert cfs to cfhr     
-    #       as.numeric(elapsed_time_hr)) %>%
-    #   dplyr::select(-elapsed_time_hr, -WL_above_orifice_ft, - WL_correction)
   }
   
   #2. Identify times associated with 5" and 7" depths
@@ -117,12 +103,12 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
   if(nrow(overlapping) != 0){
     
     last_depth5 <- df %>%
-      dplyr::filter(dtime_est < overlapping$dtime_est)%>% #remove values associated with subsequent events
+      dplyr::filter(dtime_est < overlapping$dtime_est) %>% #remove values associated with subsequent events
       dplyr::filter(depth_ft > 5/12) %>% #value immediately prior to water level crossing 5"
       dplyr::slice(dplyr::n()) #latest timestep
     
     last_depth7 <- df %>%
-      dplyr::filter(dtime_est < overlapping$dtime_est)%>% #remove values associated with subsequent events
+      dplyr::filter(dtime_est < overlapping$dtime_est) %>% #remove values associated with subsequent events
       dplyr::filter(depth_ft > 7/12) %>% #value immediately prior to water level crossing 5"
       dplyr::slice(dplyr::n()) #latest timestep
     
@@ -143,15 +129,15 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
   #2.4.1 Do observation values exist in the dataset approximately equal to 5 and 7"?
   if(nrow(last_depth5)== 0 | nrow(last_depth7) == 0){
     message(paste("Event",event[1], "does not include observation data that approximately equals 5 or 7 in. of water depth."))
-    infiltration_rate_inhr <- NA
-    recession_rate_inhr <- NA
+    infiltration_rate_inhr <- -900
+    recession_rate_inhr <- -900
   }else{
     
     #2.4.2 Does the 5" measurement occur after the 7"?
     if(last_depth5$dtime_est < last_depth7$dtime_est){
       message(paste0("Code captures rising limb in Event ", event[1], "."))
-      infiltration_rate_inhr <- NA
-      recession_rate_inhr <- NA
+      infiltration_rate_inhr <- -910
+      recession_rate_inhr <- -910
     }else{
       
       #2.4.3 Does rainfall occur during the recession period between 7" and 5"?
@@ -160,8 +146,8 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
       
       if(sum(tempseries$rainfall_in, na.rm = TRUE) != 0){
         message(paste0("Rainfall occurs during recession period between 7 in. and 5 in. in Event ", event[1], ".")) 
-        infiltration_rate_inhr <- NA
-        recession_rate_inhr <- NA
+        infiltration_rate_inhr <- -920
+        recession_rate_inhr <- -920
       }else{
         
         #3. Calculate infiltration and recession rate

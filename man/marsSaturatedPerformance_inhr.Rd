@@ -32,7 +32,12 @@ marsSaturatedPerformance_inhr(event, dtime_est, rainfall_in, dcia_ft2,
 \item{type}{"infiltration" or "recession"}
 }
 \value{
-Output is estimated infiltration rate (in/hr)
+Output is estimated infiltration rate (in/hr). These outputs are codes for the following messages: 
+ \describe{
+       \item{\code{-900}}{Event does not include observation data that approximately equals 5 or 7 in. water depth}
+       \item{\code{-910}}{Code captures rising limb in event.}
+       \item{\code{-920}}{Rainfall occurs during recession period between 7 in. and 5in. }
+ }
 }
 \description{
 Estimated either infiltration rate or recession rate, as specified, based on observed data
