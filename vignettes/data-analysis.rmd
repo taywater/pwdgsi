@@ -4,7 +4,7 @@ author: "Nicholas Manna"
 date: "2019-10-29"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Fetching, Summarizing, and Plotting SMP Performance Metrics with `pwdgsi`}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,15 +16,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 options(stringsAsFactors = FALSE, scipen = 999, knitr.table.format = 'html' )
-# library(odbc)
-# library(lubridate)
-# library(magrittr)
-# library(tidyverse)
-# library(pwdgsi)
-# library(assertthat)
-# library(ggplot2)
-# library(gridExtra)
-# library(kableExtra)
+
 library(pwdgsi)
 
 directory <- "A:/Scripts/Misc/plots/"
