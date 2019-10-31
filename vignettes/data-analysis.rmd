@@ -86,7 +86,7 @@ str(monitoringdata, vec.len = 3)
 
 ### Calculate Performance Metrics
 
-Performance metrics are calculated for observed data. First, rainfall data and water level data are joined together. Then, a time series of orifice outflow volumes are calculated using `obsOrificeOutVol_cf`. Then, the data is grouped by rainfall_gage_event_uid, and each performance metric is calculated in `dplyr::summarize()`. PSU and RPSU are calculated with `marsPeakStorage_percent()`. Saturated infiltration rate and saturated recession rate are calculated with `marsSaturatedPerformance_inhr()`. Draindown time is is figured with `marsDraindown_hr()`, and overflow is checked with `marsOvertopping_bool()`. `marsPeakReleaseRate_cfs()` computes the peak release rate. 
+Performance metrics are calculated for observed data. First, rainfall data and water level data are joined together. Then, a time series of orifice outflow volumes are calculated using `marsUnderdrainOutflow_cf`. Then, the data is grouped by rainfall_gage_event_uid, and each performance metric is calculated in `dplyr::summarize()`. PSU and RPSU are calculated with `marsPeakStorage_percent()`. Saturated infiltration rate and saturated recession rate are calculated with `marsSaturatedPerformance_inhr()`. Draindown time is is figured with `marsDraindown_hr()`, and overflow is checked with `marsOvertopping_bool()`. `marsPeakReleaseRate_cfs()` computes the peak release rate. 
 
 ```{r Calculations, message = FALSE, include = TRUE, echo = TRUE}
 
@@ -94,7 +94,7 @@ Performance metrics are calculated for observed data. First, rainfall data and w
 obs_data <- dplyr::left_join(monitoringdata[["Level Data"]], monitoringdata[["Rain Gage Data"]], 
                              by = c("dtime_est", "rainfall_gage_event_uid", "gage_uid"))  %>%
   dplyr::arrange(dtime_est) %>%
-  dplyr::mutate(orifice_outflow_ft3 = obsOrificeOutVol_cf(dtime_est = dtime_est,
+  dplyr::mutate(orifice_outflow_ft3 = marsUnderdrainOutflow_cf(dtime_est = dtime_est,
                                        waterlevel_ft = level_ft,
                                        orifice_height_ft = snapshot$assumption_orificeheight_ft,
                                        orifice_diam_in = snapshot$orifice_diam_in))

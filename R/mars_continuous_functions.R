@@ -22,7 +22,7 @@
 #'        \item{\code{-920}}{Rainfall occurs during recession period between 7 in. and 5in. }
 #'  }
 #' 
-#' @seealso \code{\link{obsRecessionRate_inhr}}, \code{\link{obsOrificeOutVol_cf}}
+#' @seealso \code{\link{marsUnderdrainOutflow_cf}}
 #' 
 #' @export
 #' 
@@ -75,7 +75,7 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
   #1.3 Calculate orifice flow
   # If orifice dimensions are not provided, slow_release_ft = 0 (1.1)
   if(!is.na(orifice_diam_in[1])){ 
-    df$slow_release_ft3 <- obsOrificeOutVol_cf(dtime_est,
+    df$slow_release_ft3 <- marsUnderdrainOutflow_cf(dtime_est,
                                             waterlevel_ft,
                                             orifice_height_ft,
                                             orifice_diam_in)
@@ -225,7 +225,7 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
 #'     orifice_diam_in = smp_stats$orifice_diam_in[7],
 #'     
 #'     # Calculate orifice flow, if applicable
-#'    orifice_vol_cf = obsOrificeOutVol_cf(dtime_est,
+#'    orifice_vol_cf = marsUnderdrainOutflow_cf(dtime_est,
 #'                                         waterlevel_ft = level_ft,
 #'                                         orifice_height_ft,
 #'                                         orifice_diam_in)
@@ -233,7 +233,7 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
 #' 
 #' 
 
-obsOrificeOutVol_cf <- function(dtime_est, 
+marsUnderdrainOutflow_cf <- function(dtime_est, 
                                 waterlevel_ft, 
                                 orifice_height_ft,
                                 orifice_diam_in,
