@@ -53,7 +53,7 @@
 #'   \item{smp_id}{factor, SMP ID}
 #'   \item{baro_psi}{num, barometric pressure (psi)}
 #'   \item{neighbors}{int, number of nearby barometric sensors with recorded data}
-#'   \item{weight}{num, weight of baro data based on distance, for interpolation}
+#'   \item{weight}{num, weight of baro data based on distance, for interpolation}}
 "marsSampleBaro_plot"
 
 #' Sample SMP Data

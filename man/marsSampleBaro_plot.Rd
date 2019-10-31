@@ -4,7 +4,13 @@
 \name{marsSampleBaro_plot}
 \alias{marsSampleBaro_plot}
 \title{Sample Baro Data for Plotting}
-\format{An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 2890 rows and 5 columns.}
+\format{a dataframe with 2890 rows and 5 variables
+\describe{
+  \item{dtime_est}{POSIXct datetime, YYYY-MM-DD HH:MM:SS}
+  \item{smp_id}{factor, SMP ID}
+  \item{baro_psi}{num, barometric pressure (psi)}
+  \item{neighbors}{int, number of nearby barometric sensors with recorded data}
+  \item{weight}{num, weight of baro data based on distance, for interpolation}}}
 \usage{
 \code{marsBaroRasterPlot}
 }
