@@ -864,7 +864,8 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
 #' Write Saturated Performance Data to Database 
 #' 
 #' Receive vectors of infiltration rate and recession rate, calculated with \code{\link{marsSaturatedPerformance_inhr}}
-#' gather data, and write to MARS Analysis Database performance_saturated table
+#' gather data, and write to MARS Analysis Database performance_saturated table. Replaces error codes with NAs and moves
+#' them to a separate column, \code{error_lookup_uid}
 #' 
 #' @param infiltration_rate_inhr vector, numeric, infiltration rate (in/hr)
 #' @param recession_rate_inhr vector, numeric, recession rate (in/hr)
@@ -917,10 +918,16 @@ marsWriteSaturatedData <- function(infiltration_rate_inhr,
                   performance_saturated_lookup_uid,
                   ow_uid,
                   rainfall_gage_event_uid,
-                  snapshot_uid)
+                  snapshot_uid) %>% 
+    dplyr::mutate("error_lookup_uid" = ifelse(saturatedperformance_inhr <0,
+                                              saturatedperformance_inhr, NA),
+                  saturatedperformance_inhr = ifelse(!is.na(error_lookup_uid),
+                                                     NA, saturatedperformance_inhr))
+  
+  
   
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(dbWriteTable(con, "performance_saturated", saturatedperformance_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, "performance_saturated", saturatedperformance_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }
@@ -944,7 +951,7 @@ marsWriteSaturatedData <- function(infiltration_rate_inhr,
 #' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
 #' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' 
-#' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWriteOvertoppingData}}
+#' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWriteOvertoppingData}},  \code{\link{marsWriteDraindownData}}
 #' 
 #' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
 #' 
@@ -993,7 +1000,7 @@ marsWritePercentStorageData <- function(percentstorageused_peak,
                   snapshot_uid)
   
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(dbWriteTable(con, "performance_percentstorage", percentstorage_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, "performance_percentstorage", percentstorage_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }
@@ -1018,7 +1025,7 @@ marsWritePercentStorageData <- function(percentstorageused_peak,
 #' 
 #' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
 #' 
-#' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWritePercentStorageData}}
+#' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWritePercentStorageData}},  \code{\link{marsWriteDraindownData}}
 #' 
 #' @export
 #' 
@@ -1026,7 +1033,8 @@ marsWriteOvertoppingData <- function(overtopping,
                                      observed_simulated_lookup_uid, 
                                      ow_uid, 
                                      rainfall_gage_event_uid,
-                                     snapshot_uid){
+                                     snapshot_uid, 
+                                     con){
   
   #check that vectors are the same length
   if(!(length(overtopping) == length(ow_uid) &
@@ -1044,7 +1052,7 @@ marsWriteOvertoppingData <- function(overtopping,
                                snapshot_uid)
   
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(dbWriteTable(con, "performance_overtopping", overtopping_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, "performance_overtopping", overtopping_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }
@@ -1053,4 +1061,56 @@ marsWriteOvertoppingData <- function(overtopping,
   return(result)
   
 }
+
+# marsWriteDraindownData ------------------------------------------
+#' Write Draidnown Data to Database 
+#' 
+#' Receive vector of draindown data, calculated with \code{\link{marsDraindown_hr}},
+#' and write to MARS Analysis Database performance_draindwown table
+#' 
+#' @param draindown_hr vector, numeric, draindown time (hr)
+#' @param ow_uid vector, numeric observation well UID
+#' @param rainfall_gage_event_uid vector, numeric
+#' @param snapshot_uid vector, numeric
+#' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
+#' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
+#' 
+#' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
+#' 
+#' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWritePercentStorageData}}, \code{\link{marsWriteOvertoppingData}}, 
+#' 
+#' @export
+#' 
+marsWriteDraindownData <- function(draindown_hr,
+                                   ow_uid,
+                                   rainfall_gage_event_uid, 
+                                   snapshot_uid,
+                                   observed_simulated_lookup_uid, 
+                                   con){
+  
+  #check that vectors are the same length
+  if(!(length(draindown_hr) == length(ow_uid) &
+       length(draindown_hr) == length(rainfall_gage_event_uid) &
+       length(draindown_hr) == length(snapshot_uid) &
+       length(draindown_hr) == length(observed_simulated_lookup_uid))){
+    stop("Vectors must be the same length")
+  }
+  
+  #add vectors to dataframe
+  draindown_df <- data.frame(draindown_hr,
+                             observed_simulated_lookup_uid,
+                             ow_uid,
+                             rainfall_gage_event_uid,
+                             snapshot_uid)
+  
+  #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
+  result <- tryCatch(odbc::dbWriteTable(con, "performance_draindown", draindown_df, overwrite = FALSE, append = TRUE), 
+                     error = function(error_message){
+                       return(error_message$message)
+                     }
+  )
+  
+  return(result)
+  
+}  
 

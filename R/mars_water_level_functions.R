@@ -735,7 +735,7 @@ marsPeakReleaseRate_cfs <- function(dtime_est,
 #' @param rainfall_in Rainfall depths during periods corresponding to times in  dtime_est (in)
 #' 
 #' @return \describe{
-#'      \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr)}
+#'      \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr). Returns \code{NA} if water level does not return to 0 after event.}
 #' }
 #' 
 #' @export

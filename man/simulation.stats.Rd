@@ -43,7 +43,7 @@ marsDraindown_hr(dtime_est, rainfall_in, waterlevel_ft)
 }
 
 \describe{
-     \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr)}
+     \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr). Returns \code{NA} if water level does not return to 0 after event.}
 }
 }
 \description{
