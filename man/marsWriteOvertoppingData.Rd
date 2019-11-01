@@ -5,7 +5,7 @@
 \title{Write Overtopping Data to Database}
 \usage{
 marsWriteOvertoppingData(overtopping, observed_simulated_lookup_uid,
-  ow_uid, rainfall_gage_event_uid, snapshot_uid)
+  ow_uid, rainfall_gage_event_uid, snapshot_uid, con)
 }
 \arguments{
 \item{overtopping}{vector, logical, TRUE if water level reaches max storage depth}

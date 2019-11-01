@@ -19,6 +19,6 @@
 \code{obs_250_all}
 }
 \description{
-A dataset conataining water level, rain, and SMP data. \code{obs_250_fill} is joined with SMP stats.
+A dataset containing water level, rain, and SMP data. \code{obs_250_fill} is joined with SMP stats.
 }
 \keyword{datasets}
