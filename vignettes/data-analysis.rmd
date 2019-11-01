@@ -1,7 +1,7 @@
 ---
 title: "Fetching, Summarizing, and Plotting SMP Performance Metrics with `pwdgsi`"
 author: "Nicholas Manna"
-date: "2019-10-29"
+date: "2019-11-01"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Fetching, Summarizing, and Plotting SMP Performance Metrics with `pwdgsi`}
@@ -30,7 +30,7 @@ This vignette uses the functions `marsFetchMonitoringData()` to retrieve SMP dat
 ### Declaring Variables
 
 Request criteria is defined below; this includes the start and end date of analysis, the SMP ID and OW Suffix (ie, OW1). In this vignette, rain events at a subsurface, unlined tree trench installed at Belmond School, SMP ID 250-1-1, will be analyzed. 
-```{r declare, include=TRUE, echo = TRUE}
+```{r declare, include=TRUE, echo = TRUE, eval = FALSE}
 #declare variables
 start_date <- "2018-01-01"
 end_date <- "2018-03-01"
@@ -46,22 +46,29 @@ mars <- odbc::dbConnect(odbc::odbc(), "mars_testing")
 
 First, the as-built SMP metrics are fetched from a live connection to the GreenIT database with `marsFetchSnapshot()`. These metrics are stored in a 'snapshot' in the MARS analysis database, and can be re-fetched in the future, even if the metrics change in GreenIT.
 
-```{r snapshot, message=FALSE, include = TRUE, echo = TRUE}
-
+```{r snapshot, message=FALSE, include = TRUE, echo = TRUE, eval=FALSE}
 #call snapshot
 snapshot <- marsFetchSMPSnapshot(con = mars, 
                                  smp_id = target_id, 
                                  ow_suffix = ow_suffix, 
-                                 request_date = "today")
+                                 request_date = "11/1/2019")
 ```
 
+```{r load snapshot, include = FALSE}
+snapshot <- snapshot_250
+#also add variables that wasn't evaluated before (in order to not evaluate the database connection)
+start_date <- "2018-01-01"
+end_date <- "2018-03-01"
+target_id <- "250-1-1"
+ow_suffix <- "OW1"
+```
 SMP `r snapshot$smp_id` has a DCIA of `r snapshot$dcia_ft2` sf, with a storage footprint of `r snapshot$storage_footprint_ft2` sf. The storage depth is `r snapshot$storage_depth_ft` ft and the storage volume is `r snapshot$storage_volume_ft3` cf. The SMP has a sump depth of `r snapshot$sumpdepth_ft` ft, and the infiltration rate at the time of construction was `r snapshot$infil_dsg_rate_inhr` in/hr.
   
   
 This analysis will use water level data, rainfall data, and rain event metrics to compute our SMP performance metrics. We will fetch all three data sets with a single call to `marsFetchMontioringData()`. `marsFetchMonitoringData()` contains three separate functions, `marsFetchRainEventData()`, `marsFetchRainGageData()`, and `marsFetchLevelData()`. Each returns a dataframe, which are returned within a list.
 
 
-```{r monitoring, message=FALSE, include = TRUE, echo = TRUE}
+```{r monitoring, message=FALSE, include = TRUE, echo = TRUE, eval = FALSE}
 #fetch monitoring data
 monitoringdata <- marsFetchMonitoringData(con = mars, 
                                           target_id = target_id, 
@@ -72,6 +79,11 @@ monitoringdata <- marsFetchMonitoringData(con = mars,
 
 The list returned from `marsFetchMonitoringData()` contains one data frame for each type of requested data. Rain gage data and water level data contains additional rain event UIDs, to illustrate which rain event they belong to. These UIDs will tell us which rainfall data and/or rain event metrics to use for a given water level period.
 
+```{r load monitoring data, message = FALSE, include = FALSE, echo = FALSE}
+monitoringdata <- monitoringdata_250
+```
+
+
 ```{r string, message=FALSE, include = TRUE, echo = TRUE}
 str(monitoringdata, vec.len = 3)
 ```
@@ -81,7 +93,6 @@ str(monitoringdata, vec.len = 3)
 Performance metrics are calculated for observed data. First, rainfall data and water level data are joined together. Then, a time series of orifice outflow volumes are calculated using `marsUnderdrainOutflow_cf`. Then, the data is grouped by rainfall_gage_event_uid, and each performance metric is calculated in `dplyr::summarize()`. PSU and RPSU are calculated with `marsPeakStorage_percent()`. Saturated infiltration rate and saturated recession rate are calculated with `marsSaturatedPerformance_inhr()`. Draindown time is is figured with `marsDraindown_hr()`, and overflow is checked with `marsOvertopping_bool()`. `marsPeakReleaseRate_cfs()` computes the peak release rate. 
 
 ```{r Calculations, message = FALSE, include = TRUE, echo = TRUE}
-
 #join monitoring data in one table
 obs_data <- dplyr::left_join(monitoringdata[["Level Data"]], monitoringdata[["Rain Gage Data"]], 
                              by = c("dtime_est", "rainfall_gage_event_uid", "gage_uid"))  %>%
@@ -178,30 +189,28 @@ knitr::kable(percent_storage_top,
   kableExtra::kable_styling(bootstrap_options = "striped", full_width = FALSE, position = "left")
 ```
 
-```{r messages}
-#Get percent storage
-recession_messages <- obs_data %>% 
-  dplyr::arrange(dtime_est) %>% 
-  dplyr::filter(rainfall_gage_event_uid %in% percent_storage_top$rainfall_gage_event_uid) %>%
-  dplyr::group_by(rainfall_gage_event_uid) %>%
-  dplyr::summarize(
-    
-        #Draindown time
-    draindown_hr = marsDraindown_hr(dtime_est = dtime_est, 
-                                    rainfall_in = rainfall_in,
-                                    waterlevel_ft = level_ft),
-    #Infiltration time
-    recession_rate_inhr = marsSaturatedPerformance_inhr(event = rainfall_gage_event_uid,
-                                           dtime_est = dtime_est,
-                                           rainfall_in = rainfall_in,
-                                           snapshot$dcia_ft2,
-                                           snapshot$assumption_orificeheight_ft, 
-                                           snapshot$orifice_diam_in,
-                                           storage_depth_ft = snapshot$storage_depth_ft,
-                                           storage_vol_ft3 = snapshot$storage_volume_ft3,
-                                           waterlevel_ft = level_ft,
-                                           type = "infiltration")
-  )
+In the following table, for event 17122, infiltration rate and recession rate are -900. A number like -900 - a clear outlier, and an impossible recession rate - indicates a failure to calculate the metric. In this case, -900 means that the event did not include observation data that approximately equaled 5 or 7 inches water depth, which is where rates are calculated. -910 indicates that the code only captured the rising limb of the event, and -920 means that rainfall occured during the recession period. More information can be found at `?marsSaturatedPerformance_inhr`.  Draindown time is `NA` because the water level did not reach 0, and peak release rate is `NA` because there was no outflow.  
+
+
+```{r table_examples, echo = FALSE}
+#Get events with unique error codes
+errors <- observed_summary %>% 
+  dplyr::filter(infiltration_rate_inhr < 0) %>% 
+  dplyr::distinct(infiltration_rate_inhr, .keep_all = TRUE)
+
+errors %>% 
+  knitr::kable(digits = 2, 
+      col.names = c("Rainfall Gage Event UID", 
+                    "PSU", 
+                    "RPSU", 
+                    "Infiltration\n Rate (in/hr)",
+                    "Recession\n Rate (in/hr)", 
+                    "Draindown (hr)",
+                    "Overtopping\n Check",
+                    "Peak Release\n Rate (cfs)",
+                    "Slow Release\n Volume (cf)"),
+      caption = "Table 2: Failure Example") %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped", full_width = FALSE, position = "left")
 
 ```
 
@@ -235,7 +244,7 @@ simulated_data %>% head(3) %>% knitr::kable(digits = 2,
                                                    "Simulated Depth (ft)", 
                                                    "Simulated Volume (cf)", 
                                                    "Simulated Orifice\n Outflow (cf)"),
-                                     caption = "Table 2: Simulated Water Level Data") %>% 
+                                     caption = "Table 3: Simulated Water Level Data") %>% 
   kableExtra::kable_styling(bootstrap_options = "striped", full_width = FALSE, position = "left")
 
 ```
@@ -273,8 +282,6 @@ for(i in 1:length(percent_storage_top$rainfall_gage_event_uid)){
   ggplot2::ggsave(plot_file_name, plot = plot, width = 9.25, height = 7.75, units = "in")
 
 }
-
-
 ```
 
 ![](chart_obs_sim1.png){width=700px}
