@@ -637,7 +637,6 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
 #' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchRainEventData}}, \code{\link{marsFetchMonitoringData}}
 #' 
 marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, sump_correct){
-  
   #1 Argument Validation
   #1.1 Check database connection
   if(!odbc::dbIsValid(con)){
@@ -672,6 +671,8 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
   
   leveldata <- odbc::dbGetQuery(con, leveldata_query)
   
+  leveldata$dtime_est %<>% lubridate::force_tz(tz = "EST")
+  
   #3 Return level data
   return(leveldata)
 }
@@ -703,7 +704,6 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
 #' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchMonitoringData}}
 #' 
 marsFetchRainEventData <- function(con, target_id, start_date, end_date){
-  
   #1 Argument validation
   #1.1 Check database connection
   if(!odbc::dbIsValid(con)){
@@ -723,7 +723,9 @@ marsFetchRainEventData <- function(con, target_id, start_date, end_date){
                        "AND eventdatastart_edt >= Date('", start_date, "')",
                        "AND eventdataend_edt <= Date('", end_date + lubridate::days(1), "');")
   
-  events <- odbc::dbGetQuery(con, event_query)
+  events <- odbc::dbGetQuery(con, event_query) 
+  events$eventdatastart_edt %<>% lubridate::force_tz("America/New_York")
+  events$eventdataend_edt %<>% lubridate::force_tz("America/New_York")
   
   #3 return event data
   return(events)
@@ -744,6 +746,7 @@ marsFetchRainEventData <- function(con, target_id, start_date, end_date){
 #' @param rain_events logical, TRUE if rain event data should be included in result
 #' @param rainfall logical, TRUE if rainfall data should be included in result
 #' @param level logical, TRUE if water level should be included in result
+#' @param daylight_savings logical, Adjust for daylight savings time? when doing QAQC this should be FALSE because the water level data does not spring forward 
 #'
 #' @return Output will be a list consisting of a combination of the following:
 #' 
@@ -758,7 +761,7 @@ marsFetchRainEventData <- function(con, target_id, start_date, end_date){
 
 
 marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_date,
-                                    sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE, daylight_savings){
+                                    sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE, daylight_savings = FALSE){
 
   #1 Argument validation
   #1.1 Check database connection
@@ -786,20 +789,17 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
       end_date[i] <- max(results[["Rain Event Data step"]]$eventdataend_edt)
       results[["Rain Event Data"]] <- dplyr::bind_rows(results[["Rain Event Data"]], results[["Rain Event Data step"]])
       results[["Rain Event Data step"]] <- NULL
-      lubridate::tz(results[["Rain Event Data"]]$eventdatastart_edt) <- "America/New_York" #add timezone
-      lubridate::tz(results[["Rain Event Data"]]$eventdataend_edt) <- "America/New_York"
     }
   }
   
   #4 Add rain gage
   if(rainfall == TRUE){
     for(i in 1:length(target_id)){
-      results[["Rain Gage Data step"]] <- marsFetchRainGageData(con, target_id[i], start_date[i], end_date[i], FALSE)
+      results[["Rain Gage Data step"]] <- marsFetchRainGageData(con, target_id[i], start_date[i], end_date[i], daylight_savings)
       start_date[i] <- min(results[["Rain Gage Data step"]]$dtime_est - lubridate::days(1))
       end_date[i] <- max(results[["Rain Gage Data step"]]$dtime_est + lubridate::days(1))
       results[["Rain Gage Data"]] <- dplyr::bind_rows(results[["Rain Gage Data"]], results[["Rain Gage Data step"]])
       results[["Rain Gage Data step"]] <- NULL
-      lubridate::tz(results[["Rain Gage Data"]]$dtime_est) <- "America/New_York" #add timezone
     }
   }
   #####
@@ -811,39 +811,36 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
         dplyr::select(dtime_est, level_ft, ow_uid, gage_uid) #remove extra columns
       if(rain_events == TRUE){
         level_data_step <- results[["Level Data step"]] #coerce to data frame for entry in sqldf 
+        results[["Rain Event Data"]]$eventdatastart_edt %<>% lubridate::with_tz("EST")
+        results[["Rain Event Data"]]$eventdataend_edt %<>% lubridate::with_tz("EST")
+        results[["Rain Event Data"]] %<>% dplyr::rename(eventdatastart_est = eventdatastart_edt, eventdataend_est = eventdataend_edt)
         
-        #add a column with datetime to use dependent on dst
-        results_event_data <- results[["Rain Event Data"]] %>% 
-          dplyr::mutate("start_est" = dplyr::case_when(lubridate::dst(eventdatastart_edt) == TRUE
-                                                       ~ eventdatastart_edt - lubridate::hours(1), 
-                                                       lubridate::dst(eventdatastart_edt) == FALSE  
-                                                       ~ eventdatastart_edt))
+        results_event_data <- results[["Rain Event Data"]]
         
         level_data_step$dtime_est %<>% lubridate::round_date("minute")
-        lubridate::tz(level_data_step$dtime_est) <- "America/New_York"
         level_data_step <- level_data_step[(!is.na(level_data_step$dtime_est)),]
         
         #select relevant columns from the results
-        results_event_data %<>% dplyr::select(rainfall_gage_event_uid, gage_uid, start_est)
+        results_event_data %<>% dplyr::select(rainfall_gage_event_uid, gage_uid, eventdatastart_est)
         
         #join by gage uid and by start time, to give a rainfal gage event uid at the start of each event
         level_data_step %<>% dplyr::left_join(results_event_data, 
-                                              by = c("gage_uid", "dtime_est" = "start_est"))   
+                                              by = c("gage_uid", "dtime_est" = "eventdatastart_est"))   
         
         #carry event uids forward from event start to start of next event
         level_data_step$rainfall_gage_event_uid %<>% zoo::na.locf(na.rm = FALSE)
         
         #isolate event data needed for assuring that the rainfall gage event uid isn't assigned too far past the event end
         event_data <- results[["Rain Event Data"]]  %>% 
-          dplyr::select(rainfall_gage_event_uid, eventdataend_edt)
+          dplyr::select(rainfall_gage_event_uid, eventdataend_est)
         
         #join event end times to level data by event uid
         #check that any dtime that has that event uid does not exceed the end time by greater than three days
         #if it does, reassign NA to event uid
         level_data_step %<>% dplyr::left_join(event_data, by = "rainfall_gage_event_uid") %>% 
-          dplyr::mutate(new_event_uid = dplyr::case_when(dtime_est >= (eventdataend_edt + lubridate::days(3)) ~ NA_integer_, 
+          dplyr::mutate(new_event_uid = dplyr::case_when(dtime_est >= (eventdataend_est + lubridate::days(3)) ~ NA_integer_, 
                                                   TRUE ~ rainfall_gage_event_uid)) %>% 
-          dplyr::select(-rainfall_gage_event_uid, -eventdataend_edt) %>% 
+          dplyr::select(-rainfall_gage_event_uid, -eventdataend_est) %>% 
           dplyr::rename(rainfall_gage_event_uid = new_event_uid)
         
         
@@ -867,13 +864,13 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
 #' gather data, and write to MARS Analysis Database performance_saturated table. Replaces error codes with NAs and moves
 #' them to a separate column, \code{error_lookup_uid}
 #' 
+#' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' @param infiltration_rate_inhr vector, numeric, infiltration rate (in/hr)
 #' @param recession_rate_inhr vector, numeric, recession rate (in/hr)
 #' @param ow_uid vector, numeric observation well UID
 #' @param rainfall_gage_event_uid vector, numeric
 #' @param snapshot_uid vector, numeric
 #' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
-#' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' 
 #' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
 #' 
@@ -881,13 +878,13 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
 #' 
 #' @export
 #' 
-marsWriteSaturatedData <- function(infiltration_rate_inhr,
+marsWriteSaturatedData <- function(con, 
+                                   infiltration_rate_inhr,
                                    recession_rate_inhr,
                                    ow_uid,
                                    rainfall_gage_event_uid,
                                    snapshot_uid,
-                                   observed_simulated_lookup_uid,
-                                   con){
+                                   observed_simulated_lookup_uid){
   
   #check that vectors are the same length
   if(!(length(infiltration_rate_inhr) == length(ow_uid) &
@@ -943,13 +940,13 @@ marsWriteSaturatedData <- function(infiltration_rate_inhr,
 #' Receive vectors of raw and relative percent storage data, calculated with \code{\link{marsPeakStorage_percent}},
 #' gather data, and write to MARS Analysis performance_percentstorage table
 #' 
+#' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' @param infiltration_rate_inhr vector, numeric, infiltration rate (in/hr)
 #' @param recession_rate_inhr vector, numeric, recession rate (in/hr)
 #' @param ow_uid vector, numeric observation well UID
 #' @param rainfall_gage_event_uid vector, numeric
 #' @param snapshot_uid vector, numeric
 #' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
-#' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' 
 #' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWriteOvertoppingData}},  \code{\link{marsWriteDraindownData}}
 #' 
@@ -958,13 +955,13 @@ marsWriteSaturatedData <- function(infiltration_rate_inhr,
 #' @export
 #' 
 #' 
-marsWritePercentStorageData <- function(percentstorageused_peak,
+marsWritePercentStorageData <- function(con, 
+                                        percentstorageused_peak,
                                         percentstorageused_relative,
                                         ow_uid,
                                         rainfall_gage_event_uid,
                                         snapshot_uid,
-                                        observed_simulated_lookup_uid,
-                                        con){
+                                        observed_simulated_lookup_uid){
   
   #check that vectors are the same length
   if(!(length(percentstorageused_peak) == length(ow_uid) &
@@ -1016,12 +1013,12 @@ marsWritePercentStorageData <- function(percentstorageused_peak,
 #' Receive vector of overtopping data, calculated with \code{\link{marsOvertoppingCheck_bool}},
 #' and write to MARS Analysis Database performance_overtopping table
 #' 
+#' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' @param overtopping vector, logical, TRUE if water level reaches max storage depth
 #' @param ow_uid vector, numeric observation well UID
 #' @param rainfall_gage_event_uid vector, numeric
 #' @param snapshot_uid vector, numeric
 #' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
-#' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' 
 #' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
 #' 
@@ -1029,12 +1026,12 @@ marsWritePercentStorageData <- function(percentstorageused_peak,
 #' 
 #' @export
 #' 
-marsWriteOvertoppingData <- function(overtopping, 
+marsWriteOvertoppingData <- function(con, 
+                                     overtopping, 
                                      observed_simulated_lookup_uid, 
                                      ow_uid, 
                                      rainfall_gage_event_uid,
-                                     snapshot_uid, 
-                                     con){
+                                     snapshot_uid){
   
   #check that vectors are the same length
   if(!(length(overtopping) == length(ow_uid) &
@@ -1068,12 +1065,12 @@ marsWriteOvertoppingData <- function(overtopping,
 #' Receive vector of draindown data, calculated with \code{\link{marsDraindown_hr}},
 #' and write to MARS Analysis Database performance_draindwown table
 #' 
+#' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' @param draindown_hr vector, numeric, draindown time (hr)
 #' @param ow_uid vector, numeric observation well UID
 #' @param rainfall_gage_event_uid vector, numeric
 #' @param snapshot_uid vector, numeric
 #' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
-#' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' 
 #' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
 #' 
@@ -1081,12 +1078,12 @@ marsWriteOvertoppingData <- function(overtopping,
 #' 
 #' @export
 #' 
-marsWriteDraindownData <- function(draindown_hr,
+marsWriteDraindownData <- function(con,
+                                   draindown_hr,
                                    ow_uid,
                                    rainfall_gage_event_uid, 
                                    snapshot_uid,
-                                   observed_simulated_lookup_uid, 
-                                   con){
+                                   observed_simulated_lookup_uid){
   
   #check that vectors are the same length
   if(!(length(draindown_hr) == length(ow_uid) &

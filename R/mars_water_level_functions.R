@@ -57,7 +57,6 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
                                           discharge_coeff = 0.62, #Orifice discharge coefficient
                                           type #"infiltration" or "recession"
 ){
-  
   #1. Prepare data
   #1.1 Initialize data frame
   df <- tibble::tibble(dtime_est = lubridate::force_tz(dtime_est, tz = "EST"),
@@ -88,7 +87,6 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
   # is then again filtered by the threshold. The last row (slice(n())) represents the timestep immediately
   # before the level drops below the threshold. This value may not represent the value closest to the 
   # threshold, however, this approach ensures that the values are taken from receding limbs.
-  
   #2.1 Re-rerun marsDetectEvents to identify overlapping events (if joined with synthetic recession period)
   overlapping <- df %>%
     dplyr::mutate(rainfall_in = tidyr::replace_na(rainfall_in, 0)) %>%
@@ -388,7 +386,6 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
                                         runoff_coeff = 1, #rational method coefficient
                                         discharge_coeff = 0.62 #Orifice discharge coefficient
 ){ 
-  
   #Prepare data
   #Initialize data frames
   collected_data <- data.frame(dtime_est, rainfall_in, event)
@@ -404,9 +401,11 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
   simseries_total <- simseries_total[0,]
   unique_events <- unique(collected_data$event) #vector of unique event IDs
   unique_events <- unique_events[!is.na(unique_events)]
+  infil_rate_inhr[is.na(infil_rate_inhr)] <- 0
   
   #Filter to create a separate dataframe, and run analysis, for each unique event
   for(j in 1:length(unique_events)){
+    
     by_event <- collected_data %>% 
       dplyr::filter(event == unique_events[j])
     
@@ -435,8 +434,6 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
                                 slow_release_ft3 = 0,
                                 infiltration_ft3 = 0, #POTENTIAL infiltration
                                 end_vol_ft3 = 0) 
-    
-    
     
     #Calculate runoff (independent of timestep)
     simseries$runoff_ft3 <- runoff_coeff * output$rainfall_in/12 * dcia_ft2[1] #convert in to ft
@@ -475,7 +472,6 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
     last_rainfall <- nrow(simseries)
     # Mass balance for all other timesteps  
     for(i in (2:(max_time))){
-      
       #If timestep exceeds the dataframe length, add a new row at the next timestep
       if(i > nrow(simseries)){
         simseries <- rbind(simseries, data.frame("dtime_est" = lubridate::force_tz(simseries$dtime_est[i-1]+lubridate::minutes(15), tz = "EST"),
@@ -530,8 +526,7 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
       
       #Save out final volume with correction for min and max storage applied
       simseries$end_vol_ft3[i] <- volume_check_cf
-      
-      if(simseries$vol_ft3[i] == 0 && i > last_rainfall){
+      if((simseries$vol_ft3[i] == 0 | is.na(simseries$vol_ft3[i])) && i > last_rainfall){
         break
       }
       
@@ -541,9 +536,8 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
     
   }
   #Series returns a data frame including water depth #may be updated
-  
   simseries_total <- simseries_total %>% dplyr::select("dtime_est", "rainfall_in", "event", "depth_ft", "vol_ft3", "slow_release_ft3")
-  
+  simseries_total$dtime_est %<>% force_tz("EST")
   colnames(simseries_total) <- c("dtime_est", 
                                  "rainfall_in", 
                                  "rainfall_gage_event_uid", 

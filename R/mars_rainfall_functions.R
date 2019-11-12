@@ -35,7 +35,6 @@
 marsDetectEvents <- function(dtime_est, rainfall_in, 
                          #DEFAULT VALUES
                          iet_hr = 6, mindepth_in = 0.10) {
-
   # 1. QC checks
   # 1.1 Check for non-zero and negative rainfall values
   if(!all(rainfall_in > 0)) {
@@ -169,7 +168,7 @@ marsStormDepth_in <- function(rainfall_in) {
   return(sum(rainfall_in))
 }
 
-# stormDuration ------------------
+# marsStormDuration ------------------
 # NOTES: Function to export storm duration from events processed using marsDetectEvents function
 
 #IN: A vector of times at which rainfall was collected in the storm
@@ -215,7 +214,7 @@ marsStormDuration_hr <- function(dtime_est) {
 }
 
 
-# stormPeakIntensity -----------------------------
+# marsStormPeakIntensity -----------------------------
 # NOTES: Function to export storm peak intensity from events processed using marsDetectEvents function
 #
 # IN:dtime_est A vector of times at which rainfall was collected in the storm
@@ -271,7 +270,7 @@ marsStormPeakIntensity_inhr <- function(dtime_est, rainfall_in) {
   return(peak)
 }
 
-# stormAvgIntensity -------------------------------
+# marsStormAvgIntensity -------------------------------
 # NOTES: Function to export storm average intensity from events processed using marsDetectEvents function
 
 # IN: dtime_est A vector of times at which rainfall was collected in the storm

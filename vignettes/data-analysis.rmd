@@ -29,7 +29,7 @@ This vignette uses the functions `marsFetchMonitoringData()` to retrieve SMP dat
 
 ### Declaring Variables
 
-Request criteria is defined below; this includes the start and end date of analysis, the SMP ID and OW Suffix (ie, OW1). In this vignette, rain events at a subsurface, unlined tree trench installed at Belmond School, SMP ID 250-1-1, will be analyzed. 
+Request criteria is defined below; this includes the start and end date of analysis, the SMP ID and OW Suffix (ie, OW1). In this vignette, rain events at a subsurface, unlined tree trench installed at Belmont School, SMP ID 250-1-1, will be analyzed. 
 ```{r declare, include=TRUE, echo = TRUE, eval = FALSE}
 #declare variables
 start_date <- "2018-01-01"

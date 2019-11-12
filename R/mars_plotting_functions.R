@@ -59,7 +59,7 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
   #1.4  Calculate cumulative rainfall
   rain_data <- rain_data %>% dplyr::mutate(cumulative = cumsum(rainIN))
   
-  #1.5 Generat title block
+  #1.5 Generate title block
   startdate <- min(rain_data$dtimeEST) - min_interval
   title_text <- paste0("Hyetograph\nRaingage: ", raingage[1],
                        " | Event: ", event[1],
@@ -340,7 +340,6 @@ marsWaterLevelPlot <- function(event,
   
   
   if(!is.na(sim_level_ft[1])){
-    sim_datetime %<>% lubridate::force_tz("America/New_York")
     min_date <- min(obs_datetime, sim_datetime, na.rm = TRUE)
     max_date <- max(obs_datetime, sim_datetime, na.rm = TRUE)
   }else{
@@ -516,12 +515,11 @@ marsCombinedPlot <- function(event,
                              raingage){
   
   #Add a last date so the hyetograph looks better
-  rainfall_in <- append(rainfall_in, 0)
+    rainfall_in <- append(rainfall_in, 0)
   if(!is.na(sim_level_ft[1])){
-    sim_datetime %<>% lubridate::force_tz("America/New_York")
-    rainfall_datetime <- append(rainfall_datetime, max(obs_datetime, sim_datetime))
+    rainfall_datetime <- append(rainfall_datetime, max(obs_datetime, sim_datetime)) %>% lubridate::with_tz("EST")
   }else{
-    rainfall_datetime <- append(rainfall_datetime, max(obs_datetime))
+    rainfall_datetime <- append(rainfall_datetime, max(obs_datetime)) %>% lubridate::with_tz("EST")
   }
   
   #1 Run functions for individual plots
@@ -541,8 +539,6 @@ marsCombinedPlot <- function(event,
                                             raingage = raingage, 
                                             reverse_y = TRUE)
   
-  
-  
   #2 Combine Plots
   
   #Save out legends
@@ -552,7 +548,6 @@ marsCombinedPlot <- function(event,
   #Calculate date plotting limits(x-axis) 
   #Calculate minimum and maximum data values
   if(!is.na(sim_level_ft[1])){
-    sim_datetime %<>% lubridate::force_tz("America/New_York")
     min_date <- min(obs_datetime, sim_datetime, na.rm = TRUE)
     max_date <- max(obs_datetime, sim_datetime, na.rm = TRUE)
   }else{
@@ -632,7 +627,7 @@ marsCombinedPlot <- function(event,
 # marsBaroRasterPlot --------------------------------------------------------
 #' Barometric Pressure Raster Plot
 #' 
-#' Create a raster plot of barometric pressurs from each sensor for each day
+#' Create a raster plot of barometric pressures from each sensor for each day
 #' 
 #' @param baro a dataframe with columns: \code{smp_id, baro_psi, day, year}
 #' 
