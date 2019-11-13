@@ -1060,7 +1060,7 @@ marsWriteOvertoppingData <- function(con,
 }
 
 # marsWriteDraindownData ------------------------------------------
-#' Write Draidnown Data to Database 
+#' Write Draindown Data to Database 
 #' 
 #' Receive vector of draindown data, calculated with \code{\link{marsDraindown_hr}},
 #' and write to MARS Analysis Database performance_draindwown table

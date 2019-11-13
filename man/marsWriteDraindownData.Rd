@@ -2,7 +2,7 @@
 % Please edit documentation in R/mars_data_fetch_write_functions.R
 \name{marsWriteDraindownData}
 \alias{marsWriteDraindownData}
-\title{Write Draidnown Data to Database}
+\title{Write Draindown Data to Database}
 \usage{
 marsWriteDraindownData(con, draindown_hr, ow_uid, rainfall_gage_event_uid,
   snapshot_uid, observed_simulated_lookup_uid)
