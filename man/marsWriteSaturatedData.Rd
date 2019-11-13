@@ -31,6 +31,17 @@ Receive vectors of infiltration rate and recession rate, calculated with \code{\
 gather data, and write to MARS Analysis Database performance_saturated table. Replaces error codes with NAs and moves
 them to a separate column, \code{error_lookup_uid}
 }
+\examples{
+
+marsWriteSaturatedData(con = mars, 
+  infiltration_rate_inhr = summary_250$infiltration_rate_inhr,
+  recession_rate_inhr = summary_250$recession_rate_inhr,
+  ow_uid = summary_250$ow_uid,
+  rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid,
+  snapshot_uid = summary_250$snapshot_uid,
+  observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
+
+}
 \seealso{
 \code{\link[pwdgsi]{marsWriteOvertoppingData}}, \code{\link{marsWritePercentStorageData}}
 }

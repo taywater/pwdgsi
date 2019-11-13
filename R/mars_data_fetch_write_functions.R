@@ -878,6 +878,16 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
 #' 
 #' @export
 #' 
+#' @examples 
+#' 
+#' marsWriteSaturatedData(con = mars, 
+#'   infiltration_rate_inhr = summary_250$infiltration_rate_inhr,
+#'   recession_rate_inhr = summary_250$recession_rate_inhr,
+#'   ow_uid = summary_250$ow_uid,
+#'   rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid,
+#'   snapshot_uid = summary_250$snapshot_uid,
+#'   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
+#' 
 marsWriteSaturatedData <- function(con, 
                                    infiltration_rate_inhr,
                                    recession_rate_inhr,
@@ -954,6 +964,15 @@ marsWriteSaturatedData <- function(con,
 #' 
 #' @export
 #' 
+#' @examples
+#' 
+#' marsWritePercentStorageData(con = mars, 
+#'    percentstorageused_peak = summary_250$percentstorageused_peak,
+#'    percentstorageused_relative = summary_250%percentstorageused_relative,
+#'    ow_uid = summary_250%ow_uid,
+#'    rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid,
+#'    snapshot_uid = summary_250$snapshot_uid,
+#'    observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 #' 
 marsWritePercentStorageData <- function(con, 
                                         percentstorageused_peak,
@@ -1026,6 +1045,16 @@ marsWritePercentStorageData <- function(con,
 #' 
 #' @export
 #' 
+#' @examples
+#' 
+#' marsWriteOvertoppingData(con = mars, 
+#'   overtopping = summary_250$overtop, 
+#'   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid, 
+#'   ow_uid = summary_250$ow_uid, 
+#'   rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid,
+#'   snapshot_uid = summary_250$snapshot_uid)
+#' 
+#' 
 marsWriteOvertoppingData <- function(con, 
                                      overtopping, 
                                      observed_simulated_lookup_uid, 
@@ -1077,6 +1106,15 @@ marsWriteOvertoppingData <- function(con,
 #' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWritePercentStorageData}}, \code{\link{marsWriteOvertoppingData}}, 
 #' 
 #' @export
+#' 
+#' @examples 
+#' 
+#' marsWriteDraindownData(con,
+#'   draindown_hr = summary_250$draindown_hr,
+#'   ow_uid = summary_250$ow_uid,
+#'   rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid, 
+#'   snapshot_uid = summary_250$snapshot_uid,
+#'   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 #' 
 marsWriteDraindownData <- function(con,
                                    draindown_hr,

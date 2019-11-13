@@ -92,7 +92,7 @@
 
 #' SMP Monitoring Data
 #' 
-#' A dataset containing water level, rainfall, and rain event data for SMP-250-1-1 from 2018-01-01 to 2018-03-01. 
+#' A dataset containing water level, rainfall, and rain event data for SMP 250-1-1 from 2018-01-01 to 2018-03-01. 
 #' 
 #' @docType data
 #' 
@@ -101,3 +101,15 @@
 #' @format a list with 3 dataframes
 #' 
 "monitoringdata_250"
+
+#' SMP Summary 
+#' 
+#' A dataset containing summary statistics for SMP 250-1-1 from 2018-01-01 to 2018-03-01.
+#' 
+#' @docType data
+#' 
+#' @usage \code{summary_250}
+#' 
+#' @format a dataframe with 27 rows and 11 columns
+#' 
+"summary_250"

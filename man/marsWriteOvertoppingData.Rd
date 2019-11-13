@@ -27,6 +27,17 @@ marsWriteOvertoppingData(con, overtopping, observed_simulated_lookup_uid,
 Receive vector of overtopping data, calculated with \code{\link{marsOvertoppingCheck_bool}},
 and write to MARS Analysis Database performance_overtopping table
 }
+\examples{
+
+marsWriteOvertoppingData(con = mars, 
+  overtopping = summary_250$overtop, 
+  observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid, 
+  ow_uid = summary_250$ow_uid, 
+  rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid,
+  snapshot_uid = summary_250$snapshot_uid)
+
+
+}
 \seealso{
 \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWritePercentStorageData}},  \code{\link{marsWriteDraindownData}}
 }

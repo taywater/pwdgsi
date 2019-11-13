@@ -30,6 +30,17 @@ marsWritePercentStorageData(con, percentstorageused_peak,
 Receive vectors of raw and relative percent storage data, calculated with \code{\link{marsPeakStorage_percent}},
 gather data, and write to MARS Analysis performance_percentstorage table
 }
+\examples{
+
+marsWritePercentStorageData(con = mars, 
+   percentstorageused_peak = summary_250$percentstorageused_peak,
+   percentstorageused_relative = summary_250\%percentstorageused_relative,
+   ow_uid = summary_250\%ow_uid,
+   rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid,
+   snapshot_uid = summary_250$snapshot_uid,
+   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
+
+}
 \seealso{
 \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWriteOvertoppingData}},  \code{\link{marsWriteDraindownData}}
 }

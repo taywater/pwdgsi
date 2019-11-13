@@ -27,6 +27,16 @@ marsWriteDraindownData(con, draindown_hr, ow_uid, rainfall_gage_event_uid,
 Receive vector of draindown data, calculated with \code{\link{marsDraindown_hr}},
 and write to MARS Analysis Database performance_draindwown table
 }
+\examples{
+
+marsWriteDraindownData(con,
+  draindown_hr = summary_250$draindown_hr,
+  ow_uid = summary_250$ow_uid,
+  rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid, 
+  snapshot_uid = summary_250$snapshot_uid,
+  observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
+
+}
 \seealso{
 \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWritePercentStorageData}}, \code{\link{marsWriteOvertoppingData}},
 }
