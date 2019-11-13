@@ -13,7 +13,7 @@ marsBaroRasterPlot(baro)
 p, a ggplot2 plot
 }
 \description{
-Create a raster plot of barometric pressurs from each sensor for each day
+Create a raster plot of barometric pressures from each sensor for each day
 }
 \examples{
 marsSampleBaro_plot \%<>\% dplyr::mutate("day" = yday_decimal(marsSampleBaro_plot$dtime_est),

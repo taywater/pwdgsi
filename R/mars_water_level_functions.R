@@ -537,7 +537,7 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
   }
   #Series returns a data frame including water depth #may be updated
   simseries_total <- simseries_total %>% dplyr::select("dtime_est", "rainfall_in", "event", "depth_ft", "vol_ft3", "slow_release_ft3")
-  simseries_total$dtime_est %<>% force_tz("EST")
+  simseries_total$dtime_est %<>% lubridate::force_tz("EST")
   colnames(simseries_total) <- c("dtime_est", 
                                  "rainfall_in", 
                                  "rainfall_gage_event_uid", 

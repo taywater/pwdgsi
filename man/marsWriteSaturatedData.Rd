@@ -4,11 +4,13 @@
 \alias{marsWriteSaturatedData}
 \title{Write Saturated Performance Data to Database}
 \usage{
-marsWriteSaturatedData(infiltration_rate_inhr, recession_rate_inhr, ow_uid,
-  rainfall_gage_event_uid, snapshot_uid, observed_simulated_lookup_uid,
-  con)
+marsWriteSaturatedData(con, infiltration_rate_inhr, recession_rate_inhr,
+  ow_uid, rainfall_gage_event_uid, snapshot_uid,
+  observed_simulated_lookup_uid)
 }
 \arguments{
+\item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}
+
 \item{infiltration_rate_inhr}{vector, numeric, infiltration rate (in/hr)}
 
 \item{recession_rate_inhr}{vector, numeric, recession rate (in/hr)}
@@ -20,8 +22,6 @@ marsWriteSaturatedData(infiltration_rate_inhr, recession_rate_inhr, ow_uid,
 \item{snapshot_uid}{vector, numeric}
 
 \item{observed_simulated_lookup_uid}{vector, numeric, 1 if observed, 2 if simulated}
-
-\item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}
 }
 \value{
 \code{TRUE} if the write is succesful, or an error message if unsuccessful

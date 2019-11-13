@@ -4,10 +4,12 @@
 \alias{marsWriteOvertoppingData}
 \title{Write Overtopping Data to Database}
 \usage{
-marsWriteOvertoppingData(overtopping, observed_simulated_lookup_uid,
-  ow_uid, rainfall_gage_event_uid, snapshot_uid, con)
+marsWriteOvertoppingData(con, overtopping, observed_simulated_lookup_uid,
+  ow_uid, rainfall_gage_event_uid, snapshot_uid)
 }
 \arguments{
+\item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}
+
 \item{overtopping}{vector, logical, TRUE if water level reaches max storage depth}
 
 \item{observed_simulated_lookup_uid}{vector, numeric, 1 if observed, 2 if simulated}
@@ -17,8 +19,6 @@ marsWriteOvertoppingData(overtopping, observed_simulated_lookup_uid,
 \item{rainfall_gage_event_uid}{vector, numeric}
 
 \item{snapshot_uid}{vector, numeric}
-
-\item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}
 }
 \value{
 \code{TRUE} if the write is succesful, or an error message if unsuccessful

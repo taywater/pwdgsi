@@ -6,7 +6,7 @@
 \usage{
 marsFetchMonitoringData(con, target_id, ow_suffix, start_date, end_date,
   sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE,
-  level = TRUE, daylight_savings)
+  level = TRUE, daylight_savings = FALSE)
 }
 \arguments{
 \item{con}{An ODBC connection to the MARS Analysis database returned by odbc::dbConnect}
@@ -26,6 +26,8 @@ marsFetchMonitoringData(con, target_id, ow_suffix, start_date, end_date,
 \item{rainfall}{logical, TRUE if rainfall data should be included in result}
 
 \item{level}{logical, TRUE if water level should be included in result}
+
+\item{daylight_savings}{logical, Adjust for daylight savings time? when doing QAQC this should be FALSE because the water level data does not spring forward}
 }
 \value{
 Output will be a list consisting of a combination of the following:

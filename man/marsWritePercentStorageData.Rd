@@ -4,11 +4,13 @@
 \alias{marsWritePercentStorageData}
 \title{Write Percent of Storaged Used Data to Database}
 \usage{
-marsWritePercentStorageData(percentstorageused_peak,
+marsWritePercentStorageData(con, percentstorageused_peak,
   percentstorageused_relative, ow_uid, rainfall_gage_event_uid,
-  snapshot_uid, observed_simulated_lookup_uid, con)
+  snapshot_uid, observed_simulated_lookup_uid)
 }
 \arguments{
+\item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}
+
 \item{ow_uid}{vector, numeric observation well UID}
 
 \item{rainfall_gage_event_uid}{vector, numeric}
@@ -16,8 +18,6 @@ marsWritePercentStorageData(percentstorageused_peak,
 \item{snapshot_uid}{vector, numeric}
 
 \item{observed_simulated_lookup_uid}{vector, numeric, 1 if observed, 2 if simulated}
-
-\item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}
 
 \item{infiltration_rate_inhr}{vector, numeric, infiltration rate (in/hr)}
 

@@ -4,10 +4,12 @@
 \alias{marsWriteDraindownData}
 \title{Write Draidnown Data to Database}
 \usage{
-marsWriteDraindownData(draindown_hr, ow_uid, rainfall_gage_event_uid,
-  snapshot_uid, observed_simulated_lookup_uid, con)
+marsWriteDraindownData(con, draindown_hr, ow_uid, rainfall_gage_event_uid,
+  snapshot_uid, observed_simulated_lookup_uid)
 }
 \arguments{
+\item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}
+
 \item{draindown_hr}{vector, numeric, draindown time (hr)}
 
 \item{ow_uid}{vector, numeric observation well UID}
@@ -17,8 +19,6 @@ marsWriteDraindownData(draindown_hr, ow_uid, rainfall_gage_event_uid,
 \item{snapshot_uid}{vector, numeric}
 
 \item{observed_simulated_lookup_uid}{vector, numeric, 1 if observed, 2 if simulated}
-
-\item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}
 }
 \value{
 \code{TRUE} if the write is succesful, or an error message if unsuccessful
