@@ -169,6 +169,9 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
     dplyr::select(dtime_edt, rainfall_in, gage_uid, rainfall_gage_event_uid) %>%
     dplyr::arrange(dtime_edt)
   
+  #round date to nearest minute
+  finalseries$dtime_est %<>% lubridate::round_date("minute")
+  
   #Rename dtime column if we are undoing daylight savings time
   if(daylightsavings == FALSE){
     finalseries <- finalseries %>%
@@ -637,6 +640,7 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
 #' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchRainEventData}}, \code{\link{marsFetchMonitoringData}}
 #' 
 marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, sump_correct){
+  
   #1 Argument Validation
   #1.1 Check database connection
   if(!odbc::dbIsValid(con)){
@@ -669,9 +673,9 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
                                 WHERE ow_uid = '", ow_uid, "'
                                 AND dtime_est BETWEEN '",start_date,"' AND '", end_date, "'")
   
-  leveldata <- odbc::dbGetQuery(con, leveldata_query)
+  leveldata <- odbc::dbGetQuery(con, leveldata_query) %>% dplyr::arrange(dtime_est)
   
-  leveldata$dtime_est %<>% lubridate::force_tz(tz = "EST")
+  leveldata$dtime_est %<>% lubridate::force_tz(tz = "EST") %>% lubridate::round_date("minute")
   
   #3 Return level data
   return(leveldata)
@@ -810,14 +814,13 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
         dplyr::left_join(ow_uid_gage, by = "ow_uid") %>%  #join rain gage uid
         dplyr::select(dtime_est, level_ft, ow_uid, gage_uid) #remove extra columns
       if(rain_events == TRUE){
-        level_data_step <- results[["Level Data step"]] #coerce to data frame for entry in sqldf 
-        results[["Rain Event Data"]]$eventdatastart_edt %<>% lubridate::with_tz("EST")
+        level_data_step <- results[["Level Data step"]] #coerce to data frame
+        results[["Rain Event Data"]]$eventdatastart_edt %<>% lubridate::with_tz("EST") #switch to EST and rename
         results[["Rain Event Data"]]$eventdataend_edt %<>% lubridate::with_tz("EST")
         results[["Rain Event Data"]] %<>% dplyr::rename(eventdatastart_est = eventdatastart_edt, eventdataend_est = eventdataend_edt)
         
         results_event_data <- results[["Rain Event Data"]]
         
-        level_data_step$dtime_est %<>% lubridate::round_date("minute")
         level_data_step <- level_data_step[(!is.na(level_data_step$dtime_est)),]
         
         #select relevant columns from the results
@@ -852,6 +855,29 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
       results[["Level Data step"]] <- NULL
     }
   }
+  
+  #remove incomplete events from level data
+  if(rain_events == TRUE & rainfall == TRUE & level == TRUE){
+  test_df_id <- dplyr::full_join(results[[2]], results[[3]], by = c("dtime_est", "rainfall_gage_event_uid", "gage_uid")) %>% #join
+    dplyr::arrange(dtime_est) %>% 
+    dplyr::filter(!is.na(rainfall_gage_event_uid) & is.na(level_ft)) %>%  #filter events that are not NA and and water level that is not NA
+    dplyr::pull(rainfall_gage_event_uid) 
+  
+  results[["Level Data"]] %<>% dplyr::filter(!(rainfall_gage_event_uid %in% test_df_id))
+  
+  
+  #filter out rain data for events that do have corresponding water level data
+  test_uid <- dplyr::full_join(results[[2]], results[[3]], by = c("dtime_est", "rainfall_gage_event_uid", "gage_uid")) %>% 
+    dplyr::arrange(dtime_est) %>% 
+    dplyr::group_by(rainfall_gage_event_uid) %>% 
+      dplyr::filter(all(is.na(level_ft))) %>% #check if all the level data match with each event is NA
+      dplyr::pull(rainfall_gage_event_uid)
+  
+  results[["Rain Gage Data"]] %<>% dplyr::filter(!(rainfall_gage_event_uid %in% test_uid)) #remove rain data where there is no corresponding level data
+  
+  }
+  
+  
   
   #6 Return results
   return(results)
