@@ -416,19 +416,8 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
     by_event <- collected_data %>% 
       dplyr::filter(event == unique_events[j])
     
-    dtime_est <- by_event$dtime_est
-    rainfall_in <- by_event$rainfall_in
-    
-    timeseries <- seq.POSIXt(as.POSIXct(min(dtime_est)), #first measurement
-                             as.POSIXct(max(dtime_est)), #last measurement
-                             by = 0.25*60*60) #15-min interval - function will not accept minutes(15)
-    
-    #Generate data with only timesteps that don't have rainfall measurements
-    new_rows <- as.data.frame(timeseries[!timeseries %in% dtime_est]) %>% dplyr::mutate(rainfall_in = 0, event = unique_events[j])
-    colnames(new_rows) <- c("dtime_est", "rainfall_in", "event")
-    
-    #bind with timesteps that have rainfall measurements
-    output <- dplyr::bind_rows(by_event, new_rows) %>% dplyr::arrange(dtime_est)
+    #pad dataset
+    output <- padr::pad(by_event, interval = '15 min') %>% tidyr::fill(event)
     
     #Create dataframe to be filled                         
     simseries <- tibble::tibble(dtime_est = lubridate::force_tz(output$dtime_est, tz = "EST"),
