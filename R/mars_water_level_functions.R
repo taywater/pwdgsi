@@ -412,12 +412,10 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
   
   #Filter to create a separate dataframe, and run analysis, for each unique event
   for(j in 1:length(unique_events)){
-    
     by_event <- collected_data %>% 
       dplyr::filter(event == unique_events[j])
-    
     #pad dataset
-    output <- padr::pad(by_event, interval = '15 min') %>% tidyr::fill(event)
+    output <- padr::pad(by_event, interval = '15 min') %>% tidyr::fill(event) %>% tidyr::replace_na(list(rainfall_in=0))
     
     #Create dataframe to be filled                         
     simseries <- tibble::tibble(dtime_est = lubridate::force_tz(output$dtime_est, tz = "EST"),
@@ -449,8 +447,8 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
       simseries$slow_release_ft3[1] <- discharge_coeff * 
         orifice_area_ft2 *
         sqrt(2 * 32.2 * max(WL_above_orifice_ft, 0)) * #set to 0 if below orifice
-        60 * #convert cfs to cfm     
-        lubridate::minutes(15) #assuming 15 minutes for first timestep
+        60 * #convert cfs to cfm
+        15 #assuming 15 minutes for first timestep. lubridate::minutes() does not work here. 
     }
     
     # Potential Infiltration

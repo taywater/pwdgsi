@@ -784,7 +784,6 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
   #Set datetime date types
   start_date %<>% as.POSIXct()
   end_date %<>% as.POSIXct()
-  
   #3 Add rain events
   if(rain_events == TRUE){
     for(i in 1:length(target_id)){
@@ -855,7 +854,6 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
       results[["Level Data step"]] <- NULL
     }
   }
-  
   #remove incomplete events from level/rainfall/rain event data
   if(rain_events == TRUE & rainfall == TRUE & level == TRUE){
   test_df_id <- dplyr::full_join(results[["Rain Gage Data"]], results[["Level Data"]], by = c("dtime_est", "rainfall_gage_event_uid", "gage_uid")) %>% #join
@@ -867,10 +865,10 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
   
   
   #filter out rain data for events that do have corresponding water level data
-  results[["Rain Gage Data"]] %<>% dplyr::filter(!(rainfall_gage_event_uid %in% results[["Level Data"]]$rainfall_gage_event_uid))
+  results[["Rain Gage Data"]] %<>% dplyr::filter((rainfall_gage_event_uid %in% results[["Level Data"]]$rainfall_gage_event_uid))
   
   #fiter out rain events that no longer have corresponding rainfall data
-  results[["Rain Event Data"]] %<>% dplyr::filter(!(rainfall_gage_event_uid %in% results[["Rain Gage Data"]]$rainfall_gage_event_uid))
+  results[["Rain Event Data"]] %<>% dplyr::filter((rainfall_gage_event_uid %in% results[["Rain Gage Data"]]$rainfall_gage_event_uid))
   
   }
   
