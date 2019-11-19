@@ -856,9 +856,9 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
     }
   }
   
-  #remove incomplete events from level data
+  #remove incomplete events from level/rainfall/rain event data
   if(rain_events == TRUE & rainfall == TRUE & level == TRUE){
-  test_df_id <- dplyr::full_join(results[[2]], results[[3]], by = c("dtime_est", "rainfall_gage_event_uid", "gage_uid")) %>% #join
+  test_df_id <- dplyr::full_join(results[["Rain Gage Data"]], results[["Level Data"]], by = c("dtime_est", "rainfall_gage_event_uid", "gage_uid")) %>% #join
     dplyr::arrange(dtime_est) %>% 
     dplyr::filter(!is.na(rainfall_gage_event_uid) & is.na(level_ft)) %>%  #filter events that are not NA and and water level that is not NA
     dplyr::pull(rainfall_gage_event_uid) 
@@ -867,13 +867,10 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
   
   
   #filter out rain data for events that do have corresponding water level data
-  test_uid <- dplyr::full_join(results[[2]], results[[3]], by = c("dtime_est", "rainfall_gage_event_uid", "gage_uid")) %>% 
-    dplyr::arrange(dtime_est) %>% 
-    dplyr::group_by(rainfall_gage_event_uid) %>% 
-      dplyr::filter(all(is.na(level_ft))) %>% #check if all the level data match with each event is NA
-      dplyr::pull(rainfall_gage_event_uid)
+  results[["Rain Gage Data"]] %<>% dplyr::filter(!(rainfall_gage_event_uid %in% results[["Level Data"]]$rainfall_gage_event_uid))
   
-  results[["Rain Gage Data"]] %<>% dplyr::filter(!(rainfall_gage_event_uid %in% test_uid)) #remove rain data where there is no corresponding level data
+  #fiter out rain events that no longer have corresponding rainfall data
+  results[["Rain Event Data"]] %<>% dplyr::filter(!(rainfall_gage_event_uid %in% results[["Rain Gage Data"]]$rainfall_gage_event_uid))
   
   }
   
