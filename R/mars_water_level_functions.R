@@ -403,6 +403,13 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
   unique_events <- unique_events[!is.na(unique_events)]
   infil_rate_inhr[is.na(infil_rate_inhr)] <- 0
   
+  #if statements
+  orifice_if <- is.na(orifice_diam_in[1]) == FALSE
+  if(orifice_if){
+    orifice_area_ft2 <- pi*((orifice_diam_in[1]/12)^2)/4
+  }
+  
+  
   #Filter to create a separate dataframe, and run analysis, for each unique event
   for(j in 1:length(unique_events)){
     
@@ -422,7 +429,6 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
     
     #bind with timesteps that have rainfall measurements
     output <- dplyr::bind_rows(by_event, new_rows) %>% dplyr::arrange(dtime_est)
-    
     
     #Create dataframe to be filled                         
     simseries <- tibble::tibble(dtime_est = lubridate::force_tz(output$dtime_est, tz = "EST"),
@@ -446,8 +452,7 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
                                          maxvol_cf = storage_vol_ft3[1],
                                          depth_ft = simseries$depth_ft[1])
     #Orifice Outflow
-    if(is.na(orifice_diam_in[1]) == FALSE){
-      orifice_area_ft2 <- pi*((orifice_diam_in[1]/12)^2)/4
+    if(orifice_if){
       WL_above_orifice_ft <- simseries$depth_ft[1] - orifice_height_ft[1] 
       
       # Q_orifice = C * Area * sqrt(2 * gravity * depth) * time
@@ -495,8 +500,7 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
                                             vol_cf = simseries$vol_ft3[i])
       
       # Orifice Outflow
-      if(is.na(orifice_diam_in[1])== FALSE){
-        orifice_area_ft2 <- pi*((orifice_diam_in[1]/12)^2)/4
+      if(orifice_if){
         WL_above_orifice_ft <- simseries$depth_ft[i] - orifice_height_ft[1] 
         
         # Q_orifice = C * Area * sqrt(2 * g * depth) * time

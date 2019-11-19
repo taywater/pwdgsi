@@ -11,9 +11,9 @@ marsFetchRainEventData(con, target_id, start_date, end_date)
 
 \item{target_id}{vector of chr, SMP ID, where the user has requested data}
 
-\item{start_date}{POSIXct, format: "YYYY-MM-DD", start of data request range}
+\item{start_date}{string, format: "YYYY-MM-DD", start of data request range}
 
-\item{end_date}{POSIXct, format: "YYYY-MM-DD", end of data request range}
+\item{end_date}{string, format: "YYYY-MM-DD", end of data request range}
 }
 \value{
 Output will be a dataframe with the following columns: 

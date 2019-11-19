@@ -14,9 +14,9 @@ marsFetchLevelData(con, target_id, ow_suffix, start_date, end_date,
 
 \item{ow_suffix}{vector of chr, SMP ID, where the user has requested data}
 
-\item{start_date}{POSIXct, format: "YYYY-MM-DD", start of data request range}
+\item{start_date}{string, format: "YYYY-MM-DD", start of data request range}
 
-\item{end_date}{POSIXct, format: "YYYY-MM-DD", end of data request range}
+\item{end_date}{string, format: "YYYY-MM-DD", end of data request range}
 
 \item{sump_correct}{logical, TRUE if water level should be corrected for to account for sump depth}
 }

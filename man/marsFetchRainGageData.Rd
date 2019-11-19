@@ -12,9 +12,9 @@ marsFetchRainGageData(con, target_id, start_date, end_date,
 
 \item{target_id}{chr, an SMP_ID that where the user has requested data}
 
-\item{start_date}{POSIXct, format: "YYYY-MM-DD", start of data request range}
+\item{start_date}{string, format: "YYYY-MM-DD", start of data request range}
 
-\item{end_date}{POSIXct, format: "YYYY-MM-DD", end of data request range}
+\item{end_date}{string, format: "YYYY-MM-DD", end of data request range}
 
 \item{daylight_savings}{logi, Adjust for daylight savings time? when doing QAQC
 this should be \code{FALSE} because the water level data does not spring forwards.}

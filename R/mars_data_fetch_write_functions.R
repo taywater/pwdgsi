@@ -55,8 +55,8 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 #'
 #' @param con Formal class 'PostgreSQL', a connection to the MARS Analysis database
 #' @param target_id chr, an SMP_ID that where the user has requested data
-#' @param start_date POSIXct, format: "YYYY-MM-DD", start of data request range
-#' @param end_date POSIXct, format: "YYYY-MM-DD", end of data request range
+#' @param start_date string, format: "YYYY-MM-DD", start of data request range
+#' @param end_date string, format: "YYYY-MM-DD", end of data request range
 #' @param daylight_savings logi, Adjust for daylight savings time? when doing QAQC
 #'   this should be \code{FALSE} because the water level data does not spring forwards.
 #'
@@ -624,8 +624,8 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param target_id vector of chr, SMP ID, where the user has requested data
 #' @param ow_suffix vector of chr, SMP ID, where the user has requested data
-#' @param start_date POSIXct, format: "YYYY-MM-DD", start of data request range
-#' @param end_date POSIXct, format: "YYYY-MM-DD", end of data request range
+#' @param start_date string, format: "YYYY-MM-DD", start of data request range
+#' @param end_date string, format: "YYYY-MM-DD", end of data request range
 #' @param sump_correct logical, TRUE if water level should be corrected for to account for sump depth
 #'
 #' @return Output will be a dataframe with the following columns: 
@@ -689,8 +689,8 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
 #'   
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param target_id vector of chr, SMP ID, where the user has requested data
-#' @param start_date POSIXct, format: "YYYY-MM-DD", start of data request range
-#' @param end_date POSIXct, format: "YYYY-MM-DD", end of data request range
+#' @param start_date string, format: "YYYY-MM-DD", start of data request range
+#' @param end_date string, format: "YYYY-MM-DD", end of data request range
 #'
 #' @return Output will be a dataframe with the following columns: 
 #' 
@@ -744,8 +744,8 @@ marsFetchRainEventData <- function(con, target_id, start_date, end_date){
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param target_id vector of chr, SMP ID, where the user has requested data
 #' @param ow_suffix vector of chr, SMP ID, where the user has requested data
-#' @param start_date POSIXct, format: "YYYY-MM-DD", start of data request range
-#' @param end_date POSIXct, format: "YYYY-MM-DD", end of data request range
+#' @param start_date string, format: "YYYY-MM-DD", start of data request range
+#' @param end_date string, format: "YYYY-MM-DD", end of data request range
 #' @param sump_correct logical, TRUE if water level should be corrected for to account for sump depth
 #' @param rain_events logical, TRUE if rain event data should be included in result
 #' @param rainfall logical, TRUE if rainfall data should be included in result
