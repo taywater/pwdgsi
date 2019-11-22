@@ -765,7 +765,8 @@ marsFetchRainEventData <- function(con, target_id, start_date, end_date){
 
 
 marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_date,
-                                    sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE, daylight_savings = FALSE){
+                                    sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE, daylight_savings = FALSE,
+                                    debug = FALSE){
 
   #1 Argument validation
   #1.1 Check database connection
@@ -777,13 +778,27 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
   results <- list()
   
   #Get closest gage
+  
+  if(debug){
+    ptm <- proc.time()
+  }
+  
   smp_gage <- odbc::dbGetQuery(con, "SELECT * FROM public.smp_gage") %>% dplyr::filter(smp_id %in% target_id)
   ow_validity <- odbc::dbGetQuery(con, "SELECT * FROM ow_validity")
   ow_uid_gage <- ow_validity %>% dplyr::right_join(smp_gage, by = "smp_id")
   
+  if(debug){
+  print(paste("gage_lookup_time:", (proc.time()-ptm)[3]))
+  }
+  
   #Set datetime date types
   start_date %<>% as.POSIXct()
   end_date %<>% as.POSIXct()
+  
+  if(debug){
+    ptm <- proc.time()
+  }
+  
   #3 Add rain events
   if(rain_events == TRUE){
     for(i in 1:length(target_id)){
@@ -794,6 +809,15 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
       results[["Rain Event Data step"]] <- NULL
     }
   }
+  
+  if(debug){
+    print(paste("rain_event_lookup_time:", (proc.time()-ptm)[3]))
+  }
+  
+  if(debug){
+    ptm <- proc.time()
+  }
+  
   
   #4 Add rain gage
   if(rainfall == TRUE){
@@ -806,6 +830,15 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
     }
   }
   #####
+  
+  if(debug){
+    print(paste("rain_gage_lookup_time:", (proc.time()-ptm)[3]))
+  }
+  
+  if(debug){
+    ptm <- proc.time()
+  }
+  
   #5 Add level data
   if(level == TRUE){
     for(i in 1:length(target_id)){
@@ -854,6 +887,15 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
       results[["Level Data step"]] <- NULL
     }
   }
+  
+  if(debug){
+    print(paste("level_lookup_time:", (proc.time()-ptm)[3]))
+  }
+  
+  if(debug){
+    ptm <- proc.time()
+  }
+  
   #remove incomplete events from level/rainfall/rain event data
   if(rain_events == TRUE & rainfall == TRUE & level == TRUE){
   test_df_id <- dplyr::full_join(results[["Rain Gage Data"]], results[["Level Data"]], by = c("dtime_est", "rainfall_gage_event_uid", "gage_uid")) %>% #join
@@ -869,6 +911,10 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
   
   #fiter out rain events that no longer have corresponding rainfall data
   results[["Rain Event Data"]] %<>% dplyr::filter((rainfall_gage_event_uid %in% results[["Rain Gage Data"]]$rainfall_gage_event_uid))
+  
+  if(debug){
+    print(paste("filtering_time:", (proc.time()-ptm)[3]))
+  }
   
   }
   
