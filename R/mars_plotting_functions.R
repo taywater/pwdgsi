@@ -290,7 +290,7 @@ marsWaterLevelPlot <- function(event,
   
   #1.1 
   #Confirm that storage depth is explicitly defined
-  if(!is.numeric(storage_depth_ft)){
+  if(!is.numeric(storage_depth_ft) | is.na(storage_depth_ft)){
     stop("storage_depth is not numeric.")
   }
   
