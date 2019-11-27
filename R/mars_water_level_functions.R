@@ -57,6 +57,7 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
                                           discharge_coeff = 0.62, #Orifice discharge coefficient
                                           type #"infiltration" or "recession"
 ){
+  
   #1. Prepare data
   #1.1 Initialize data frame
   df <- tibble::tibble(dtime_est = lubridate::force_tz(dtime_est, tz = "EST"),
@@ -123,55 +124,65 @@ marsSaturatedPerformance_inhr <- function(event, #for warning messages
   }
   
   #2.4 Check that data is appropriate for calculating infiltration rate
-  
   #2.4.1 Do observation values exist in the dataset approximately equal to 5 and 7"?
   if(nrow(last_depth5)== 0 | nrow(last_depth7) == 0){
     message(paste("Event",event[1], "does not include observation data that approximately equals 5 or 7 in. of water depth."))
-    infiltration_rate_inhr <- -900
-    recession_rate_inhr <- -900
-  }else{
+    return(-900)
+  }
     
-    #2.4.2 Does the 5" measurement occur after the 7"?
-    if(last_depth5$dtime_est < last_depth7$dtime_est){
-      message(paste0("Code captures rising limb in Event ", event[1], "."))
-      infiltration_rate_inhr <- -910
-      recession_rate_inhr <- -910
-    }else{
+  #2.4.2 Does the 5" measurement occur after the 7"?
+  if(last_depth5$dtime_est == last_depth7$dtime_est){
+    message(paste0("Code does not capture descending limb in Event ", event[1], "."))
+    return(-910)
+  }
       
-      #2.4.3 Does rainfall occur during the recession period between 7" and 5"?
-      tempseries <- df %>%
-        dplyr::filter(dtime_est >= last_depth7$dtime_est & dtime_est <= last_depth5$dtime_est) 
+  #2.4.3 Establish temp series. Is last depth above 5" part of the same descending limb? Does rainfall occur during recession period?
+  tempseries <- df %>%
+    dplyr::filter(dtime_est >= last_depth7$dtime_est & dtime_est <= last_depth5$dtime_est) 
+  
+  #assure that the 5" depth used is within the same descending limb as the 7"
+  #following the last 7" measurement, level can dip and rise back above 5". This cuts off the dip and rise
+  if(min(tempseries$depth_ft) < 5/12){
+    
+    #select the first point where depth drops below 5"
+    cutoff <- tempseries %>% 
+      dplyr::filter(depth_ft < 5/12) %>% 
+      dplyr::slice(1)
+    
+    #cut tempseries 
+    tempseries %<>% dplyr::filter(dtime_est < cutoff$dtime_est)
+    
+    #reassign last depth above 5"
+    last_depth5 <- tempseries %>% dplyr::slice(dplyr::n())
+  }
       
-      if(sum(tempseries$rainfall_in, na.rm = TRUE) != 0){
-        message(paste0("Rainfall occurs during recession period between 7 in. and 5 in. in Event ", event[1], ".")) 
-        infiltration_rate_inhr <- -920
-        recession_rate_inhr <- -920
-      }else{
+  #2.4.4 Does rainfall occur during the recession period between 7" and 5"?
+  if(sum(tempseries$rainfall_in, na.rm = TRUE) != 0){
+    message(paste0("Rainfall occurs during recession period between 7 in. and 5 in. in Event ", event[1], ".")) 
+    return(-920)
+  }
         
-        #3. Calculate infiltration and recession rate
-        
-        #3.1 Recession rate
-        recession_rate_inhr <- round(((last_depth7$depth_ft - last_depth5$depth_ft)*12)/ #inches
-                                       as.numeric(difftime(last_depth5$dtime_est, last_depth7$dtime_est, units = "hours")),3)
-        
-        #3.2 Calculate total orifice flow  
-        total_orifice_ft3 <- sum(tempseries$slow_release_ft3, na.rm = TRUE)    
-        
-        
-        #3.3 Calculate total change storage
-        change_storage_ft3 <- tempseries$vol_ft3[1] - tempseries$vol_ft3[nrow(tempseries)] - total_orifice_ft3
-        
-        change_depth_in <- vol.to.depth(maxdepth_ft = storage_depth_ft,
-                                        maxvol_cf = storage_vol_ft3,
-                                        vol_cf = change_storage_ft3)*12
-        
-        #3.4 Calculate infiltration
-        infiltration_rate_inhr <- round(change_depth_in/ #inches
-                                          as.numeric(difftime(last_depth5$dtime_est, last_depth7$dtime_est, units = "hours")),3)
-      }}}
+  #3. Calculate infiltration and recession rate
+  
+  #3.1 Recession rate
+  recession_rate_inhr <- round(((last_depth7$depth_ft - last_depth5$depth_ft)*12)/ #inches
+                                 as.numeric(difftime(last_depth5$dtime_est, last_depth7$dtime_est, units = "hours")),3)
+  
+  #3.2 Calculate total orifice flow  
+  total_orifice_ft3 <- sum(tempseries$slow_release_ft3, na.rm = TRUE)    
   
   
+  #3.3 Calculate total change storage
+  change_storage_ft3 <- tempseries$vol_ft3[1] - tempseries$vol_ft3[nrow(tempseries)] - total_orifice_ft3
   
+  change_depth_in <- vol.to.depth(maxdepth_ft = storage_depth_ft,
+                                  maxvol_cf = storage_vol_ft3,
+                                  vol_cf = change_storage_ft3)*12
+  
+  #3.4 Calculate infiltration
+  infiltration_rate_inhr <- round(change_depth_in/ #inches
+                                    as.numeric(difftime(last_depth5$dtime_est, last_depth7$dtime_est, units = "hours")),3)
+      
   #Function returns infiltration rate in in/hr
   if(type == "infiltration"){
     return(infiltration_rate_inhr)
@@ -394,11 +405,19 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
   }
   
   if(storage_depth_ft == 0 | dcia_ft2 == 0 | storage_vol_ft3 == 0){
-    stop("storage_depth_ft, dcia_ft2, or storage_volume_ft3 equals NA")
+    stop("storage_depth_ft, dcia_ft2, or storage_volume_ft3 equals 0")
   }
   
   if(is.na(infil_rate_inhr) & is.na(orifice_diam_in)){
     stop("both infil_rate_inhr and orifice_diam_in equal NA")
+  }
+  
+  if(infil_rate_inhr == 0 & is.na(orifice_diam_in)){
+    stop("infil_rate_inhr is 0 and orifice_diam_in is NA")
+  }
+  
+  if((infil_footprint_ft2 == 0 | is.na(infil_footprint_ft2)) & is.na(orifice_diam_in)){
+    stop("infil_footprint_ft2 is 0 or NA, and orifice_diam_in is NA")
   }
   
   #Prepare data
@@ -449,6 +468,8 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
 
 
 # Private function for inside marsSimulatedLevelSeries --------------------
+
+#this function is used with "apply" to replace a for loop and save a little bit of time in marsSimulatedLevelSeries
 
 sim_loop <- function(x, debug, simseries_total, infil_rate_inhr, orifice_if, orifice_area_ft2, infil_footprint_ft2, dcia_ft2, orifice_height_ft, 
                      orifice_diam_in, storage_depth_ft, storage_vol_ft3, initial_water_level_ft, runoff_coeff, discharge_coeff){
