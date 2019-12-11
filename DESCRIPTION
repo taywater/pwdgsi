@@ -1,7 +1,7 @@
 Package: pwdgsi
 Type: Package
 Title: Philadelphia Water Department Green Stormwater Infrastructure
-Version: 0.4.1
+Version: 0.4.2
 Authors@R: c(
     person("Taylor", "Heffernan", role = c("aut", "cre"), comment = "PWD", email = "taylor.heffernan@phila.gov"),
     person("Nicholas", "Manna", role = c("aut"), comment = "AKRF", email = "nmanna@akrf.com"),
