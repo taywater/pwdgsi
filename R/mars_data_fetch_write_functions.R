@@ -77,6 +77,9 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
     stop("Argument 'con' is not an open RODBC channel")
   }
   
+  start_date %<>% as.POSIXct()
+  end_date %<>% as.POSIXct()
+  
   #Get closest gage
   smp_gage <- odbc::dbGetQuery(con, "SELECT * FROM public.smp_gage") %>% dplyr::filter(smp_id == target_id)
   
@@ -105,7 +108,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
   #Returns NA, because the time is impossible.
   #I hate this so, so much
   #To mitigate this, we will strip NA values from the new object
-  gage_temp %<>% dplyr::filter(!is.na(dtime_edt))
+  gage_temp %<>% dplyr::filter(!is.na(dtime_edt)) %>% dplyr::arrange(dtime_edt)
   
   #Our water level data is not corrected for daylight savings time. ie it doesn't spring forwards
   #So we must shift back any datetimes within the DST window
@@ -122,7 +125,6 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
   
   #First, create data frame to contain zero fills with same column names as our rain data
   zeroFills <- gage_temp[0,]
-  
   for(i in 1:(nrow(gage_temp) - 1)){
     k <- difftime(gage_temp$dtime_edt[i+1], gage_temp$dtime_edt[i], units = "min")
     

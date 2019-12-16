@@ -257,15 +257,12 @@ marsUnderdrainOutflow_cf <- function(dtime_est,
   #WL_above_orifice_ft = 0,
   #slow_release_vol_ft3 = 0) 
   
-  
-  
   #2. Calculate Orifice Outflow
   # Orifice equation:
   # Q_orifice = C * Area * sqrt(2 * gravity * depth) * time
   
   #2.1 Calculate area of orifice (ft2)
   orifice_area_ft2 <- pi*((orifice_diam_in[1]/12)^2)/4 #area of orifice (ft2)
-  
   
   df <- df %>%
     dplyr:: mutate(#2.2 calculate elapsed time (hrs) 
@@ -316,6 +313,7 @@ vol.to.depth <- function(maxdepth_ft, maxvol_cf, vol_cf){
 
 #' @rdname depth.volume
 #' 
+#' @export
 
 depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
   return(maxvol_cf[1] * depth_ft/maxdepth_ft[1])
