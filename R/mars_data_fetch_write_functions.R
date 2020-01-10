@@ -519,7 +519,7 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 #'   
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param smp_id vector of chr, SMP ID, where the user has requested data
-#' @param ow_suffix vector of chr, SMP ID, where the user has requested data
+#' @param ow_suffix vector of chr, OW Suffix, where the user has requested data
 #' @param request_date single date or vector the length of SMP ID, either "YYYY-MM-DD" or "today", of the request data
 #'
 #' @return Output will be a dataframe with the following columns: 

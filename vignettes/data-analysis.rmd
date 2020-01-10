@@ -65,7 +65,7 @@ ow_suffix <- "OW1"
 SMP `r snapshot$smp_id` has a DCIA of `r snapshot$dcia_ft2` sf, with a storage footprint of `r snapshot$storage_footprint_ft2` sf. The storage depth is `r snapshot$storage_depth_ft` ft and the storage volume is `r snapshot$storage_volume_ft3` cf. The SMP has a sump depth of `r snapshot$sumpdepth_ft` ft, and the infiltration rate at the time of construction was `r snapshot$infil_dsg_rate_inhr` in/hr.
   
   
-This analysis will use water level data, rainfall data, and rain event metrics to compute our SMP performance metrics. We will fetch all three data sets with a single call to `marsFetchMontioringData()`. `marsFetchMonitoringData()` contains three separate functions, `marsFetchRainEventData()`, `marsFetchRainGageData()`, and `marsFetchLevelData()`. Each returns a dataframe, which are returned within a list.
+This analysis will use water level data, rainfall data, and rain event metrics to compute our SMP performance metrics. We will fetch all three data sets with a single call to `marsFetchMonitoringData()`. `marsFetchMonitoringData()` contains three separate functions, `marsFetchRainEventData()`, `marsFetchRainGageData()`, and `marsFetchLevelData()`. Each returns a dataframe, which are returned within a list.
 
 
 ```{r monitoring, message=FALSE, include = TRUE, echo = TRUE, eval = FALSE}
