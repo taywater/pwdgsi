@@ -438,7 +438,7 @@ marsWaterLevelPlot <- function(event,
     ) +
     
     ggplot2::scale_y_continuous(
-      breaks = seq(0, storage_depth_ft+1, by = 0.5),
+      breaks = seq(0, storage_depth_ft+1, by = round(storage_depth_ft/4, 0)),
       minor_breaks = seq(-0.5,2*storage_depth_ft, by = 0.1)
     ) +
     

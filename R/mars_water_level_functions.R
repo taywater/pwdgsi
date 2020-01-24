@@ -475,99 +475,63 @@ sim_loop <- function(x, debug, simseries_total, infil_rate_inhr, orifice_if, ori
   by_event <- x 
   # by_event <- collected_data %>% 
   #   dplyr::filter(event == unique_events[x])
-
-last_rainfall_time <- max(by_event$dtime_est) 
-
-max_time <- max(last_rainfall_time) + lubridate::days(4)
-
-by_event_new_row <- tibble::tibble(dtime_est = max_time, 
-                                   rainfall_in = 0, 
-                                   event = NA)
-
-by_event %<>% dplyr::bind_rows(by_event_new_row)
-
-#pad dataset
-output <- padr::pad(by_event, interval = '15 min') %>% tidyr::fill(event) %>% tidyr::replace_na(list(rainfall_in=0))
-
-#Create dataframe to be filled                         
-simseries <- tibble::tibble(dtime_est = lubridate::force_tz(output$dtime_est, tz = "EST"),
-                            rainfall_in = output$rainfall_in, 
-                            event = by_event$event[1], 
-                            depth_ft = 0, 
-                            vol_ft3 = 0,
-                            runoff_ft3 = 0,
-                            slow_release_ft3 = 0,
-                            infiltration_ft3 = 0, #POTENTIAL infiltration
-                            end_vol_ft3 = 0, 
-                            check = -90) #"check off" and remove unchecked rows at end 
-#Calculate runoff (independent of timestep)
-simseries$runoff_ft3 <- runoff_coeff * output$rainfall_in/12 * dcia_ft2[1] #convert in to ft
-
-#Mass balance
-#Calculate starting values
-#Starting Storage
-simseries$depth_ft[1] <- initial_water_level_ft[1]
-simseries$vol_ft3[1] <- depth.to.vol(maxdepth_ft = storage_depth_ft[1],
-                                     maxvol_cf = storage_vol_ft3[1],
-                                     depth_ft = simseries$depth_ft[1])
-#Orifice Outflow
-if(orifice_if){
-  WL_above_orifice_ft <- simseries$depth_ft[1] - orifice_height_ft[1] 
   
-  # Q_orifice = C * Area * sqrt(2 * gravity * depth) * time
+  last_rainfall_time <- max(by_event$dtime_est) 
   
-  simseries$slow_release_ft3[1] <- discharge_coeff * 
-    orifice_area_ft2 *
-    sqrt(2 * 32.2 * max(WL_above_orifice_ft, 0)) * #set to 0 if below orifice
-    60 * #convert cfs to cfm
-    15 #assuming 15 minutes for first timestep. lubridate::minutes() does not work here. 
-}
-
-# Potential Infiltration
-# Total volume for period of time - assume first timestep is 15 minutes
-# Q_infil = Area * infiltration rate * time
-simseries$infiltration_ft3[1] <- infil_footprint_ft2[1] * infil_rate_inhr[1]/12 * 15/60 
-
-# Change in storage
-simseries$end_vol_ft3[1] <- max(0, simseries$vol_ft3[1] + simseries$runoff_ft3[1] -
-                                  simseries$slow_release_ft3[1] - simseries$infiltration_ft3[1]) 
-simseries$check[1] <- 0
-
-max_time <- nrow(simseries) #length of existing simulated data series, plus 4 days * 24 hours * 4 timesteps/hour
-last_rainfall <- which(simseries$dtime_est == last_rainfall_time, arr.ind = TRUE)
-# Mass balance for all other timesteps  
-
-for(i in (2:max_time)){
-  # Calculate time since last measurement
-  elapsed_time_hr = (simseries$dtime_est[i-1] %--% simseries$dtime_est[i])/lubridate::hours(1)
-  # Starting Storage
-  simseries$vol_ft3[i] <- simseries$end_vol_ft3[i-1]
-  simseries$depth_ft[i] <- vol.to.depth(maxdepth_ft = storage_depth_ft[1],
-                                        maxvol_cf = storage_vol_ft3[1],
-                                        vol_cf = simseries$vol_ft3[i])
+  max_time <- max(last_rainfall_time) + lubridate::days(4)
   
-  # Orifice Outflow
+  by_event_new_row <- tibble::tibble(dtime_est = max_time, 
+                                     rainfall_in = 0, 
+                                     event = NA)
+  
+  by_event %<>% dplyr::bind_rows(by_event_new_row)
+  
+  #pad dataset
+  output <- padr::pad(by_event, interval = '15 min') %>% tidyr::fill(event) %>% tidyr::replace_na(list(rainfall_in=0))
+  
+  #Create dataframe to be filled                         
+  simseries <- tibble::tibble(dtime_est = lubridate::force_tz(output$dtime_est, tz = "EST"),
+                              rainfall_in = output$rainfall_in, 
+                              event = by_event$event[1], 
+                              depth_ft = 0, 
+                              vol_ft3 = 0,
+                              runoff_ft3 = 0,
+                              slow_release_ft3 = 0,
+                              infiltration_ft3 = 0, #POTENTIAL infiltration
+                              end_vol_ft3 = 0, 
+                              check = -90) #"check off" and remove unchecked rows at end 
+  #Calculate runoff (independent of timestep)
+  simseries$runoff_ft3 <- runoff_coeff * output$rainfall_in/12 * dcia_ft2[1] #convert in to ft
+  
+  #Mass balance
+  #Calculate starting values
+  #Starting Storage
+  simseries$depth_ft[1] <- initial_water_level_ft[1]
+  simseries$vol_ft3[1] <- depth.to.vol(maxdepth_ft = storage_depth_ft[1],
+                                       maxvol_cf = storage_vol_ft3[1],
+                                       depth_ft = simseries$depth_ft[1])
+  #Orifice Outflow
   if(orifice_if){
-    WL_above_orifice_ft <- simseries$depth_ft[i] - orifice_height_ft[1] 
+    WL_above_orifice_ft <- simseries$depth_ft[1] - orifice_height_ft[1] 
     
-    # Q_orifice = C * Area * sqrt(2 * g * depth) * time
+    # Q_orifice = C * Area * sqrt(2 * gravity * depth) * time
     
-    simseries$slow_release_ft3[i] <- discharge_coeff * 
+    simseries$slow_release_ft3[1] <- discharge_coeff * 
       orifice_area_ft2 *
       sqrt(2 * 32.2 * max(WL_above_orifice_ft, 0)) * #set to 0 if below orifice
-      60 * 60 *  #convert cf/s to cf/hr
-      elapsed_time_hr #assuming 15 minutes for first timestep
+      60 * #convert cfs to cfm
+      15 #assuming 15 minutes for first timestep. lubridate::minutes() does not work here. 
   }
+  
   # Potential Infiltration
   # Total volume for period of time - assume first timestep is 15 minutes
   # Q_infil = Area * infiltration rate * time
-  simseries$infiltration_ft3[i] <- infil_footprint_ft2[1] * infil_rate_inhr[1]/12 * elapsed_time_hr 
+  simseries$infiltration_ft3[1] <- infil_footprint_ft2[1] * infil_rate_inhr[1]/12 * 15/60 
   
-  # Ending volume calculation  
-  
-  #Calculate volume at end of timestep
-  end_vol_cf <- simseries$vol_ft3[i] + simseries$runoff_ft3[i] -
-    simseries$slow_release_ft3[i] - simseries$infiltration_ft3[i]
+  # Change in storage
+  end_vol_cf <- max(0, simseries$vol_ft3[1] + simseries$runoff_ft3[1] -
+                                    simseries$slow_release_ft3[1] - simseries$infiltration_ft3[1]) 
+  simseries$check[1] <- 0
   
   #If volume is less than 0 (eg. infiltration potential exceeds storage), set to 0
   min_volume_check_cf <- max(0, end_vol_cf)
@@ -576,26 +540,71 @@ for(i in (2:max_time)){
   volume_check_cf <- min(min_volume_check_cf, storage_vol_ft3[1])
   
   #Save out final volume with correction for min and max storage applied
-  simseries$end_vol_ft3[i] <- volume_check_cf
-  simseries$check[i] <- 0
-
-  #break loop following last rainfall if volume is 0 or NA, or if 2 measurements in a row are very near orifice height
-  if((simseries$vol_ft3[i] == 0 | # if volume is 0 
-      is.na(simseries$vol_ft3[i]) | # if volume is NA
-            ifelse(!is.na(orifice_height_ft[1]), #if orifice is NA, disregard this part
-                   (simseries$depth_ft[i] < (orifice_height_ft[1] + 0.01) & #if depth ft is equal to orifice height (or within .01 of it)
-                    simseries$depth_ft[i -1] < (orifice_height_ft[1] + 0.01)), #for two consecutive timestipes
-                    FALSE)) && 
-      i > last_rainfall){ #if time exceeds last rainfall
-    simseries %<>% dplyr::filter(check == 0) #remove excess pre-allocated rows
-    break
+  simseries$end_vol_ft3[1] <- volume_check_cf
+  
+  max_time <- nrow(simseries) #length of existing simulated data series, plus 4 days * 24 hours * 4 timesteps/hour
+  last_rainfall <- which(simseries$dtime_est == last_rainfall_time, arr.ind = TRUE)
+  # Mass balance for all other timesteps  
+  
+  for(i in (2:max_time)){
+    # Calculate time since last measurement
+    elapsed_time_hr = (simseries$dtime_est[i-1] %--% simseries$dtime_est[i])/lubridate::hours(1)
+    # Starting Storage
+    simseries$vol_ft3[i] <- simseries$end_vol_ft3[i-1]
+    simseries$depth_ft[i] <- vol.to.depth(maxdepth_ft = storage_depth_ft[1],
+                                          maxvol_cf = storage_vol_ft3[1],
+                                          vol_cf = simseries$vol_ft3[i])
+    
+    # Orifice Outflow
+    if(orifice_if){
+      WL_above_orifice_ft <- simseries$depth_ft[i] - orifice_height_ft[1] 
+      
+      # Q_orifice = C * Area * sqrt(2 * g * depth) * time
+      
+      simseries$slow_release_ft3[i] <- discharge_coeff * 
+        orifice_area_ft2 *
+        sqrt(2 * 32.2 * max(WL_above_orifice_ft, 0)) * #set to 0 if below orifice
+        60 * 60 *  #convert cf/s to cf/hr
+        elapsed_time_hr #assuming 15 minutes for first timestep
+    }
+    # Potential Infiltration
+    # Total volume for period of time - assume first timestep is 15 minutes
+    # Q_infil = Area * infiltration rate * time
+    simseries$infiltration_ft3[i] <- infil_footprint_ft2[1] * infil_rate_inhr[1]/12 * elapsed_time_hr 
+    
+    # Ending volume calculation  
+    
+    #Calculate volume at end of timestep
+    end_vol_cf <- simseries$vol_ft3[i] + simseries$runoff_ft3[i] -
+      simseries$slow_release_ft3[i] - simseries$infiltration_ft3[i]
+    
+    #If volume is less than 0 (eg. infiltration potential exceeds storage), set to 0
+    min_volume_check_cf <- max(0, end_vol_cf)
+    
+    #If volume is more than maximum storage capacity, set to maximum storage capacity
+    volume_check_cf <- min(min_volume_check_cf, storage_vol_ft3[1])
+    
+    #Save out final volume with correction for min and max storage applied
+    simseries$end_vol_ft3[i] <- volume_check_cf
+    simseries$check[i] <- 0
+  
+    #break loop following last rainfall if volume is 0 or NA, or if 2 measurements in a row are very near orifice height
+    if((simseries$vol_ft3[i] == 0 | # if volume is 0 
+        is.na(simseries$vol_ft3[i]) | # if volume is NA
+              ifelse(!is.na(orifice_height_ft[1]), #if orifice is NA, disregard this part
+                     (simseries$depth_ft[i] < (orifice_height_ft[1] + 0.01) & #if depth ft is equal to orifice height (or within .01 of it)
+                      simseries$depth_ft[i -1] < (orifice_height_ft[1] + 0.01)), #for two consecutive timestipes
+                      FALSE)) && 
+        i > last_rainfall){ #if time exceeds last rainfall
+      simseries %<>% dplyr::filter(check == 0) #remove excess pre-allocated rows
+      break
+    }
   }
-}
-
-#bind new data 
-simseries_total <- dplyr::bind_rows(simseries_total, simseries) 
-
-return(simseries_total)
+  
+  #bind new data 
+  simseries_total <- dplyr::bind_rows(simseries_total, simseries) 
+  
+  return(simseries_total)
 
 }
 

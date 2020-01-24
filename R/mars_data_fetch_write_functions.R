@@ -1020,8 +1020,8 @@ marsWriteSaturatedData <- function(con,
 #' gather data, and write to MARS Analysis performance_percentstorage table
 #' 
 #' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
-#' @param infiltration_rate_inhr vector, numeric, infiltration rate (in/hr)
-#' @param recession_rate_inhr vector, numeric, recession rate (in/hr)
+#' @param percent_of_storage_used vector, numeric, raw percent storage (in/hr)
+#' @param relative_percent_of_storage_used vector, numeric, relative percent storage (in/hr)
 #' @param ow_uid vector, numeric observation well UID
 #' @param rainfall_gage_event_uid vector, numeric
 #' @param snapshot_uid vector, numeric
