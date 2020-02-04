@@ -7,7 +7,9 @@
 marsCombinedPlot(event, structure_name, obs_datetime, obs_level_ft,
   sim_datetime = NA, sim_level_ft = NA, storage_depth_ft,
   orifice_show = FALSE, orifice_height_ft = NULL, rainfall_datetime,
-  rainfall_in, raingage)
+  rainfall_in, raingage, draindown_hr = NA,
+  infiltration_rate_inhr = NA, percent_storage_relative = NA,
+  baseline_ft = NA)
 }
 \arguments{
 \item{event}{chr, rain gage event UID}

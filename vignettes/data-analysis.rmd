@@ -1,7 +1,7 @@
 ---
 title: "Fetching, Summarizing, and Plotting SMP Performance Metrics with `pwdgsi`"
 author: "Nicholas Manna"
-date: "2019-11-01"
+date: "2020-01-29"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Fetching, Summarizing, and Plotting SMP Performance Metrics with `pwdgsi`}
@@ -90,7 +90,7 @@ str(monitoringdata, vec.len = 3)
 
 ### Calculate Performance Metrics
 
-Performance metrics are calculated for observed data. First, rainfall data and water level data are joined together. Then, a time series of orifice outflow volumes are calculated using `marsUnderdrainOutflow_cf`. Then, the data is grouped by rainfall_gage_event_uid, and each performance metric is calculated in `dplyr::summarize()`. PSU and RPSU are calculated with `marsPeakStorage_percent()`. Saturated infiltration rate and saturated recession rate are calculated with `marsSaturatedPerformance_inhr()`. Draindown time is is figured with `marsDraindown_hr()`, and overflow is checked with `marsOvertopping_bool()`. `marsPeakReleaseRate_cfs()` computes the peak release rate. 
+Performance metrics are calculated for observed data. First, rainfall data and water level data are joined together. Then, a time series of orifice outflow volumes are calculated using `marsUnderdrainOutflow_cf`. Then, the data is grouped by rainfall_gage_event_uid, and each performance metric is calculated in `dplyr::summarize()`. PSU and RPSU are calculated with `marsPeakStorage_percent()`. Saturated infiltration rate is calculated with `marsInfiltrationRate_inhr()`, at 5in to 7in above the last point water level of the event, saved with `marsWaterLevelBaseline_ft`. Draindown time is is figured with `marsDraindown_hr()`, and overflow is checked with `marsOvertopping_bool()`. `marsPeakReleaseRate_cfs()` computes the peak release rate. 
 
 ```{r Calculations, message = FALSE, include = TRUE, echo = TRUE}
 #join monitoring data in one table
@@ -117,8 +117,11 @@ observed_summary <- obs_data %>%
                                                                             dplyr::first(level_ft), 
                                                           storage_depth_ft = snapshot$storage_depth_ft),
     
+    baseline = marsWaterLevelBaseline_ft(dtime_est = dtime_est, 
+                                      level_ft = level_ft),
+    
     #Infiltration 
-    infiltration_rate_inhr = marsSaturatedPerformance_inhr(event = rainfall_gage_event_uid,
+    infiltration_rate_inhr = marsInfiltrationRate_inhr(event = rainfall_gage_event_uid,
                                          dtime_est = dtime_est,
                                          rainfall_in = rainfall_in,
                                          dcia_ft2 = snapshot$dcia_ft2,
@@ -126,20 +129,7 @@ observed_summary <- obs_data %>%
                                          orifice_diam_in = snapshot$orifice_diam_in,
                                          storage_depth_ft = snapshot$storage_depth_ft,
                                          storage_vol_ft3 = snapshot$storage_volume_ft3,
-                                         waterlevel_ft = level_ft,
-                                         type = "infiltration"),
-    
-    #Recession
-    recession_rate_inhr = marsSaturatedPerformance_inhr(event = rainfall_gage_event_uid,
-                                          dtime_est = dtime_est,
-                                          rainfall_in = rainfall_in,
-                                          dcia_ft2 = snapshot$dcia_ft2,
-                                          orifice_height_ft = snapshot$assumption_orificeheight_ft, 
-                                          orifice_diam_in = snapshot$orifice_diam_in,
-                                          storage_depth_ft = snapshot$storage_depth_ft,
-                                          storage_vol_ft3 = snapshot$storage_volume_ft3,
-                                          waterlevel_ft = level_ft,
-                                          type = "recession"),
+                                         waterlevel_ft = level_ft),
     
     #Draindown time
     draindown_hr = marsDraindown_hr(dtime_est = dtime_est, 
@@ -179,8 +169,8 @@ knitr::kable(percent_storage_top,
       col.names = c("Rainfall Gage Event UID", 
                     "PSU", 
                     "RPSU", 
+                    "Baseline (ft)",
                     "Infiltration\n Rate (in/hr)",
-                    "Recession\n Rate (in/hr)", 
                     "Draindown (hr)",
                     "Overtopping\n Check",
                     "Peak Release\n Rate (cfs)",
@@ -189,7 +179,7 @@ knitr::kable(percent_storage_top,
   kableExtra::kable_styling(bootstrap_options = "striped", full_width = FALSE, position = "left")
 ```
 
-In the following table, for event 17122, infiltration rate and recession rate are -900. A number like -900 - a clear outlier, and an impossible recession rate - indicates a failure to calculate the metric. In this case, -900 means that the event did not include observation data that approximately equaled 5 or 7 inches water depth, which is where rates are calculated. -910 indicates that the code only captured the rising limb of the event, and -920 means that rainfall occured during the recession period. More information can be found at `?marsSaturatedPerformance_inhr`.  Draindown time is `NA` because the water level did not reach 0, and peak release rate is `NA` because there was no outflow.  
+In the following table, for event 17122, infiltration rate is -900. A number like -900 - a clear outlier, and an impossible recession rate - indicates a failure to calculate the metric. In this case, -900 means that the event did not include observation data that approximately equaled 5 or 7 inches water depth, which is where rates are calculated. -910 indicates that the code only captured the rising limb of the event, and -920 means that rainfall occured during the recession period. More information can be found at `?marsInfiltrationRate_inhr`.  Draindown time is `NA` because the water level did not reach 0, and peak release rate is `NA` because there was no outflow.  
 
 
 ```{r table_examples, echo = FALSE}
@@ -203,8 +193,8 @@ errors %>%
       col.names = c("Rainfall Gage Event UID", 
                     "PSU", 
                     "RPSU", 
+                    "Baseline (ft)",
                     "Infiltration\n Rate (in/hr)",
-                    "Recession\n Rate (in/hr)", 
                     "Draindown (hr)",
                     "Overtopping\n Check",
                     "Peak Release\n Rate (cfs)",

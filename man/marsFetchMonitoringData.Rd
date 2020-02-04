@@ -6,7 +6,7 @@
 \usage{
 marsFetchMonitoringData(con, target_id, ow_suffix, start_date, end_date,
   sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE,
-  level = TRUE, daylight_savings = FALSE)
+  level = TRUE, daylight_savings = FALSE, debug = FALSE)
 }
 \arguments{
 \item{con}{An ODBC connection to the MARS Analysis database returned by odbc::dbConnect}
@@ -34,10 +34,10 @@ Output will be a list consisting of a combination of the following:
 
     \item{Rain Event Data}{dataframe, output from \code{\link{marsFetchRainEventData}}}
     \item{Rain Gage Data}{dataframe, output from \code{\link{marsFetchRainGageData}}}
-    \item{Level Data}{dataframe, output from \code{\link{marsFetchLevelData}}}
+    \item{Level Data}{dataframe, output from \code{\link{marsFetchLevelData}}, plus rainfall_gage_event_uids}
 }
 \description{
-Returns a data frame with rain event data from the rain gage closest to the request SMP
+Returns a list with data frames with rain data and rain event data from the rain gage closest to the request SMP, and level data
 }
 \seealso{
 \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchRainEventData}}

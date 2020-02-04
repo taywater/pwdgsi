@@ -63,7 +63,7 @@ marsDetectEvents <- function(dtime_est, rainfall_in,
   
   # Assumed interval
   interval_sec <- 15 * 60
-
+  
   # 2. Process rainfall data
   prepseries <- tibble::tibble(dtime = dtime_est,
                             rf_in = rainfall_in) %>%

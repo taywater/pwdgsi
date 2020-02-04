@@ -8,7 +8,7 @@ marsSimulatedLevelSeries_ft(dtime_est, rainfall_in, event,
   infil_footprint_ft2, dcia_ft2, orifice_height_ft = NA,
   orifice_diam_in = NA, storage_depth_ft, storage_vol_ft3,
   infil_rate_inhr, initial_water_level_ft = 0, runoff_coeff = 1,
-  discharge_coeff = 0.62)
+  discharge_coeff = 0.62, debug = FALSE)
 }
 \arguments{
 \item{dtime_est}{A vector of POSIXct date times, in ascending order}

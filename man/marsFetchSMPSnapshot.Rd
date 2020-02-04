@@ -11,7 +11,7 @@ marsFetchSMPSnapshot(con, smp_id, ow_suffix, request_date)
 
 \item{smp_id}{vector of chr, SMP ID, where the user has requested data}
 
-\item{ow_suffix}{vector of chr, SMP ID, where the user has requested data}
+\item{ow_suffix}{vector of chr, OW Suffix, where the user has requested data}
 
 \item{request_date}{single date or vector the length of SMP ID, either "YYYY-MM-DD" or "today", of the request data}
 }

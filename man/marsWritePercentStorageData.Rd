@@ -19,9 +19,9 @@ marsWritePercentStorageData(con, percentstorageused_peak,
 
 \item{observed_simulated_lookup_uid}{vector, numeric, 1 if observed, 2 if simulated}
 
-\item{infiltration_rate_inhr}{vector, numeric, infiltration rate (in/hr)}
+\item{percent_of_storage_used}{vector, numeric, raw percent storage (in/hr)}
 
-\item{recession_rate_inhr}{vector, numeric, recession rate (in/hr)}
+\item{relative_percent_of_storage_used}{vector, numeric, relative percent storage (in/hr)}
 }
 \value{
 \code{TRUE} if the write is succesful, or an error message if unsuccessful

@@ -741,7 +741,7 @@ marsFetchRainEventData <- function(con, target_id, start_date, end_date){
 
 #' Fetch monitoring data for an SMP
 #'
-#' Returns a data frame with rain event data from the rain gage closest to the request SMP
+#' Returns a list with data frames with rain data and rain event data from the rain gage closest to the request SMP, and level data
 #'   
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param target_id vector of chr, SMP ID, where the user has requested data
@@ -758,7 +758,7 @@ marsFetchRainEventData <- function(con, target_id, start_date, end_date){
 #' 
 #'     \item{Rain Event Data}{dataframe, output from \code{\link{marsFetchRainEventData}}}
 #'     \item{Rain Gage Data}{dataframe, output from \code{\link{marsFetchRainGageData}}}
-#'     \item{Level Data}{dataframe, output from \code{\link{marsFetchLevelData}}}
+#'     \item{Level Data}{dataframe, output from \code{\link{marsFetchLevelData}}, plus rainfall_gage_event_uids}
 #'     
 #' @export
 #' 
@@ -860,7 +860,7 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
         #select relevant columns from the results
         results_event_data %<>% dplyr::select(rainfall_gage_event_uid, gage_uid, eventdatastart_est)
         
-        #join by gage uid and by start time, to give a rainfal gage event uid at the start of each event
+        #join by gage uid and by start time, to give a rainfall gage event uid at the start of each event
         level_data_step %<>% dplyr::left_join(results_event_data, 
                                               by = c("gage_uid", "dtime_est" = "eventdatastart_est"))   
         
@@ -875,7 +875,7 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
         #check that any dtime that has that event uid does not exceed the end time by greater than three days
         #if it does, reassign NA to event uid
         level_data_step %<>% dplyr::left_join(event_data, by = "rainfall_gage_event_uid") %>% 
-          dplyr::mutate(new_event_uid = dplyr::case_when(dtime_est >= (eventdataend_est + lubridate::days(3)) ~ NA_integer_, 
+          dplyr::mutate(new_event_uid = dplyr::case_when(dtime_est >= (eventdataend_est + lubridate::days(4)) ~ NA_integer_, 
                                                   TRUE ~ rainfall_gage_event_uid)) %>% 
           dplyr::select(-rainfall_gage_event_uid, -eventdataend_est) %>% 
           dplyr::rename(rainfall_gage_event_uid = new_event_uid)
@@ -926,16 +926,16 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
   return(results)
 }
 
-# marsWriteSaturatedData ------------------------------------------
-#' Write Saturated Performance Data to Database 
+# marsWriteInfiltrationData ------------------------------------------
+#' Write Infiltration Performance Data to Database 
 #' 
-#' Receive vectors of infiltration rate and recession rate, calculated with \code{\link{marsSaturatedPerformance_inhr}}
-#' gather data, and write to MARS Analysis Database performance_saturated table. Replaces error codes with NAs and moves
-#' them to a separate column, \code{error_lookup_uid}
+#' Receive vectors of infiltration rate and infiltration baseline data calculated with \code{\link{marsInfiltrationRate_inhr}},
+#' gather data, and write to MARS Analysis Database performance_infiltration table. Replaces error codes with NAs and moves
+#' them to a separate column, \code{error_lookup_uid}.
 #' 
 #' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
+#' @param baseline_ft vector, numeric, point that water level returns to at the end of an event (default ??)
 #' @param infiltration_rate_inhr vector, numeric, infiltration rate (in/hr)
-#' @param recession_rate_inhr vector, numeric, recession rate (in/hr)
 #' @param ow_uid vector, numeric observation well UID
 #' @param rainfall_gage_event_uid vector, numeric
 #' @param snapshot_uid vector, numeric
@@ -949,61 +949,45 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
 #' 
 #' @examples 
 #' 
-#' marsWriteSaturatedData(con = mars, 
+#' marsWriteInfiltrationData(con = mars, 
 #'   infiltration_rate_inhr = summary_250$infiltration_rate_inhr,
-#'   recession_rate_inhr = summary_250$recession_rate_inhr,
 #'   ow_uid = summary_250$ow_uid,
 #'   rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid,
 #'   snapshot_uid = summary_250$snapshot_uid,
 #'   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 #' 
-marsWriteSaturatedData <- function(con, 
+marsWriteInfiltrationData <- function(con, 
                                    infiltration_rate_inhr,
-                                   recession_rate_inhr,
+                                   baseline_ft = NA,
                                    ow_uid,
                                    rainfall_gage_event_uid,
                                    snapshot_uid,
                                    observed_simulated_lookup_uid){
-  
+
   #check that vectors are the same length
   if(!(length(infiltration_rate_inhr) == length(ow_uid) &
        length(infiltration_rate_inhr) == length(rainfall_gage_event_uid) &
-       length(infiltration_rate_inhr) == length(snapshot_uid) &
-       length(infiltration_rate_inhr) == length(recession_rate_inhr))){
+       length(infiltration_rate_inhr) == length(snapshot_uid))){
     stop("Vectors must be the same length")
   }
   
   #add vectors to dataframe
   summary_df <- data.frame(infiltration_rate_inhr,
-                           recession_rate_inhr,
+                           baseline_ft,
                            ow_uid,
                            rainfall_gage_event_uid,
                            snapshot_uid) %>% 
     dplyr::filter(observed_simulated_lookup_uid == 1)
   
-  #gather saturated performance types in one column
-  saturated_table <- tidyr::gather(summary_df, key = "performance_saturated_lookup_uid", value = "saturatedperformance_inhr", infiltration_rate_inhr, recession_rate_inhr)
-  
-  #reassign recession and infiltration to 1 and 2 
-  saturated_table[saturated_table$performance_saturated_lookup_uid == "recession_rate_inhr", "performance_saturated_lookup_uid"] <- 1
-  saturated_table[saturated_table$performance_saturated_lookup_uid == "infiltration_rate_inhr", "performance_saturated_lookup_uid"] <- 2
-  
   #select columns for dataframe
-  saturatedperformance_df <- saturated_table %>% 
-    dplyr::select(saturatedperformance_inhr,
-                  performance_saturated_lookup_uid,
-                  ow_uid,
-                  rainfall_gage_event_uid,
-                  snapshot_uid) %>% 
-    dplyr::mutate("error_lookup_uid" = ifelse(saturatedperformance_inhr <0,
-                                              saturatedperformance_inhr, NA),
-                  saturatedperformance_inhr = ifelse(!is.na(error_lookup_uid),
-                                                     NA, saturatedperformance_inhr))
-  
-  
+  saturatedperformance_df <- summary_df %>% 
+    dplyr::mutate("error_lookup_uid" = ifelse(infiltration_rate_inhr <0,
+                                              infiltration_rate_inhr, NA),
+                  infiltration_rate_inhr = ifelse(!is.na(error_lookup_uid),
+                                                     NA, infiltration_rate_inhr))
   
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(odbc::dbWriteTable(con, "performance_saturated", saturatedperformance_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, "performance_infiltration", saturatedperformance_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }
