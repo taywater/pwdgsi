@@ -34,7 +34,7 @@
 
 
 marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y = FALSE){
-
+  
   #0. check data
   if(length(dtime_est) != length(rainfall_in)){
     stop("Datetime and rainfall lengths must be equal")
@@ -69,7 +69,6 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
   
   #1.6 Shift timestep to beginning of measurement interval
   rain_data$dtimeEST <- rain_data$dtimeEST - min_interval
-  
   
   #2. Calculate plotting parameters
   
@@ -438,7 +437,7 @@ marsWaterLevelPlot <- function(event,
     ) +
     
     ggplot2::scale_y_continuous(
-      breaks = seq(0, storage_depth_ft+1, by = round(storage_depth_ft/4, 0)),
+      breaks = seq(0, storage_depth_ft+1, by = if(storage_depth_ft > 2) round(storage_depth_ft/4, 0) else ceiling(storage_depth_ft/4)),
       minor_breaks = seq(-0.5,2*storage_depth_ft, by = 0.1)
     ) +
     
@@ -512,7 +511,21 @@ marsCombinedPlot <- function(event,
                              orifice_height_ft = NULL,
                              rainfall_datetime,
                              rainfall_in,
-                             raingage){
+                             raingage, 
+                             draindown_hr = NA,
+                             infiltration_rate_inhr = NA,
+                             percent_storage_relative = NA,
+                             baseline_ft = NA
+                             ){
+  
+  
+  if(!is.na(draindown_hr) | !is.na(infiltration_rate_inhr) | !is.na(percent_storage_relative) |
+     !is.na(baseline_ft)){
+    metrics_caption <- paste0(paste0(if(infiltration_rate_inhr[1] >= -800) "Infiltration Rate (in/hr): " else "Infiltration Error Code: "), infiltration_rate_inhr[1], "\n Draindown (hr): ", draindown_hr[1],
+                      "\n Relative Percent of Storage Used: ", percent_storage_relative[1], "\n Baseline (ft): ", baseline_ft[1], "\n ")
+  }else{
+    metrics_caption <- ""
+  }
   
   #Add a last date so the hyetograph looks better
     rainfall_in <- append(rainfall_in, 0)
@@ -603,7 +616,9 @@ marsCombinedPlot <- function(event,
       limits = c(min_date - lubridate::minutes(15), max_date + lubridate::minutes(60)),
       breaks = major_date_breaks,
       minor_breaks = minor_date_breaks)  +
-    ggplot2::labs(title = title_text)
+    ggplot2::labs(title = title_text) +
+    ggplot2::annotate("text", y = Inf, x = max_date - (max_date - min_date)*0.02, vjust=0, hjust = 1, size = 4.7, label = metrics_caption)
+    #ggplot2::annotate("text", x = max_date - lubridate::minutes(60), y = max(rainfall_in), vjust=0, hjust = 1, label = metrics_caption)
   
   #Calculate max width and set both to that value
   #Grob
