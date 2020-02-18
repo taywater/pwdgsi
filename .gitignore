@@ -10,3 +10,5 @@ update_smp_tables/output
 inst/doc
 doc
 Meta
+.proxytest
+.otherproxytest
