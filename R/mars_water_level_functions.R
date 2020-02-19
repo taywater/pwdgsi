@@ -192,9 +192,9 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
   #3.1 Calculate total orifice flow
   #3.1.1 make sure that orifice outflow does not exceed delta V at any timestep
   #sensor noise sometimes causes delta V to go the wrong direction, so that is evened out to zero
-  tempseries %<>% mutate(slow_release_check = case_when(is.na(lead(vol_ft3)) ~ slow_release_ft3,
-                                                        vol_ft3 - lead(vol_ft3) < 0 ~ 0,
-                                                        TRUE ~ pmin(slow_release_ft3,(vol_ft3 - lead(vol_ft3)))))
+  tempseries %<>% dplyr::mutate(slow_release_check = dplyr::case_when(is.na(dplyr::lead(vol_ft3)) ~ slow_release_ft3,
+                                                        vol_ft3 - dplyr::lead(vol_ft3) < 0 ~ 0,
+                                                        TRUE ~ pmin(slow_release_ft3,(vol_ft3 - dplyr::lead(vol_ft3)))))
   
   
   total_orifice_ft3 <- sum(tempseries$slow_release_check, na.rm = TRUE)
