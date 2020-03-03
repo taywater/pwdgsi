@@ -382,7 +382,7 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' @param  storage_depth_ft        Maximum storage depth (ft)
 #' @param  storage_vol_ft3         Maximum storage volume (pore space) (cf)
 #' @param  infil_rate_inhr         System design infiltration rate (in/hr)
-#' @param  initial_water_level_ft  Initial water Level (ft) (Default = 0)
+#' @param  initial_water_level_ft  Initial water Level (ft); either a single value or a vector of length equal to and corresponding to length(unique(event)) (Default = 0)
 #' @param  runoff_coeff            Rational method coefficient (Default = 1)
 #' @param  discharge_coeff         Orifice discharge coefficient (Defauly = 0.62)
 #' 
@@ -443,9 +443,20 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
     stop("infil_footprint_ft2 is 0 or NA, and orifice_diam_in is NA")
   }
   
+ # browser()
+  
+  
   #Prepare data
   #Initialize data frames
   collected_data <- data.frame(dtime_est, rainfall_in, event)
+  
+  if(length(initial_water_level_ft) > 1){
+    events <- unique(event)
+    events <- events[!is.na(events)]
+    events_initial <- data.frame(events, initial_water_level_ft)
+    collected_data <- collected_data %>% dplyr::left_join(events_initial, by = c("event" = "events"))
+  }
+  
   simseries_total <- tibble::tibble(dtime_est = lubridate::force_tz(dtime_est, tz = "EST"),
                                     rainfall_in = 0, 
                                     event = 0,
@@ -531,7 +542,12 @@ sim_loop <- function(x, debug, simseries_total, infil_rate_inhr, orifice_if, ori
   #Mass balance
   #Calculate starting values
   #Starting Storage
+  if(length(initial_water_level_ft) > 1){
+    simseries$depth_ft[1] <- by_event$initial_water_level_ft[1]
+  }else{
   simseries$depth_ft[1] <- initial_water_level_ft[1]
+  }
+  
   simseries$vol_ft3[1] <- depth.to.vol(maxdepth_ft = storage_depth_ft[1],
                                        maxvol_cf = storage_vol_ft3[1],
                                        depth_ft = simseries$depth_ft[1])
@@ -664,7 +680,7 @@ NULL
 #' @examples
 #' 
 #' simulation_summary <- simulated_data %>%
-#'   dplyr::group_by(event) %>%
+#'   dplyr::group_by(rainfall_gage_event_uid) %>%
 #'   dplyr::summarize(startdate = min(dtime_est), #add start date of event to summary table,
 #'                   
 #'    #1. Overtopping check
@@ -817,10 +833,11 @@ marsPeakReleaseRate_cfs <- function(dtime_est,
 #' @export
 
 marsDraindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
-  
   #1. Process data
   #1.1 Initialize dataframe
   dtime_est <- lubridate::force_tz(dtime_est, tz = "EST")
+  
+  starting_level_ft <- dplyr::first(waterlevel_ft)
   
   combined_data <- tibble::tibble(
     dtime_est = dtime_est,
@@ -838,7 +855,7 @@ marsDraindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
     dplyr::slice(dplyr::n()) #pull last row (corresponds to end of rainfall event)
   
   #2. Confirm that there was a response in the structure during the event (water level > 0)
-  check <- any(waterlevel_ft > 0)  
+  check <- any(waterlevel_ft > starting_level_ft + 0.001)  
   
   if(check == FALSE){
     draindown_hrs <- NA
@@ -848,7 +865,7 @@ marsDraindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
     #3. Filter by storage depth to pull time to empty
     stor_end <- combined_data %>%
       dplyr::filter(dtime_est > rain_end$dtime_est) %>%
-      dplyr::filter(waterlevel_ft < 0.001) %>%
+      dplyr::filter(waterlevel_ft < starting_level_ft + 0.001) %>%
       dplyr::arrange(dtime_est) %>%
       dplyr::slice(1L)
     
