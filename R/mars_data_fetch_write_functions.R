@@ -569,17 +569,17 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
   #1.4.1 Create dataframe
   request_df <- data.frame(smp_id, ow_suffix, request_date, stringsAsFactors = FALSE)
   
-  #1.4.2 Query ow_validity and check if each smp id and observation well are there
+  #1.4.2 Query fieldwork.ow_all and check if each smp id and observation well are there
   # Initialize dataframe
   ow_validity <- data.frame(ow_uid = numeric(), 
                             smp_id =  character(),  
                             ow_suffix = character(), 
                             stringsAsFactors = FALSE)
   
-  # Check if smp_id and ow_suffix are in the MARS table "ow_validity"
+  # Check if smp_id and ow_suffix are in the MARS table "fieldwork.ow_all"
   # Return matches
   for(i in 1:length(request_df$smp_id)){
-    ow_valid_check <- odbc::dbGetQuery(con, "SELECT * FROM ow_validity") %>% dplyr::select(-facility_id) %>%  dplyr::filter(smp_id == request_df$smp_id[i] & ow_suffix == request_df$ow_suffix[i])
+    ow_valid_check <- odbc::dbGetQuery(con, "SELECT * FROM fieldwork.ow_all") %>% dplyr::select(-facility_id) %>%  dplyr::filter(smp_id == request_df$smp_id[i] & ow_suffix == request_df$ow_suffix[i])
     ow_validity <- dplyr::bind_rows(ow_validity, ow_valid_check)
   }
   
@@ -786,7 +786,7 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, start_date, end_d
   }
   
   smp_gage <- odbc::dbGetQuery(con, "SELECT * FROM public.smp_gage") %>% dplyr::filter(smp_id %in% target_id)
-  ow_validity <- odbc::dbGetQuery(con, "SELECT * FROM ow_validity")
+  ow_validity <- odbc::dbGetQuery(con, "SELECT * FROM fieldwork.ow_all")
   ow_uid_gage <- ow_validity %>% dplyr::right_join(smp_gage, by = "smp_id")
   
   if(debug){
