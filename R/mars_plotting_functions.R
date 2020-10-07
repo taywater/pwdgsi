@@ -659,7 +659,7 @@ marsCombinedPlot <- function(event,
 marsBaroRasterPlot <- function(baro){
   p <- ggplot2::ggplot(baro, ggplot2::aes(x = day, y = smp_id)) +
     ggplot2::facet_grid(. ~ year) +
-    ggplot2::geom_raster(ggplot2::aes(fill = baro_psi)) +
+    ggplot2::geom_tile(ggplot2::aes(fill = baro_psi)) +
     ggplot2::scale_fill_gradientn(colours = rev(RColorBrewer::brewer.pal(11, "RdBu")), name = "Pressure (psi)") +
     ggplot2::theme(axis.text=ggplot2::element_text(colour="black", size=15),
           axis.title.x=ggplot2::element_text(colour="black", size=15),
