@@ -598,9 +598,10 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
                        "assumption_orificeheight_ft" = numeric(),
                        "storage_depth_ft" = numeric(),
                        "sumpdepth_ft" = numeric(),
-                       "lined" = logical(), 
-                       "surface" = logical(), 
+                       #"lined" = logical(), 
+                       #"surface" = logical(), 
                        stringsAsFactors = FALSE)
+  
   
   #2.2 Run get_arbitrary_snapshot in a loop and bind results
   for(i in 1:length(ow_validity$smp_id)){
