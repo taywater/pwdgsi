@@ -484,20 +484,20 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   #render markdown document
   #output file and output dir arguments do not work, so file is placed where markdown document is, and moved later
   rmarkdown::render(system.file("rmd", "baro.rmd", package = "pwdgsi"), #find .rmd location on local cpu
-                    params = list(smp_id = smp_id,  #input parameters to be passed into markdown body
+                    params = list(smp_id = target_id,  #input parameters to be passed into markdown body
                                   start_date = start_date,
                                   end_date = end_date,
                                   data_interval = data_interval,
                                   neighbors = neighbors,
                                   countNAs = countNAs_t,
                                   p = p,
-                                  csv_name = paste0(downloader_folder_csv, paste(smp_id, start_date, "to", end_date, sep = "_"), ".csv"),
+                                  csv_name = paste0(downloader_folder_csv, paste(target_id, start_date, "to", end_date, sep = "_"), ".csv"),
                                   map = baro_map,
                                   baro_latest_dtime = baro_latest_dtime,
                                   baro_latest_valid = baro_latest_valid))
 
   #give a new filename and path
-  new_filename <- paste0(downloader_folder, "/Reports/", paste(smp_id, start_date, "to", end_date, sep = "_"), "_baro_report.html")
+  new_filename <- paste0(downloader_folder, "/Reports/", paste(target_id, start_date, "to", end_date, sep = "_"), "_baro_report.html")
 
   #move file to Baro Data Downloader/Reports folder
   file.rename(from = paste0(system.file("rmd", "baro.html", package = "pwdgsi")),
