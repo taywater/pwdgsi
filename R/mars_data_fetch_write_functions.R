@@ -101,7 +101,7 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
   }
   
   gage_temp$rainfall_in %<>% as.numeric
-  gage_temp$dtime_edt %<>% lubridate::ymd_hms(tz = "America/New_york")
+  gage_temp$dtime_edt %<>% lubridate::ymd_hms(tz = "America/New_York")
   
   #Apparently, attempting to set the time zone on a datetime that falls squarely on the spring forward datetime
   #Such as 2005-04-03 02:00:00
