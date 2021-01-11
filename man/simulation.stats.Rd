@@ -26,8 +26,6 @@ marsDraindown_hr(dtime_est, rainfall_in, waterlevel_ft)
 \item{orifice_outflow_ft3}{Orifice outflow volume (cf)}
 
 \item{rainfall_in}{Rainfall depths during periods corresponding to times in  dtime_est (in)}
-
-\item{dtime_est}{A vector of POSIXct date times, in ascending order}
 }
 \value{
 \describe{
@@ -43,7 +41,7 @@ marsDraindown_hr(dtime_est, rainfall_in, waterlevel_ft)
 }
 
 \describe{
-     \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr). Returns \code{NA} if water level does not return to 0 after event.}
+     \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr). Returns \code{NA} if water level does not return to the starting level after event.}
 }
 }
 \description{
@@ -52,7 +50,7 @@ Summarize and Evaluate System Performance
 \examples{
 
 simulation_summary <- simulated_data \%>\%
-  dplyr::group_by(event) \%>\%
+  dplyr::group_by(rainfall_gage_event_uid) \%>\%
   dplyr::summarize(startdate = min(dtime_est), #add start date of event to summary table,
                   
    #1. Overtopping check

@@ -4,8 +4,14 @@
 \alias{marsFetchLevelData}
 \title{Fetch water level data for an SMP}
 \usage{
-marsFetchLevelData(con, target_id, ow_suffix, start_date, end_date,
-  sump_correct)
+marsFetchLevelData(
+  con,
+  target_id,
+  ow_suffix,
+  start_date,
+  end_date,
+  sump_correct
+)
 }
 \arguments{
 \item{con}{An ODBC connection to the MARS Analysis database returned by odbc::dbConnect}

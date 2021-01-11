@@ -4,8 +4,7 @@
 \alias{marsFetchRainGageData}
 \title{Return a dataframe with rain gage data}
 \usage{
-marsFetchRainGageData(con, target_id, start_date, end_date,
-  daylightsavings)
+marsFetchRainGageData(con, target_id, start_date, end_date, daylightsavings)
 }
 \arguments{
 \item{con}{Formal class 'PostgreSQL', a connection to the MARS Analysis database}

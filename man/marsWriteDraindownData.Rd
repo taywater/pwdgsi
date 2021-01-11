@@ -4,8 +4,14 @@
 \alias{marsWriteDraindownData}
 \title{Write Draindown Data to Database}
 \usage{
-marsWriteDraindownData(con, draindown_hr, ow_uid, rainfall_gage_event_uid,
-  snapshot_uid, observed_simulated_lookup_uid)
+marsWriteDraindownData(
+  con,
+  draindown_hr,
+  ow_uid,
+  rainfall_gage_event_uid,
+  snapshot_uid,
+  observed_simulated_lookup_uid
+)
 }
 \arguments{
 \item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}

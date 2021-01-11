@@ -4,12 +4,14 @@
 \name{marsSampleRain}
 \alias{marsSampleRain}
 \title{Sample Rain Data}
-\format{A dataframe with 105 rows and 3 variables
+\format{
+A dataframe with 105 rows and 3 variables
 \describe{
   \item{dtime_edt}{POSIXct datetime, YYYY-MM-DD HH:MM:SS}
   \item{rainfall_in}{rainfall total in the 15 minutes preceding the corresponding datetime}
   \item{gage_uid}{rain gage ID}
-}}
+}
+}
 \usage{
 \code{marsSampleRain}
 }

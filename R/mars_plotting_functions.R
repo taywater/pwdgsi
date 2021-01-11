@@ -459,7 +459,6 @@ marsWaterLevelPlot <- function(event,
       legend.text = ggplot2::element_text(size = ggplot2::rel(.9)),
       legend.title=ggplot2::element_blank())
   
-  
   if(!is.na(sim_level_ft[1])){
     level_plot <- level_plot +     
       #Simulated water level
@@ -521,8 +520,8 @@ marsCombinedPlot <- function(event,
   
   if(!is.na(draindown_hr) | !is.na(infiltration_rate_inhr) | !is.na(percent_storage_relative) |
      !is.na(baseline_ft)){
-    metrics_caption <- paste0(paste0(if(infiltration_rate_inhr[1] >= -800) "Infiltration Rate (in/hr): " else "Infiltration Error Code: "), infiltration_rate_inhr[1], "\n Draindown (hr): ", draindown_hr[1],
-                      "\n Relative Percent of Storage Used: ", percent_storage_relative[1], "\n Baseline (ft): ", baseline_ft[1], "\n ")
+    metrics_caption <- paste0(paste0(if(infiltration_rate_inhr[1] >= -800) "Infiltration Rate (in/hr): " else "Infiltration Error Code: "), infiltration_rate_inhr[1], "<br />  Draindown (hr): ", draindown_hr[1],
+                      "<br />  Relative Storage Used: ", percent_storage_relative[1], "%<br />  Baseline (ft): ", baseline_ft[1], " ")
   }else{
     metrics_caption <- ""
   }
@@ -617,7 +616,14 @@ marsCombinedPlot <- function(event,
       breaks = major_date_breaks,
       minor_breaks = minor_date_breaks)  +
     ggplot2::labs(title = title_text) +
-    ggplot2::annotate("text", y = Inf, x = max_date - (max_date - min_date)*0.02, vjust=0, hjust = 1, size = 4.7, label = metrics_caption)
+    # ggplot2::geom_label(ggplot2::aes(x = max_date - (max_date - min_date)*0.1, 
+    #                                  y = Inf, 
+    #                                  label = metrics_caption),
+    #                    # size = ggplot2::rel(5),
+    #                     size = 4.7,
+    #                     fill = "white", 
+    #                     label.size = 0)
+    ggplot2::annotate("richtext", y = Inf, x = max_date - (max_date - min_date)*0.01, vjust=0, hjust = 1, size = 4.7, label = metrics_caption, fill = "white")
     #ggplot2::annotate("text", x = max_date - lubridate::minutes(60), y = max(rainfall_in), vjust=0, hjust = 1, label = metrics_caption)
   
   #Calculate max width and set both to that value

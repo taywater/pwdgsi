@@ -4,9 +4,15 @@
 \alias{marsWritePercentStorageData}
 \title{Write Percent of Storaged Used Data to Database}
 \usage{
-marsWritePercentStorageData(con, percentstorageused_peak,
-  percentstorageused_relative, ow_uid, rainfall_gage_event_uid,
-  snapshot_uid, observed_simulated_lookup_uid)
+marsWritePercentStorageData(
+  con,
+  percentstorageused_peak,
+  percentstorageused_relative,
+  ow_uid,
+  rainfall_gage_event_uid,
+  snapshot_uid,
+  observed_simulated_lookup_uid
+)
 }
 \arguments{
 \item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}

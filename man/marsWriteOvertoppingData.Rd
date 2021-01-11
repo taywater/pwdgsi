@@ -4,8 +4,14 @@
 \alias{marsWriteOvertoppingData}
 \title{Write Overtopping Data to Database}
 \usage{
-marsWriteOvertoppingData(con, overtopping, observed_simulated_lookup_uid,
-  ow_uid, rainfall_gage_event_uid, snapshot_uid)
+marsWriteOvertoppingData(
+  con,
+  overtopping,
+  observed_simulated_lookup_uid,
+  ow_uid,
+  rainfall_gage_event_uid,
+  snapshot_uid
+)
 }
 \arguments{
 \item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}

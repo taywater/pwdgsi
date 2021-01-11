@@ -30,7 +30,8 @@ Imports:
   scales,
   sp,
   tidyverse,
+  ggtext,
   zoo
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
 VignetteBuilder: knitr
 Suggests: 

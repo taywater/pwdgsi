@@ -4,8 +4,7 @@
 \alias{marsRainfallPlot}
 \title{Plot hyetograph}
 \usage{
-marsRainfallPlot(dtime_est, rainfall_in, raingage, event,
-  reverse_y = FALSE)
+marsRainfallPlot(dtime_est, rainfall_in, raingage, event, reverse_y = FALSE)
 }
 \arguments{
 \item{dtime_est}{vector, POSIXct datetimes representing a single rain event}

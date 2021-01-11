@@ -4,8 +4,13 @@
 \alias{marsFetchBaroData}
 \title{Fetch barometric pressure data for a target SMP, date range, and interval}
 \usage{
-marsFetchBaroData(con, target_id, start_date, end_date,
-  data_interval = c("5 mins", "15 mins"))
+marsFetchBaroData(
+  con,
+  target_id,
+  start_date,
+  end_date,
+  data_interval = c("5 mins", "15 mins")
+)
 }
 \arguments{
 \item{con}{An ODBC connection to the MARS Analysis database returned by odbc::dbConnect}

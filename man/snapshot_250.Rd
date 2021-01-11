@@ -4,7 +4,9 @@
 \name{snapshot_250}
 \alias{snapshot_250}
 \title{SMP Snapshot}
-\format{a dataframe with 1 row and 16 columns}
+\format{
+a dataframe with 1 row and 16 columns
+}
 \usage{
 \code{snapshot_250}
 }

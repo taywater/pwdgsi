@@ -4,9 +4,15 @@
 \alias{marsWriteInfiltrationData}
 \title{Write Infiltration Performance Data to Database}
 \usage{
-marsWriteInfiltrationData(con, infiltration_rate_inhr, baseline_ft = NA,
-  ow_uid, rainfall_gage_event_uid, snapshot_uid,
-  observed_simulated_lookup_uid)
+marsWriteInfiltrationData(
+  con,
+  infiltration_rate_inhr,
+  baseline_ft = NA,
+  ow_uid,
+  rainfall_gage_event_uid,
+  snapshot_uid,
+  observed_simulated_lookup_uid
+)
 }
 \arguments{
 \item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}

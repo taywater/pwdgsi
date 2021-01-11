@@ -62,13 +62,14 @@ marsWaterLevelBaseline_ft <- function(dtime_est, level_ft, max_infil_rate_inhr =
 #' @param  storage_depth_ft     Maximum storage depth of system (ft)
 #' @param  storage_vol_ft3      Maximum storage volume (pore space) of system, in cubic feet
 #' @param  waterlevel_ft        Observed water level data (ft)
-#' @param  discharge_coeff      Orifice discharge coefficient
+#' @param  depth_in             Depth at which to calculate infiltration rate (default 6in, which creates a range of 7in to 5in)
+#' @param  discharge_coeff      Orifice discharge coefficient (default 0.62)
 #' 
 #' @return Output is estimated infiltration rate (in/hr). These outputs are codes for the following messages: 
 #'  \describe{
-#'        \item{\code{-900}}{Event does not include observation data that approximately equals 5 or 7 in. water depth}
+#'        \item{\code{-900}}{Event does not include observation data that approximately equals specified water depth}
 #'        \item{\code{-910}}{Code captures rising limb in event.}
-#'        \item{\code{-920}}{Rainfall occurs during recession period between 7 in. and 5in. }
+#'        \item{\code{-920}}{Rainfall occurs during recession period in specified depth range.}
 #'        \item{\code{-930}}{Infiltration rate is negligible; calculated infiltration rate is less than 0.1in/hr. }
 #'  } 
 #'  If 
@@ -103,6 +104,7 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
                                               storage_depth_ft,
                                               storage_vol_ft3,
                                               waterlevel_ft, #observed data
+                                              depth_in = 6, #depth at which to take infiltration rate
                                               discharge_coeff = 0.62 #Orifice discharge coefficient
 ){
   
@@ -141,17 +143,17 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
   # threshold, however, this approach ensures that the values are taken from receding limbs.
   
   last_depth5 <- df %>%
-    dplyr::filter(depth_ft > 5/12 + last_depth) %>% #value immediately prior to water level crossing 5"
+    dplyr::filter(depth_ft > (depth_in - 1)/12 + last_depth) %>% #value immediately prior to water level crossing 5"
     dplyr::slice(dplyr::n()) #latest timestep
   
   last_depth7 <- df %>%
-    dplyr::filter(depth_ft > 7/12 + last_depth) %>% #value immediately prior to water level crossing 7"
+    dplyr::filter(depth_ft > (depth_in + 1)/12 + last_depth) %>% #value immediately prior to water level crossing 7"
     dplyr::slice(dplyr::n()) #latest timestep
   
   #2.4 Check that data is appropriate for calculating infiltration rate
   #2.4.1 Do observation values exist in the dataset approximately equal to 5 and 7"?
   if(nrow(last_depth5)== 0 | nrow(last_depth7) == 0){
-    message(paste("Event",event[1], "does not include observation data that approximately equals 5 or 7 in. of water depth."))
+    message(paste("Event",event[1], "does not include observation data that approximately equals", depth_in - 1, "or", depth_in + 1, "in. of water depth."))
     return(-900)
   }
   
@@ -167,11 +169,11 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
   
   #assure that the 5" depth used is within the same descending limb as the 7"
   #following the last 7" measurement, level can dip and rise back above 5". This cuts off the dip and rise
-  if(min(tempseries$depth_ft) < 5/12 + last_depth){
+  if(min(tempseries$depth_ft) < (depth_in - 1)/12 + last_depth){
     
     #select the first point where depth drops below 5"
     cutoff <- tempseries %>%
-      dplyr::filter(depth_ft < 5/12 + last_depth) %>%
+      dplyr::filter(depth_ft < (depth_in - 1)/12 + last_depth) %>%
       dplyr::slice(1)
     
     #cut tempseries
@@ -181,9 +183,9 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
     last_depth5 <- tempseries %>% dplyr::slice(dplyr::n())
   }
   
-  #2.4.4 Does rainfall occur during the recession period between 7" and 5"?
+  #2.4.4 Does rainfall occur during the recession period between 7" and 5" (or whatever the specfied range is)?
   if(sum(tempseries$rainfall_in, na.rm = TRUE) != 0){
-    message(paste0("Rainfall occurs during recession period between 7 in. and 5 in. in Event ", event[1], "."))
+    message(paste0("Rainfall occurs during recession period between ", depth_in + 1, " in. and ", depth_in - 1, " in. in Event ", event[1], "."))
     return(-920)
   }
   

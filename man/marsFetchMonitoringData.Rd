@@ -4,9 +4,19 @@
 \alias{marsFetchMonitoringData}
 \title{Fetch monitoring data for an SMP}
 \usage{
-marsFetchMonitoringData(con, target_id, ow_suffix, start_date, end_date,
-  sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE,
-  level = TRUE, daylight_savings = FALSE, debug = FALSE)
+marsFetchMonitoringData(
+  con,
+  target_id,
+  ow_suffix,
+  start_date,
+  end_date,
+  sump_correct = TRUE,
+  rain_events = TRUE,
+  rainfall = TRUE,
+  level = TRUE,
+  daylight_savings = FALSE,
+  debug = FALSE
+)
 }
 \arguments{
 \item{con}{An ODBC connection to the MARS Analysis database returned by odbc::dbConnect}

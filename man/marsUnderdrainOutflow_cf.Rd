@@ -4,8 +4,13 @@
 \alias{marsUnderdrainOutflow_cf}
 \title{Observed Orifice Outflow Volume}
 \usage{
-marsUnderdrainOutflow_cf(dtime_est, waterlevel_ft, orifice_height_ft,
-  orifice_diam_in, discharge_coeff = 0.62)
+marsUnderdrainOutflow_cf(
+  dtime_est,
+  waterlevel_ft,
+  orifice_height_ft,
+  orifice_diam_in,
+  discharge_coeff = 0.62
+)
 }
 \arguments{
 \item{dtime_est}{A vector of POSIXct date times, in ascending order}

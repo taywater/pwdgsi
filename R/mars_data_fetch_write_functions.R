@@ -479,8 +479,8 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   baro_map <- mapview::mapview(baro_sp, layer.name = "Baro") + mapview::mapview(smp_sp, color = "red", col.regions = NA, layer.name = "Target SMP")
   
   downloader_folder <- "O:/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader"
-  downloader_folder_csv <- "\\\\\\\\pwdoows\\\\oows\\\\Watershed Sciences\\\\GSI Monitoring\\07 Databases and Tracking Spreadsheets\\13 MARS Analysis Database\\\\Scripts\\\\Downloader\\\\Baro Data Downloader\\\\"
-  
+  # downloader_folder_csv <- "\\\\\\\\pwdoows\\\\oows\\\\Watershed Sciences\\\\GSI Monitoring\\07 Databases and Tracking Spreadsheets\\13 MARS Analysis Database\\\\Scripts\\\\Downloader\\\\Baro Data Downloader\\\\"
+  # 
   #render markdown document
   #output file and output dir arguments do not work, so file is placed where markdown document is, and moved later
   rmarkdown::render(system.file("rmd", "baro.rmd", package = "pwdgsi"), #find .rmd location on local cpu
@@ -491,7 +491,6 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
                                   neighbors = neighbors,
                                   countNAs = countNAs_t,
                                   p = p,
-                                  csv_name = paste0(downloader_folder_csv, paste(target_id, start_date, "to", end_date, sep = "_"), ".csv"),
                                   map = baro_map,
                                   baro_latest_dtime = baro_latest_dtime,
                                   baro_latest_valid = baro_latest_valid))

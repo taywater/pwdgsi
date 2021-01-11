@@ -4,9 +4,19 @@
 \alias{marsInfiltrationRate_inhr}
 \title{Infiltration Rate}
 \usage{
-marsInfiltrationRate_inhr(event, dtime_est, rainfall_in, dcia_ft2,
-  orifice_height_ft = NA, orifice_diam_in = NA, storage_depth_ft,
-  storage_vol_ft3, waterlevel_ft, discharge_coeff = 0.62)
+marsInfiltrationRate_inhr(
+  event,
+  dtime_est,
+  rainfall_in,
+  dcia_ft2,
+  orifice_height_ft = NA,
+  orifice_diam_in = NA,
+  storage_depth_ft,
+  storage_vol_ft3,
+  waterlevel_ft,
+  depth_in = 6,
+  discharge_coeff = 0.62
+)
 }
 \arguments{
 \item{event}{Rainfall event ID (grouping variable)}
@@ -27,14 +37,16 @@ marsInfiltrationRate_inhr(event, dtime_est, rainfall_in, dcia_ft2,
 
 \item{waterlevel_ft}{Observed water level data (ft)}
 
-\item{discharge_coeff}{Orifice discharge coefficient}
+\item{depth_in}{Depth at which to calculate infiltration rate (default 6in, which creates a range of 7in to 5in)}
+
+\item{discharge_coeff}{Orifice discharge coefficient (default 0.62)}
 }
 \value{
 Output is estimated infiltration rate (in/hr). These outputs are codes for the following messages: 
  \describe{
-       \item{\code{-900}}{Event does not include observation data that approximately equals 5 or 7 in. water depth}
+       \item{\code{-900}}{Event does not include observation data that approximately equals specified water depth}
        \item{\code{-910}}{Code captures rising limb in event.}
-       \item{\code{-920}}{Rainfall occurs during recession period between 7 in. and 5in. }
+       \item{\code{-920}}{Rainfall occurs during recession period in specified depth range.}
        \item{\code{-930}}{Infiltration rate is negligible; calculated infiltration rate is less than 0.1in/hr. }
  } 
  If

@@ -4,9 +4,17 @@
 \alias{marsWaterLevelPlot}
 \title{Observed and Simulated Water Level Plot}
 \usage{
-marsWaterLevelPlot(event, structure_name, storage_depth_ft, obs_datetime,
-  obs_level_ft, sim_datetime = NA, sim_level_ft = NA,
-  orifice_show = FALSE, orifice_height_ft = NULL)
+marsWaterLevelPlot(
+  event,
+  structure_name,
+  storage_depth_ft,
+  obs_datetime,
+  obs_level_ft,
+  sim_datetime = NA,
+  sim_level_ft = NA,
+  orifice_show = FALSE,
+  orifice_height_ft = NULL
+)
 }
 \arguments{
 \item{event}{Rainfall gage event ID}
