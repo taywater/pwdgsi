@@ -326,7 +326,7 @@ yday_decimal <- function(dtime_est){
 #'     all columns other than "dtime_est" will be NA.
 #'     
 #'     The function will also output and open an html document describing the data request and including
-#'     a raster plot of barometric pressures. 
+#'     a raster plot of barometric pressures. (This feature is currently disabled. 2/2/21 - NM)
 #' 
 #' @export
 #'
@@ -448,62 +448,67 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   #Get elevations #This has been removed in favor of using distances to sort SMPs on plot. Code is left in case 
   #baro_elev <- odbc::dbGetQuery(con, "SELECT * FROM smp_elev") %>% filter(smp_id %in% baro$smp_id)
   
-  #Bind all raw baro data with interpolated data, and add weights
-  baro_p <- dplyr::bind_rows(baro, finalseries)
-  baro_p <- dplyr::left_join(baro_p, baro_weights, by = "smp_id") 
+  #currently disabled (2/2/21)
   
-  #Set NA weights to max weight +1 so interpolated data plots at the top of the chart
-  baro_p$weight[is.na(baro_p$weight)] <- max(baro_p$weight)+1
-  
-  #Sort SMP IDs by elevation
-  baro_p$smp_id <- factor(baro_p$smp_id, levels = unique(baro_p$smp_id[order(baro_p$weight)]))
-  
-  #Add year and day for chart
-  baro_p %<>% dplyr::mutate("day" = yday_decimal(baro_p$dtime_est),
-                     "year" = lubridate::year(baro_p$dtime_est))
-  
-  
-  baro_p$smp_id %<>% as.factor
-  
-  #Create baro Raster Chart
-  p <- marsBaroRasterPlot(baro_p)
+  # #Bind all raw baro data with interpolated data, and add weights
+  # baro_p <- dplyr::bind_rows(baro, finalseries)
+  # baro_p <- dplyr::left_join(baro_p, baro_weights, by = "smp_id") 
+  # 
+  # #Set NA weights to max weight +1 so interpolated data plots at the top of the chart
+  # baro_p$weight[is.na(baro_p$weight)] <- max(baro_p$weight)+1
+  # 
+  # #Sort SMP IDs by elevation
+  # baro_p$smp_id <- factor(baro_p$smp_id, levels = unique(baro_p$smp_id[order(baro_p$weight)]))
+  # 
+  # #Add year and day for chart
+  # baro_p %<>% dplyr::mutate("day" = yday_decimal(baro_p$dtime_est),
+  #                    "year" = lubridate::year(baro_p$dtime_est))
+  # 
+  # 
+  # baro_p$smp_id %<>% as.factor
+  # 
+  # #Create baro Raster Chart
+  # p <- marsBaroRasterPlot(baro_p)
   
   
   #Create baro Map
-  baro_loc <- smp_loc %>% dplyr::filter(smp_id %in% baro$smp_id)
-  rownames(baro_loc) <- NULL
-  coords <- baro_loc[c("lon_wgs84", "lat_wgs84")]
-  baro_sp <- sp::SpatialPointsDataFrame(coords, data = baro_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
-  coords <- locus_loc[c("lon_wgs84", "lat_wgs84")]
-  smp_sp <- sp::SpatialPointsDataFrame(coords, data = locus_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
-  baro_map <- mapview::mapview(baro_sp, layer.name = "Baro") + mapview::mapview(smp_sp, color = "red", col.regions = NA, layer.name = "Target SMP")
-  
+  # baro_loc <- smp_loc %>% dplyr::filter(smp_id %in% baro$smp_id)
+  # rownames(baro_loc) <- NULL
+  # coords <- baro_loc[c("lon_wgs84", "lat_wgs84")]
+  # baro_sp <- sp::SpatialPointsDataFrame(coords, data = baro_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+  # coords <- locus_loc[c("lon_wgs84", "lat_wgs84")]
+  # smp_sp <- sp::SpatialPointsDataFrame(coords, data = locus_loc, proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+  # baro_map <- mapview::mapview(baro_sp, layer.name = "Baro") + mapview::mapview(smp_sp, color = "red", col.regions = NA, layer.name = "Target SMP")
+  # 
   downloader_folder <- "O:/Watershed Sciences/GSI Monitoring/07 Databases and Tracking Spreadsheets/13 MARS Analysis Database/Scripts/Downloader/Baro Data Downloader"
   # downloader_folder_csv <- "\\\\\\\\pwdoows\\\\oows\\\\Watershed Sciences\\\\GSI Monitoring\\07 Databases and Tracking Spreadsheets\\13 MARS Analysis Database\\\\Scripts\\\\Downloader\\\\Baro Data Downloader\\\\"
   # 
   #render markdown document
   #output file and output dir arguments do not work, so file is placed where markdown document is, and moved later
-  rmarkdown::render(system.file("rmd", "baro.rmd", package = "pwdgsi"), #find .rmd location on local cpu
-                    params = list(smp_id = target_id,  #input parameters to be passed into markdown body
-                                  start_date = start_date,
-                                  end_date = end_date,
-                                  data_interval = data_interval,
-                                  neighbors = neighbors,
-                                  countNAs = countNAs_t,
-                                  p = p,
-                                  map = baro_map,
-                                  baro_latest_dtime = baro_latest_dtime,
-                                  baro_latest_valid = baro_latest_valid))
+  
+  #markdown is currently disabled
+  
+  # rmarkdown::render(system.file("rmd", "baro.rmd", package = "pwdgsi"), #find .rmd location on local cpu
+  #                   params = list(smp_id = target_id,  #input parameters to be passed into markdown body
+  #                                 start_date = start_date,
+  #                                 end_date = end_date,
+  #                                 data_interval = data_interval,
+  #                                 neighbors = neighbors,
+  #                                 countNAs = countNAs_t,
+  #                                 p = p,
+  #                                 map = baro_map,
+  #                                 baro_latest_dtime = baro_latest_dtime,
+  #                                 baro_latest_valid = baro_latest_valid))
 
-  #give a new filename and path
-  new_filename <- paste0(downloader_folder, "/Reports/", paste(target_id, start_date, "to", end_date, sep = "_"), "_baro_report.html")
-
-  #move file to Baro Data Downloader/Reports folder
-  file.rename(from = paste0(system.file("rmd", "baro.html", package = "pwdgsi")),
-              to = new_filename)
-
-  #open html
-  browseURL(new_filename)
+  # #give a new filename and path
+  # new_filename <- paste0(downloader_folder, "/Reports/", paste(target_id, start_date, "to", end_date, sep = "_"), "_baro_report.html")
+  # 
+  # #move file to Baro Data Downloader/Reports folder
+  # file.rename(from = paste0(system.file("rmd", "baro.html", package = "pwdgsi")),
+  #             to = new_filename)
+  # 
+  # #open html
+  # browseURL(new_filename)
   
   #return Final Series. 
   return(finalseries)

@@ -36,7 +36,7 @@ Output will be a dataframe with four columns:
     all columns other than "dtime_est" will be NA.
     
     The function will also output and open an html document describing the data request and including
-    a raster plot of barometric pressures.
+    a raster plot of barometric pressures. (This feature is currently disabled. 2/2/21 - NM)
 }
 \description{
 Returns a data frame with datetime, barometric pressure, smp id, and number of neighbors
