@@ -55,6 +55,7 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 #'
 #' @param con Formal class 'PostgreSQL', a connection to the MARS Analysis database
 #' @param target_id chr, an SMP_ID that where the user has requested data
+#' @param source chr, either "gage" or "radarcell" to retrieve rain gage data or radar rainfall data
 #' @param start_date string, format: "YYYY-MM-DD", start of data request range
 #' @param end_date string, format: "YYYY-MM-DD", end of data request range
 #' @param daylight_savings logi, Adjust for daylight savings time? when doing QAQC
@@ -64,7 +65,7 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 #' 
 #'   \item{dtime_est OR dtime_edt}{POSIXct datetime with tz = EST or EDT as specified by \code{daylight_savings}}
 #'   \item{rainfall_in}{num, rainfall for the 15 minute preceding the corresponding datetime}
-#'   \item{gagename}{rain gage ID}
+#'   \item{gage_uid OR radarcell_uid}{Unique identifier for where the data came from}
 #'   \item{event_id}{event number during this timestep}
 #' 
 #' 
@@ -72,27 +73,37 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 #'
 #' @export
 
-marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylightsavings){
+marsFetchRainGageData <- function(con, target_id, source = c("gage", "radarcell"), start_date, end_date, daylightsavings){
   if(!odbc::dbIsValid(con)){
-    stop("Argument 'con' is not an open RODBC channel")
+    stop("Argument 'con' is not an open ODBC channel")
   }
   
   start_date %<>% as.POSIXct()
   end_date %<>% as.POSIXct()
   
-  #Get closest gage
-  smp_gage <- odbc::dbGetQuery(con, "SELECT * FROM public.smp_gage") %>% dplyr::filter(smp_id == target_id)
+  #Are we working with gages or radarcells?
+  if(source == "gage"){
+    rainparams <- data.frame(smptable = "smp_gage", raintable = "rainfall_gage", uidvar = "gage_uid")
+  } else if(source == "radarcell"){
+    rainparams <- data.frame(smptable = "smp_radarcell", raintable = "rainfall_radarcell", uidvar = "radarcell_uid")
+  } else { #Parameter is somehow invalid
+    stop("Argument 'source' is not one of 'gage' or 'radarcell'")
+  }
+  
+  #Get closest rainfall source
+  smp_query <- paste0("SELECT * FROM public.", rainparams$smptable)
+  rainsource <- odbc::dbGetQuery(con, smp_query) %>% dplyr::filter(smp_id == target_id) %>% pull(rainparams$uidvar)
   
   #Collect gage data
   #First, get all the relevant data from the closest gage
-  gage_query <- paste("SELECT * FROM public.rainfall_gage",
-                      "WHERE gage_uid = CAST('", smp_gage$gage_uid[1], "' as int)",
+  rain_query <- paste(paste0("SELECT * FROM public.", rainparams$raintable, " "),
+                      paste0("WHERE ", rainparams$uidvar, " = CAST('", rainsource, "' as int)"),
                       "AND dtime_edt >= Date('", start_date, "')",
                       "AND dtime_edt <= Date('", end_date + lubridate::days(1), "');")
   
-  gage_temp <- odbc::dbGetQuery(con, gage_query)
+  rain_temp <- odbc::dbGetQuery(con, rain_query)
   
-  if(nrow(gage_temp) == 0){
+  if(nrow(rain_temp) == 0){
     
     if(lubridate::month(start_date) == lubridate::month(lubridate::today())){
       stop(paste("Rainfall data appears in the MARS database on about a 5 week delay. \nData for", lubridate::month(start_date, label = TRUE, abbr = FALSE), "should be available in the second week of", lubridate::month(lubridate::today() + lubridate::months(1), label = TRUE, abbr = FALSE)))
@@ -100,23 +111,23 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
     stop("There is no data in the database for this date range.")
   }
   
-  gage_temp$rainfall_in %<>% as.numeric
-  gage_temp$dtime_edt %<>% lubridate::ymd_hms(tz = "America/New_York")
+  rain_temp$rainfall_in %<>% as.numeric
+  rain_temp$dtime_edt %<>% lubridate::ymd_hms(tz = "America/New_York")
   
   #Apparently, attempting to set the time zone on a datetime that falls squarely on the spring forward datetime
   #Such as 2005-04-03 02:00:00
   #Returns NA, because the time is impossible.
   #I hate this so, so much
   #To mitigate this, we will strip NA values from the new object
-  gage_temp %<>% dplyr::filter(!is.na(dtime_edt)) %>% dplyr::arrange(dtime_edt)
+  rain_temp %<>% dplyr::filter(!is.na(dtime_edt)) %>% dplyr::arrange(dtime_edt)
   
   #Our water level data is not corrected for daylight savings time. ie it doesn't spring forwards
   #So we must shift back any datetimes within the DST window
   #Thankfully, the dst() function returns TRUE if a dtime is within that zone
   if(daylightsavings == FALSE){
-    dst_index <- lubridate::dst(gage_temp$dtime_edt)
-    gage_temp$dtime_edt %<>% lubridate::force_tz("EST") #Assign new TZ without changing dates
-    gage_temp$dtime_edt[dst_index] <- gage_temp$dtime_edt[dst_index] - lubridate::hours(1)
+    dst_index <- lubridate::dst(rain_temp$dtime_edt)
+    rain_temp$dtime_edt %<>% lubridate::force_tz("EST") #Assign new TZ without changing dates
+    rain_temp$dtime_edt[dst_index] <- rain_temp$dtime_edt[dst_index] - lubridate::hours(1)
   }
   
   #Punctuate data with zeroes to prevent linear interpolation when plotting
@@ -124,9 +135,9 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
   #If it's greather than 30 minutes, we must insert a zero 15 minutes before B also
   
   #First, create data frame to contain zero fills with same column names as our rain data
-  zeroFills <- gage_temp[0,]
-  for(i in 1:(nrow(gage_temp) - 1)){
-    k <- difftime(gage_temp$dtime_edt[i+1], gage_temp$dtime_edt[i], units = "min")
+  zeroFills <- rain_temp[0,]
+  for(i in 1:(nrow(rain_temp) - 1)){
+    k <- difftime(rain_temp$dtime_edt[i+1], rain_temp$dtime_edt[i], units = "min")
     
     #If gap is > 15 mins, put a zero 15 minutes after the gap starts
     if(k > 15){
@@ -135,8 +146,8 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
       zeroFillIndex <- nrow(zeroFills)+1
       
       #Boundaries of the interval to be zeroed
-      boundary.low <- gage_temp$dtime_edt[i]
-      boundary.high <- gage_temp$dtime_edt[i+1]
+      boundary.low <- rain_temp$dtime_edt[i]
+      boundary.high <- rain_temp$dtime_edt[i+1]
       
       #The zero goes 15 minutes (900 seconds) after the first boundary
       #Filled by index because R is weird about partially filled data frame rows
@@ -145,8 +156,8 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
       zeroFills[zeroFillIndex, 4] <- 0                      #rainfall_in
       zeroFills[zeroFillIndex, 3] <- smp_gage$gage_uid[1]   #gage_uid
       
-      #print(paste("Gap-filling event ID. Before:", gage_temp$event[i], "After:", gage_temp$event[i+1]))
-      zeroFills[zeroFillIndex, 5] <- pwdgsi:::marsGapFillEventID(event_low = gage_temp$rainfall_gage_event_uid[i], event_high = gage_temp$rainfall_gage_event_uid[i+1]) #event
+      #print(paste("Gap-filling event ID. Before:", rain_temp$event[i], "After:", rain_temp$event[i+1]))
+      zeroFills[zeroFillIndex, 5] <- pwdgsi:::marsGapFillEventID(event_low = rain_temp$rainfall_gage_event_uid[i], event_high = rain_temp$rainfall_gage_event_uid[i+1]) #event
       
       #If the boundary is longer than 30 minutes, we need a second zero
       if(k > 30){
@@ -157,16 +168,20 @@ marsFetchRainGageData <- function(con, target_id, start_date, end_date, daylight
         zeroFills[zeroFillIndex + 1, 4] <- 0                      #rainfall_in
         zeroFills[zeroFillIndex + 1, 3] <- smp_gage$gage_uid[1]   #gage_uid
         
-        #print(paste("Gap-filling event ID. Before:", gage_temp$rainfall_gage_event_uid[i], "After:", gage_temp$rainfall_gage_event_uid[i+1]))
-        zeroFills[zeroFillIndex + 1, 5] <- pwdgsi:::marsGapFillEventID(event_low = gage_temp$rainfall_gage_event_uid[i], event_high = gage_temp$rainfall_gage_event_uid[i+1]) #event
+        #print(paste("Gap-filling event ID. Before:", rain_temp$rainfall_gage_event_uid[i], "After:", rain_temp$rainfall_gage_event_uid[i+1]))
+        zeroFills[zeroFillIndex + 1, 5] <- pwdgsi:::marsGapFillEventID(event_low = rain_temp$rainfall_gage_event_uid[i], event_high = rain_temp$rainfall_gage_event_uid[i+1]) #event
         
       }
       
     }
   }
+  #-------------
+  #edited up to this point
+  #-------------
+  
   #Replace UIDs with SMP IDs
   gages <- odbc::dbGetQuery(con, "SELECT * FROM public.gage")
-  finalseries <- dplyr::bind_rows(gage_temp, zeroFills) %>%
+  finalseries <- dplyr::bind_rows(rain_temp, zeroFills) %>%
     dplyr::left_join(gages, by = "gage_uid") %>%
     dplyr::select(dtime_edt, rainfall_in, gage_uid, rainfall_gage_event_uid) %>%
     dplyr::arrange(dtime_edt)
