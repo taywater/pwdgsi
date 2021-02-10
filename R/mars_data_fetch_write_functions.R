@@ -710,13 +710,14 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
 #'   
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param target_id vector of chr, SMP ID, where the user has requested data
+#' @param source string, one of "gage" or "radarcell" to select rain gage events or radar rainfall events
 #' @param start_date string, format: "YYYY-MM-DD", start of data request range
 #' @param end_date string, format: "YYYY-MM-DD", end of data request range
 #'
 #' @return Output will be a dataframe with the following columns: 
 #' 
 #'     \item{rainfall_gage_event_uid}{int}
-#'     \item{gage_uid}{int, rain gage number}
+#'     \item{gage_uid OR radarcell_uid}{int, unique identifier for rain source, depending on value of source argument}
 #'     \item{eventdatastart_edt}{POSIXct datetime}
 #'     \item{eventdataend_edt}{POSIXct datetime}
 #'     \item{eventduration_hr}{num, duration of event}
@@ -726,9 +727,9 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
 #'     
 #' @export
 #' 
-#' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchMonitoringData}}
+#' @seealso \code{\link{marsFetchRainfallData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchMonitoringData}}
 #' 
-marsFetchRainEventData <- function(con, target_id, start_date, end_date){
+marsFetchRainEventData <- function(con, target_id, source = c("gage", "radarcell"), start_date, end_date){
   #1 Argument validation
   #1.1 Check database connection
   if(!odbc::dbIsValid(con)){
@@ -739,12 +740,24 @@ marsFetchRainEventData <- function(con, target_id, start_date, end_date){
   start_date %<>% lubridate::ymd()
   end_date %<>% lubridate::ymd()
   
-  #2 Get closest rain gage
-  smp_gage <- odbc::dbGetQuery(con, "SELECT * FROM public.smp_gage") %>% dplyr::filter(smp_id == target_id)
+  #Are we working with gages or radarcells?
+  if(source == "gage"){
+    rainparams <- data.frame(smptable = "smp_gage", eventtable = "rainfall_gage_event", uidvar = "gage_uid", loctable = "gage", eventuidvar = "rainfall_gage_event_uid", stringsAsFactors=FALSE)
+  } else if(source == "radarcell"){
+    rainparams <- data.frame(smptable = "smp_radarcell", eventtable = "rainfall_radarcell_event", uidvar = "radarcell_uid", loctable = "radarcell", eventuidvar = "rainfall_radarcell_event_uid", stringsAsFactors=FALSE)
+  } else { #Parameter is somehow invalid
+    stop("Argument 'source' is not one of 'gage' or 'radarcell'")
+  }
   
-  #2.1 Query gage data
-  event_query <- paste("SELECT * FROM public.rainfall_gage_event",
-                       "WHERE gage_uid = CAST('", smp_gage$gage_uid, "' as int)",
+  
+  #2 Get closest rain source
+  rainsource <- odbc::dbGetQuery(con, paste0("SELECT * FROM public.", rainparams$smptable)) %>% 
+    dplyr::filter(smp_id == target_id) %>%
+    dplyr::pull(rainparams$uidvar)
+  
+  #2.1 Query event data
+  event_query <- paste(paste0("SELECT * FROM public.", rainparams$eventtable),
+                       "WHERE", rainparams$uidvar, "= CAST('", rainsource, "' as int)",
                        "AND eventdatastart_edt >= Date('", start_date, "')",
                        "AND eventdataend_edt <= Date('", end_date + lubridate::days(1), "');")
   
