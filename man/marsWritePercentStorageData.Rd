@@ -9,7 +9,8 @@ marsWritePercentStorageData(
   percentstorageused_peak,
   percentstorageused_relative,
   ow_uid,
-  rainfall_gage_event_uid,
+  source = c("gage", "radarcell"),
+  event_uid,
   snapshot_uid,
   observed_simulated_lookup_uid
 )
@@ -19,7 +20,9 @@ marsWritePercentStorageData(
 
 \item{ow_uid}{vector, numeric observation well UID}
 
-\item{rainfall_gage_event_uid}{vector, numeric}
+\item{source}{string, one of "gage" or "radarcell" for whether rain gage events or radar rainfall events have been processed}
+
+\item{event_uid}{vector, numeric event UIDs for rain events from the chosen source}
 
 \item{snapshot_uid}{vector, numeric}
 
@@ -42,7 +45,8 @@ marsWritePercentStorageData(con = mars,
    percentstorageused_peak = summary_250$percentstorageused_peak,
    percentstorageused_relative = summary_250\%percentstorageused_relative,
    ow_uid = summary_250\%ow_uid,
-   rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid,
+   source = "gage",
+   event_uid = summary_250$rainfall_gage_event_uid,
    snapshot_uid = summary_250$snapshot_uid,
    observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 

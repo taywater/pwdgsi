@@ -8,6 +8,7 @@ marsWriteDraindownData(
   con,
   draindown_hr,
   ow_uid,
+  source = c("gage", "radarcell"),
   rainfall_gage_event_uid,
   snapshot_uid,
   observed_simulated_lookup_uid
@@ -20,11 +21,13 @@ marsWriteDraindownData(
 
 \item{ow_uid}{vector, numeric observation well UID}
 
-\item{rainfall_gage_event_uid}{vector, numeric}
+\item{source}{string, one of "gage" or "radarcell" for whether rain gage events or radar rainfall events have been processed}
 
 \item{snapshot_uid}{vector, numeric}
 
 \item{observed_simulated_lookup_uid}{vector, numeric, 1 if observed, 2 if simulated}
+
+\item{event_uid}{vector, numeric}
 }
 \value{
 \code{TRUE} if the write is succesful, or an error message if unsuccessful
@@ -38,7 +41,8 @@ and write to MARS Analysis Database performance_draindwown table
 marsWriteDraindownData(con,
   draindown_hr = summary_250$draindown_hr,
   ow_uid = summary_250$ow_uid,
-  rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid, 
+  source = "gage",
+  event_uid = summary_250$rainfall_gage_event_uid, 
   snapshot_uid = summary_250$snapshot_uid,
   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 

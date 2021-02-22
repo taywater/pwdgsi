@@ -4,12 +4,20 @@
 \alias{marsFetchRainEventData}
 \title{Fetch rain event data for an SMP}
 \usage{
-marsFetchRainEventData(con, target_id, start_date, end_date)
+marsFetchRainEventData(
+  con,
+  target_id,
+  source = c("gage", "radarcell"),
+  start_date,
+  end_date
+)
 }
 \arguments{
 \item{con}{An ODBC connection to the MARS Analysis database returned by odbc::dbConnect}
 
 \item{target_id}{vector of chr, SMP ID, where the user has requested data}
+
+\item{source}{string, one of "gage" or "radarcell" to select rain gage events or radar rainfall events}
 
 \item{start_date}{string, format: "YYYY-MM-DD", start of data request range}
 
@@ -19,7 +27,7 @@ marsFetchRainEventData(con, target_id, start_date, end_date)
 Output will be a dataframe with the following columns: 
 
     \item{rainfall_gage_event_uid}{int}
-    \item{gage_uid}{int, rain gage number}
+    \item{gage_uid OR radarcell_uid}{int, unique identifier for rain source, depending on value of source argument}
     \item{eventdatastart_edt}{POSIXct datetime}
     \item{eventdataend_edt}{POSIXct datetime}
     \item{eventduration_hr}{num, duration of event}
@@ -31,5 +39,5 @@ Output will be a dataframe with the following columns:
 Returns a data frame with rain event data from the rain gage closest to the request SMP
 }
 \seealso{
-\code{\link{marsFetchRainGageData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchMonitoringData}}
+\code{\link{marsFetchRainfallData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchMonitoringData}}
 }

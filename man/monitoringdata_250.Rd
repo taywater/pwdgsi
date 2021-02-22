@@ -4,9 +4,7 @@
 \name{monitoringdata_250}
 \alias{monitoringdata_250}
 \title{SMP Monitoring Data}
-\format{
-a list with 3 dataframes
-}
+\format{a list with 3 dataframes}
 \usage{
 \code{monitoringdata_250}
 }

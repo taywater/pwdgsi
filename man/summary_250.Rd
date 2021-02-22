@@ -4,9 +4,7 @@
 \name{summary_250}
 \alias{summary_250}
 \title{SMP Summary}
-\format{
-a dataframe with 27 rows and 11 columns
-}
+\format{a dataframe with 27 rows and 11 columns}
 \usage{
 \code{summary_250}
 }

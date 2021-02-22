@@ -9,7 +9,8 @@ marsWriteOvertoppingData(
   overtopping,
   observed_simulated_lookup_uid,
   ow_uid,
-  rainfall_gage_event_uid,
+  source = c("gage", "radarcell"),
+  event_uid,
   snapshot_uid
 )
 }
@@ -22,9 +23,11 @@ marsWriteOvertoppingData(
 
 \item{ow_uid}{vector, numeric observation well UID}
 
-\item{rainfall_gage_event_uid}{vector, numeric}
+\item{source}{string, one of "gage" or "radarcell" for whether rain gage events or radar rainfall events have been processed}
 
 \item{snapshot_uid}{vector, numeric}
+
+\item{rainfall_gage_event_uid}{vector, numeric}
 }
 \value{
 \code{TRUE} if the write is succesful, or an error message if unsuccessful
@@ -39,7 +42,8 @@ marsWriteOvertoppingData(con = mars,
   overtopping = summary_250$overtop, 
   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid, 
   ow_uid = summary_250$ow_uid, 
-  rainfall_gage_event_uid = summary_250$rainfall_gage_event_uid,
+  source = "gage",
+  event_uid = summary_250$rainfall_gage_event_uid,
   snapshot_uid = summary_250$snapshot_uid)
 
 
