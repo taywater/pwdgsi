@@ -48,7 +48,7 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
   return(privateSMPs)
 }
 
-# marsFetchRainGageData ------------------------------------------
+# marsFetchRainfallData ------------------------------------------
 #' Return a dataframe with rain gage data
 #'
 #' Return data from the rain gage nearest a target SMP, for a specified date range.
@@ -77,7 +77,6 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radarcell"
   if(!odbc::dbIsValid(con)){
     stop("Argument 'con' is not an open ODBC channel")
   }
-  
   start_date %<>% as.POSIXct()
   end_date %<>% as.POSIXct()
   
@@ -158,7 +157,7 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radarcell"
       zeroFills[zeroFillIndex, 4] <- 0                      #rainfall_in
       zeroFills[zeroFillIndex, 3] <- rainsource   #gage_uid or radarcell_uid
       #browser()
-      print(paste("Gap-filling event ID. Before:", rain_temp$event[i], "After:", rain_temp$event[i+1]))
+      #print(paste("Gap-filling event ID. Before:", rain_temp$event[i], "After:", rain_temp$event[i+1]))
       zeroFills[zeroFillIndex, 5] <- pwdgsi:::marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
       
       #If the boundary is longer than 30 minutes, we need a second zero
@@ -170,7 +169,7 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radarcell"
         zeroFills[zeroFillIndex + 1, 4] <- 0                      #rainfall_in
         zeroFills[zeroFillIndex + 1, 3] <- rainsource   #gage_uid or radarcell_uid
         
-        print(paste("Gap-filling event ID. Before:", rain_temp[i, 5], "After:", rain_temp[i+1, 5]))
+        #print(paste("Gap-filling event ID. Before:", rain_temp[i, 5], "After:", rain_temp[i+1, 5]))
         zeroFills[zeroFillIndex + 1, 5] <- pwdgsi:::marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
         
       }
@@ -802,7 +801,7 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radarcell
 marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage", "radarcell"), start_date, end_date,
                                     sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE, daylight_savings = FALSE,
                                     debug = FALSE){
-
+#browser()
   #1 Argument validation
   #1.1 Check database connection
   if(!odbc::dbIsValid(con)){
@@ -907,19 +906,21 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
                                               by = c(rainparams$uidvar, "dtime_est" = "eventdatastart_est"))   
         
         #carry event uids forward from event start to start of next event
-        level_data_step$rainparams$eventuidvar %<>% zoo::na.locf(na.rm = FALSE)
+        level_data_step[[rainparams$eventuidvar]] %<>% zoo::na.locf(na.rm = FALSE)
         
         #isolate event data needed for assuring that the rainfall gage event uid isn't assigned too far past the event end
         event_data <- results[["Rain Event Data"]]  %>% 
           dplyr::select(rainparams$eventuidvar, eventdataend_est)
+        
+        #browser()
         
         #join event end times to level data by event uid
         #check that any dtime that has that event uid does not exceed the end time by greater than three days
         #if it does, reassign NA to event uid
         level_data_step %<>% dplyr::left_join(event_data, by = rainparams$eventuidvar) %>% 
           dplyr::mutate(new_event_uid = dplyr::case_when(dtime_est >= (eventdataend_est + lubridate::days(4)) ~ NA_integer_, 
-                                                         TRUE ~ rainparams$eventuidvar)) %>% 
-          dplyr::select(-rainparams$eventuidvar, -eventdataend_est) %>% 
+                                                         TRUE ~ level_data_step[[rainparams$eventuidvar]])) %>% 
+          dplyr::select(-!!rainparams$eventuidvar, -eventdataend_est) %>% 
           dplyr::rename(!!rainparams$eventuidvar := new_event_uid)
         
         
@@ -939,7 +940,7 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   if(debug){
     ptm <- proc.time()
   }
-  
+  #browser()
   #remove incomplete events from level/rainfall/rain event data
   if(rain_events == TRUE & rainfall == TRUE & level == TRUE){
   test_df_id <- dplyr::full_join(results[["Rainfall Data"]], results[["Level Data"]], by = c("dtime_est", rainparams$eventuidvar, rainparams$uidvar)) %>% #join
@@ -949,12 +950,14 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   
   results[["Level Data"]] %<>% dplyr::filter(!(rainparams$eventuidvar %in% test_df_id))
   
+  # !!sym syntax comes from here: https://stackoverflow.com/questions/49786597/r-dplyr-filter-with-a-dynamic-variable-name
+  # Because our variable name is a string, we need to make it evaluate as an R symbol instead of the string
   
   #filter out rain data for events that do have corresponding water level data
-  results[["Rainfall Data"]] %<>% dplyr::filter((rainparams$eventuidvar %in% results[["Level Data"]][, rainparams$eventuidvar]))
+  results[["Rainfall Data"]] %<>% dplyr::filter((!!sym(rainparams$eventuidvar) %in% results[["Level Data"]][, rainparams$eventuidvar]))
   
   #fiter out rain events that no longer have corresponding rainfall data
-  results[["Rain Event Data"]] %<>% dplyr::filter((rainparams$eventuidvar %in% results[["Rain Gage Data"]][, rainparams$eventuidvar]))
+  results[["Rain Event Data"]] %<>% dplyr::filter((!!sym(rainparams$eventuidvar) %in% results[["Rainfall Data"]][, rainparams$eventuidvar]))
   
   if(debug){
     print(paste("filtering_time:", (proc.time()-ptm)[3]))
