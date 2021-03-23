@@ -183,6 +183,12 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
     last_depth5 <- tempseries %>% dplyr::slice(dplyr::n())
   }
   
+  #check this again!
+  if(last_depth5$dtime_est == last_depth7$dtime_est){
+    message(paste0("Code does not capture descending limb in Event ", event[1], "."))
+    return(-910)
+  }
+  
   #2.4.4 Does rainfall occur during the recession period between 7" and 5" (or whatever the specfied range is)?
   if(sum(tempseries$rainfall_in, na.rm = TRUE) != 0){
     message(paste0("Rainfall occurs during recession period between ", depth_in + 1, " in. and ", depth_in - 1, " in. in Event ", event[1], "."))
@@ -386,7 +392,7 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' @param  infil_rate_inhr         System design infiltration rate (in/hr)
 #' @param  initial_water_level_ft  Initial water Level (ft); either a single value or a vector of length equal to and corresponding to length(unique(event)) (Default = 0)
 #' @param  runoff_coeff            Rational method coefficient (Default = 1)
-#' @param  discharge_coeff         Orifice discharge coefficient (Defauly = 0.62)
+#' @param  discharge_coeff         Orifice discharge coefficient (Default = 0.62)
 #' 
 #' @return Output is a dataframe with the following columns: dtime_est, rainfall_in, rainfall_gage_event_uid, Simulated_depth_ft, Simulated_vol_ft3, Simulated_orifice_vol_ft3
 #' 
@@ -835,6 +841,7 @@ marsPeakReleaseRate_cfs <- function(dtime_est,
 #' @export
 
 marsDraindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
+  
   #1. Process data
   #1.1 Initialize dataframe
   dtime_est <- lubridate::force_tz(dtime_est, tz = "EST")
