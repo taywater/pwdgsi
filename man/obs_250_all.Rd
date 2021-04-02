@@ -4,7 +4,8 @@
 \name{obs_250_all}
 \alias{obs_250_all}
 \title{Sample SMP Data}
-\format{a dataframe with 2890 rows and 5 variables
+\format{
+a dataframe with 2890 rows and 5 variables
 \describe{
  \item{dtime_est}{POSIXct datetime, YYYY-MM-DD HH:MM:SS}
  \item{level_ft}{num, water level (ft)}
@@ -14,7 +15,8 @@
  \item{gagename}{num, rain gage ID}
  \item{event}{num, rain event}
  
- }}
+ }
+}
 \usage{
 \code{obs_250_all}
 }

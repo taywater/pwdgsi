@@ -42,7 +42,14 @@ marsDraindown_hr(dtime_est, rainfall_in, waterlevel_ft)
 
 \describe{
      \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr). Returns \code{NA} if water level does not return to the starting level after event.}
-}
+\describe{
+       \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr).Returns the following outputs as coders for these error messages:}
+       \item{\code{-810}}{Water level does not respond to rain event}
+       \item{\code{-820}}{Water level does not return to a stable baseline}
+       \item{\code{-830}}{There is an increase during the descending limb that pushes the draindown time more than one hour}
+       \item{\code{-840}}{Water level did not drop below baseline}
+ } 
+ }
 }
 \description{
 Summarize and Evaluate System Performance

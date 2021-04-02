@@ -46,7 +46,7 @@ marsSimulatedLevelSeries_ft(
 
 \item{runoff_coeff}{Rational method coefficient (Default = 1)}
 
-\item{discharge_coeff}{Orifice discharge coefficient (Defauly = 0.62)}
+\item{discharge_coeff}{Orifice discharge coefficient (Default = 0.62)}
 }
 \value{
 Output is a dataframe with the following columns: dtime_est, rainfall_in, rainfall_gage_event_uid, Simulated_depth_ft, Simulated_vol_ft3, Simulated_orifice_vol_ft3

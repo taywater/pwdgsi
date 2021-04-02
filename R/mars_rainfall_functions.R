@@ -35,6 +35,7 @@
 marsDetectEvents <- function(dtime_est, rainfall_in, 
                          #DEFAULT VALUES
                          iet_hr = 6, mindepth_in = 0.10) {
+  
   # 1. QC checks
   # 1.1 Check for non-zero and negative rainfall values
   if(!all(rainfall_in > 0)) {

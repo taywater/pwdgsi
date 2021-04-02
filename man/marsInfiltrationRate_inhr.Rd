@@ -48,8 +48,7 @@ Output is estimated infiltration rate (in/hr). These outputs are codes for the f
        \item{\code{-910}}{Code captures rising limb in event.}
        \item{\code{-920}}{Rainfall occurs during recession period in specified depth range.}
        \item{\code{-930}}{Infiltration rate is negligible; calculated infiltration rate is less than 0.1in/hr. }
- } 
- If
+ }
 }
 \description{
 Estimated infiltration rate based on observed data

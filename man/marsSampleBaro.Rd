@@ -4,13 +4,15 @@
 \name{marsSampleBaro}
 \alias{marsSampleBaro}
 \title{Sample Baro Data}
-\format{A list containing a dataframe with 9 rows and 3 variables, and a character. 
+\format{
+A list containing a dataframe with 9 rows and 3 variables, and a character. 
 \describe{
   \item{smp_id}{SMP ID}
   \item{baro_psi}{barometric pressure at the corresponding SMP}
   \item{weight}{weight assigned based on distance from target SMP}
   \item{target_ID}{SMP ID for which the user requests data}
-}}
+}
+}
 \usage{
 \code{marsSampleBaro}
 }
