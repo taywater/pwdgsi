@@ -995,7 +995,7 @@ marsDraindownAssessment <- function(level_ft, eventdepth_in, event_id_check, des
     }else if(sim_draindown_complies == FALSE & real_draindown_complies == TRUE){
       assessment <- -1
     }else if(sim_draindown_complies == FALSE & real_draindown_complies == FALSE){
-      assessment <- 2
+      assessment <- -2
     }
     
     return(assessment)
