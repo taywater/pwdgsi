@@ -931,11 +931,11 @@ marsDraindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
 #' 
 #' @return Output is a number based on draindown time and draindown time is rain event was scaled to the design depth. Outputs are codes for the following messages: 
 #'  \describe{
-#'        \item{\code{2}}{Draindown is below the target duration, and scaled draindown is below the target duration.}
-#'        \item{\code{1}}{Draindown is above the target duration, but scaled draindown is below the target duration.}
-#'        \item{\code{0}}{Rainfall occurs during recession period in specified depth range.}
-#'        \item{\code{-1}}{Draindown is below the target duration, but scaled draindown is above the target duration.}
-#'        \item{\code{-2}}{Draindown is above the target duration, and scaled draindown is above the target duration.}
+#'        \item{\code{5}}{Draindown is below the target duration, and scaled draindown is below the target duration.}
+#'        \item{\code{4}}{Draindown is above the target duration, but scaled draindown is below the target duration.}
+#'        \item{\code{3}}{Draindown is below the target duration, but scaled draindown is above the target duration.}
+#'        \item{\code{2}}{Draindown is above the target duration, and scaled draindown is above the target duration.}
+#'        \item{\code{1}}{Draindown was not calculated.}
 #'  } 
 #'  
 #' @export
@@ -946,7 +946,7 @@ marsDraindownAssessment <- function(level_ft, eventdepth_in, event_id_check, des
   #this is a function to assess draindown based on relationship between storm size and design storm size
   #if there is a draindown error code, return 0.
   if(draindown_hr < 0){
-    assessment <- 0
+    assessment <- 1
   }else{
     
     #define a target draindown time
@@ -971,31 +971,31 @@ marsDraindownAssessment <- function(level_ft, eventdepth_in, event_id_check, des
     #ratio of design storm size to real storm size
     storm_size_ratio <- designdepth_in/eventdepth_in
     
-    #height of simulated ascending limb based on a linear relationship to the storm size
+    #height of scaled ascending limb based on a linear relationship to the storm size
     #max it out at the storage depth
-    sim_ascend_ft <- min(storm_size_ratio*ascend_ft, storage_depth_ft)
+    scaled_ascend_ft <- min(storm_size_ratio*ascend_ft, storage_depth_ft)
     
-    #ratio of simulated peak to real peak
-    peak_ratio <- sim_ascend_ft/ascend_ft
+    #ratio of scaled peak to real peak
+    peak_ratio <- scaled_ascend_ft/ascend_ft
     
-    #simulated draindown time based on linear relationship to peak
-    sim_draindown_hr <- peak_ratio*draindown_hr
+    #scaled draindown time based on linear relationship to peak
+    scaled_draindown_hr <- peak_ratio*draindown_hr
     
     #compare real draindown to target
     real_draindown_complies <- draindown_hr <= target_hr
     
-    #compare simulated draindown to target
-    sim_draindown_complies <- sim_draindown_hr <= target_hr
+    #compare scaled draindown to target
+    scaled_draindown_complies <- scaled_draindown_hr <= target_hr
     
     #set values 
-    if(real_draindown_complies & sim_draindown_complies){
+    if(real_draindown_complies & scaled_draindown_complies){
+      assessment <- 5
+    }else if(scaled_draindown_complies & real_draindown_complies == FALSE){
+      assessment <- 4
+    }else if(scaled_draindown_complies == FALSE & real_draindown_complies == TRUE){
+      assessment <- 3
+    }else if(scaled_draindown_complies == FALSE & real_draindown_complies == FALSE){
       assessment <- 2
-    }else if(sim_draindown_complies & real_draindown_complies == FALSE){
-      assessment <- 1
-    }else if(sim_draindown_complies == FALSE & real_draindown_complies == TRUE){
-      assessment <- -1
-    }else if(sim_draindown_complies == FALSE & real_draindown_complies == FALSE){
-      assessment <- -2
     }
     
     return(assessment)
