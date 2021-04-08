@@ -1008,7 +1008,7 @@ marsWriteInfiltrationData <- function(con,
                                    baseline_ft = NA,
                                    ow_uid,
                                    source = c("gage", "radarcell"),
-                                   rainfall_gage_event_uid,
+                                   event_uid,
                                    snapshot_uid,
                                    observed_simulated_lookup_uid){
 
@@ -1044,8 +1044,10 @@ marsWriteInfiltrationData <- function(con,
                                                      NA, infiltration_rate_inhr))
   
   #name column appropriately for performance table
-  summary_df[[rainparams$eventuidvar]] <- summary_df$event_uid
-  summary_df %<>% dplyr::select(-event_uid)
+  saturatedperformance_df[[rainparams$eventuidvar]] <- saturatedperformance_df$event_uid
+  saturatedperformance_df %<>% dplyr::select(1, 2, 3, 7, 5, 6)
+  
+  #browser()
   
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
   result <- tryCatch(odbc::dbWriteTable(con, rainparams$performancetable, saturatedperformance_df, overwrite = FALSE, append = TRUE), 
@@ -1224,6 +1226,8 @@ marsWriteOvertoppingData <- function(con,
   overtopping_df[[rainparams$eventuidvar]] <- overtopping_df$event_uid
   overtopping_df %<>% dplyr::select(-event_uid)
   
+  #browser()
+  
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
   result <- tryCatch(odbc::dbWriteTable(con, rainparams$performancetable, overtopping_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
@@ -1267,14 +1271,16 @@ marsWriteOvertoppingData <- function(con,
 #' 
 marsWriteDraindownData <- function(con,
                                    draindown_hr,
+                                   performance_draindown_assessment_lookup_uid,
                                    ow_uid,
                                    source = c("gage", "radarcell"),
-                                   rainfall_gage_event_uid, 
+                                   event_uid, 
                                    snapshot_uid,
                                    observed_simulated_lookup_uid){
   
   #check that vectors are the same length
   if(!(length(draindown_hr) == length(ow_uid) &
+       length(draindown_hr) == length(performance_draindown_assessment_lookup_uid) &
        length(draindown_hr) == length(event_uid) &
        length(draindown_hr) == length(snapshot_uid) &
        length(draindown_hr) == length(observed_simulated_lookup_uid))){
@@ -1296,7 +1302,15 @@ marsWriteDraindownData <- function(con,
                              observed_simulated_lookup_uid,
                              ow_uid,
                              event_uid,
-                             snapshot_uid)
+                             snapshot_uid, 
+                             performance_draindown_assessment_lookup_uid)
+  
+  #select columns for dataframe
+  draindown_df <- draindown_df %>% 
+    dplyr::mutate("error_lookup_uid" = ifelse(draindown_hr <0,
+                                              draindown_hr, NA),
+                  draindown_hr = ifelse(!is.na(error_lookup_uid),
+                                                  NA, draindown_hr))
   
   #name column appropriately by source
   draindown_df[[rainparams$eventuidvar]] <- draindown_df$event_uid
