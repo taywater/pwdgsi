@@ -39,7 +39,7 @@ marsWaterLevelBaseline_ft <- function(dtime_est, level_ft, event_check, max_infi
   #0.25 in/hr or lower is considered "not infiltrating". This is converted to ft/(15 minutes)
   depth_change <- max_infil_rate_inhr*1/12*15/60
   
-  if(min(test$diffr) > depth_change){
+  if(min(test$diffr, na.rm = TRUE) > depth_change){
     return(NA)
   }else{
     return(last_point)
