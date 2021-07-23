@@ -8,6 +8,7 @@ marsFetchMonitoringData(
   con,
   target_id,
   ow_suffix,
+  source = c("gage", "radarcell"),
   start_date,
   end_date,
   sump_correct = TRUE,
@@ -23,7 +24,9 @@ marsFetchMonitoringData(
 
 \item{target_id}{vector of chr, SMP ID, where the user has requested data}
 
-\item{ow_suffix}{vector of chr, SMP ID, where the user has requested data}
+\item{ow_suffix}{vector of chr, OW suffixes corresponding to SMP IDs, where the user has requested data}
+
+\item{source}{string, one of "gage" or "radarcell" to select rain gage events or radar rainfall events}
 
 \item{start_date}{string, format: "YYYY-MM-DD", start of data request range}
 

@@ -12,7 +12,7 @@
 #' @export
 #'
 
-marsWaterLevelBaseline_ft <- function(dtime_est, level_ft, max_infil_rate_inhr = 1){
+marsWaterLevelBaseline_ft <- function(dtime_est, level_ft, event_check, max_infil_rate_inhr = 1){
   
   #get difference in timesteps to determine steps needed in moving average
   step_diff <- as.numeric(difftime(dtime_est[length(dtime_est)], dtime_est[length(dtime_est) - 1], units = "mins"))
@@ -39,7 +39,7 @@ marsWaterLevelBaseline_ft <- function(dtime_est, level_ft, max_infil_rate_inhr =
   #0.25 in/hr or lower is considered "not infiltrating". This is converted to ft/(15 minutes)
   depth_change <- max_infil_rate_inhr*1/12*15/60
   
-  if(min(test$diffr) > depth_change){
+  if(min(test$diffr, na.rm = TRUE) > depth_change){
     return(NA)
   }else{
     return(last_point)
@@ -72,7 +72,6 @@ marsWaterLevelBaseline_ft <- function(dtime_est, level_ft, max_infil_rate_inhr =
 #'        \item{\code{-920}}{Rainfall occurs during recession period in specified depth range.}
 #'        \item{\code{-930}}{Infiltration rate is negligible; calculated infiltration rate is less than 0.1in/hr. }
 #'  } 
-#'  If 
 #' 
 #' @seealso \code{\link{marsUnderdrainOutflow_cf}}
 #' 
@@ -183,7 +182,13 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
     last_depth5 <- tempseries %>% dplyr::slice(dplyr::n())
   }
   
-  #2.4.4 Does rainfall occur during the recession period between 7" and 5" (or whatever the specfied range is)?
+  #check this again!
+  if(last_depth5$dtime_est == last_depth7$dtime_est){
+    message(paste0("Code does not capture descending limb in Event ", event[1], "."))
+    return(-910)
+  }
+  
+  #2.4.4 Does rainfall occur during the recession period between 7" and 5" (or whatever the specified range is)?
   if(sum(tempseries$rainfall_in, na.rm = TRUE) != 0){
     message(paste0("Rainfall occurs during recession period between ", depth_in + 1, " in. and ", depth_in - 1, " in. in Event ", event[1], "."))
     return(-920)
@@ -386,7 +391,7 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' @param  infil_rate_inhr         System design infiltration rate (in/hr)
 #' @param  initial_water_level_ft  Initial water Level (ft); either a single value or a vector of length equal to and corresponding to length(unique(event)) (Default = 0)
 #' @param  runoff_coeff            Rational method coefficient (Default = 1)
-#' @param  discharge_coeff         Orifice discharge coefficient (Defauly = 0.62)
+#' @param  discharge_coeff         Orifice discharge coefficient (Default = 0.62)
 #' 
 #' @return Output is a dataframe with the following columns: dtime_est, rainfall_in, rainfall_gage_event_uid, Simulated_depth_ft, Simulated_vol_ft3, Simulated_orifice_vol_ft3
 #' 
@@ -830,11 +835,20 @@ marsPeakReleaseRate_cfs <- function(dtime_est,
 #' 
 #' @return \describe{
 #'      \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr). Returns \code{NA} if water level does not return to the starting level after event.}
-#' }
+#' \describe{
+#'        \item{\code{marsDraindown_hr}}{Output is Calculated Draindown time (hr).Returns the following outputs as coders for these error messages:}
+#'        \item{\code{-810}}{Water level does not respond to rain event}
+#'        \item{\code{-820}}{Water level does not return to a stable baseline}
+#'        \item{\code{-830}}{There is an increase during the descending limb that pushes the draindown time more than one hour}
+#'        \item{\code{-840}}{Water level did not drop below baseline}
+#'  } 
+#'  }
 #' 
 #' @export
+#' 
 
 marsDraindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
+  
   #1. Process data
   #1.1 Initialize dataframe
   dtime_est <- lubridate::force_tz(dtime_est, tz = "EST")
@@ -846,52 +860,148 @@ marsDraindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
     rainfall_in = rainfall_in,
     waterlevel_ft  = waterlevel_ft)
   
-  #1.2 Re-run marsDetectEvents to pull rain event endtime
-  rain_end <- combined_data %>%
-    dplyr::mutate(rainfall_in = tidyr::replace_na(rainfall_in, 0)) %>%
-    dplyr::filter(rainfall_in != 0) %>%
-    dplyr::arrange(dtime_est) %>% #confirm that dtime is in ascending order
-    dplyr::mutate(rain_event = marsDetectEvents(dtime_est, rainfall_in)) %>%
-    dplyr::filter(rain_event == 1) %>%
-    dplyr::arrange(dtime_est) %>% #confirm that dtime is in ascending order
-    dplyr::slice(dplyr::n()) #pull last row (corresponds to end of rainfall event)
-  
-  #2. Confirm that there was a response in the structure during the event (water level > 0)
-  check <- any(waterlevel_ft > starting_level_ft + 0.001)  
+  #2. Confirm that there was a response in the structure during the event (water level >= 0.1)
+  check <- any(waterlevel_ft > starting_level_ft + 0.1)  
   
   if(check == FALSE){
-    draindown_hrs <- NA
+    return(-810)
+  }
+  
+  #2.1 Confirm that there is a 'baseline' where water level returns after peak
+  baseline_ft <- pwdgsi::marsWaterLevelBaseline_ft(dtime_est = dtime_est, level_ft = waterlevel_ft)
+  
+  if(is.na(baseline_ft)){
+    return(-820)
+  }
+  
+  #2.2 find time at which peak occurs
+  peak_time <- combined_data$dtime_est[which.max(combined_data$waterlevel_ft)]
+  
+  #3. Filter by storage depth to get the last time above baseline 
+  # in this case we are finding the first time after peak but above baseline + 0.01, which should prevent us from capturing a flat-ish tail
+  stor_end_time <- combined_data %>%
+    dplyr::filter(dtime_est > peak_time) %>%
+    dplyr::filter(waterlevel_ft < baseline_ft + 0.1) %>%
+    dplyr::arrange(dtime_est) %>%
+    dplyr::slice(1L) 
+  
+  #3.1 see if there is an increase in water level during the descending limb
+  increase <- combined_data %>%
+    dplyr::mutate(waterlevel_ft = zoo::rollmean(waterlevel_ft, 3, fill = NA)) %>% 
+    dplyr::filter(dtime_est > peak_time) %>% 
+    dplyr::filter(dtime_est < stor_end_time$dtime_est) %>%
+    dplyr::mutate(check_increase = dplyr::case_when(difftime(dplyr::lead(dtime_est, 12), dtime_est, units = "hours") == 1 & 
+                                                      dplyr::lead(waterlevel_ft, 12) > waterlevel_ft + 0.1 ~ TRUE, 
+                                                    dplyr::lead(waterlevel_ft, 4) > waterlevel_ft + 0.1 ~ TRUE,
+                                                    TRUE ~ FALSE))
+  
+  if(sum(increase$check_increase == TRUE) > 2){
+    return(-830)
+  }
+  
+  
+  #4. Assure that water level dropped below baseline + 0.01 (i think it has to right?)
+  if(nrow(stor_end_time) > 0){
+    #4.1 Calculate draindown time
+    draindown_hrs <- difftime(stor_end_time$dtime_est, peak_time, unit = "hours")
+    
+    #4.2 Round to whole number
+    draindown_hrs <- round(draindown_hrs,0)
+    
+    return(as.double(draindown_hrs))
     
   }else{
+    return(-840)
     
-    #3. Filter by storage depth to pull time to empty
-    stor_end <- combined_data %>%
-      dplyr::filter(dtime_est > rain_end$dtime_est) %>%
-      dplyr::filter(waterlevel_ft < starting_level_ft + 0.001) %>%
-      dplyr::arrange(dtime_est) %>%
-      dplyr::slice(1L)
-    
-    
-    #4. Check that water level drops below zero after event
-    if(nrow(stor_end) > 0){
-      #4.1 Calculate draindown time
-      draindown_hrs <- difftime(stor_end$dtime_est, rain_end$dtime_est, unit = "hours")
-      
-      #4.2 Round to whole number
-      draindown_hrs <- round(draindown_hrs,0)
-      
-    }else{
-      draindown_hrs <- NA
-      
-    } # End #4 check
-    
-  }# End #2 check
+  }
   
-  
-  return(as.double(draindown_hrs))
 }
 
+# marsDraindownAssement ------------------------------------------
+#' Draindown Assessment
+#' 
+#' Assess Draindown Rate based on storm size
+#' 
+#' @param  level_ft             Observed water level data (ft)
+#' @param  eventdepth_in        Rainfall event depth (in)
+#' @param  designdepth_in       Depth that the SMP is designed to managed (in)
+#' @param  storage_depth_ft     Maximum storage depth of system (ft)
+#' @param  draindown_hr         Draindown calculated by marsDraindown_hr (hr)
+#' @param  subsurface           If the SMP is subsurface, TRUE. If surface, FALSE.
+#' 
+#' @return Output is a number based on draindown time and draindown time is rain event was scaled to the design depth. Outputs are codes for the following messages: 
+#'  \describe{
+#'        \item{\code{5}}{Draindown is below the target duration, and scaled draindown is below the target duration.}
+#'        \item{\code{4}}{Draindown is above the target duration, but scaled draindown is below the target duration.}
+#'        \item{\code{3}}{Draindown is below the target duration, but scaled draindown is above the target duration.}
+#'        \item{\code{2}}{Draindown is above the target duration, and scaled draindown is above the target duration.}
+#'        \item{\code{1}}{Draindown was not calculated.}
+#'  } 
+#'  
+#' @export
+#'  
 
+marsDraindownAssessment <- function(level_ft, eventdepth_in, event_id_check, designdepth_in, storage_depth_ft, draindown_hr, subsurface = c(TRUE, FALSE)){
+  
+  #this is a function to assess draindown based on relationship between storm size and design storm size
+  #if there is a draindown error code, return 0.
+  if(draindown_hr < 0){
+    assessment <- 1
+  }else{
+    
+    #define a target draindown time
+    #72 hours for subsurface, 24 hours for surface
+    if(subsurface == TRUE){
+      target_hr <- 72
+    }else if(subsurface == FALSE){
+      target_hr <- 24
+    }
+    
+    #initial level
+    initial_level_ft <- level_ft %>% 
+      dplyr::first()
+    
+    #peak level
+    peak_level_ft <- level_ft %>% 
+      max() 
+    
+    #height of ascending limb
+    ascend_ft <- peak_level_ft - initial_level_ft
+    
+    #ratio of design storm size to real storm size
+    storm_size_ratio <- designdepth_in/eventdepth_in
+    
+    #height of scaled ascending limb based on a linear relationship to the storm size
+    #max it out at the storage depth
+    scaled_ascend_ft <- min(storm_size_ratio*ascend_ft, storage_depth_ft)
+    
+    #ratio of scaled peak to real peak
+    peak_ratio <- scaled_ascend_ft/ascend_ft
+    
+    #scaled draindown time based on linear relationship to peak
+    scaled_draindown_hr <- peak_ratio*draindown_hr
+    
+    #compare real draindown to target
+    real_draindown_complies <- draindown_hr <= target_hr
+    
+    #compare scaled draindown to target
+    scaled_draindown_complies <- scaled_draindown_hr <= target_hr
+    
+    #set values 
+    if(real_draindown_complies & scaled_draindown_complies){
+      assessment <- 5
+    }else if(scaled_draindown_complies & real_draindown_complies == FALSE){
+      assessment <- 4
+    }else if(scaled_draindown_complies == FALSE & real_draindown_complies == TRUE){
+      assessment <- 3
+    }else if(scaled_draindown_complies == FALSE & real_draindown_complies == FALSE){
+      assessment <- 2
+    }
+    
+    return(assessment)
+    
+  }
+}
 
 
 

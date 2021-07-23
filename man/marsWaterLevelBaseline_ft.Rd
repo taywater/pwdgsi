@@ -4,7 +4,12 @@
 \alias{marsWaterLevelBaseline_ft}
 \title{Water Level Baseline}
 \usage{
-marsWaterLevelBaseline_ft(dtime_est, level_ft, max_infil_rate_inhr = 1)
+marsWaterLevelBaseline_ft(
+  dtime_est,
+  level_ft,
+  event_check,
+  max_infil_rate_inhr = 1
+)
 }
 \arguments{
 \item{dtime_est}{A vector of POSIXct date times, in ascending order}
