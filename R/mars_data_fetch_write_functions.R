@@ -285,7 +285,7 @@ marsGapFillEventID <- function(event_low, event_high){
 
 marsInterpolateBaro <- function(baro_psi, smp_id, weight, target_id){
 
- if(length(baro_psi) >= 4){
+ if(length(baro_psi) >= 1){
    return(sum(baro_psi*weight)/sum(weight))
  }else{
    return(NA)
