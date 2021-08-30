@@ -42,7 +42,7 @@ marsWaterLevelBaseline_ft <- function(dtime_est, level_ft, event_check, max_infi
   if(min(test$diffr, na.rm = TRUE) > depth_change){
     return(NA)
   }else{
-    return(last_point)
+    return(round(last_point, 4))
   }
   
 }
@@ -222,7 +222,7 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
     return(-930)
   }
   
-  return(infiltration_rate_inhr)
+  return(round(infiltration_rate_inhr, 4))
   
 }
 
@@ -762,7 +762,7 @@ marsPeakStorage_percent <- function(waterlevel_ft, storage_depth_ft){
   #5. Set to zero if negative
   peak_util <- ifelse(peak_util < 0, 0, peak_util)
   
-  return(peak_util)
+  return(round(peak_util, 4))
 }
 
 
@@ -812,8 +812,8 @@ marsPeakReleaseRate_cfs <- function(dtime_est,
       as.numeric(df_max$elapsed_time_hr*60*60) #hr converted to seconds 
   }
   
-  #4. Round to 3 digits
-  rate <- round(rate, 3)
+  #4. Round to 4 digits
+  rate <- round(rate, 4)
   
   return(rate)
 }
@@ -905,8 +905,8 @@ marsDraindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
     #4.1 Calculate draindown time
     draindown_hrs <- difftime(stor_end_time$dtime_est, peak_time, unit = "hours")
     
-    #4.2 Round to whole number
-    draindown_hrs <- round(draindown_hrs,0)
+    #4.2 Round to 4 digits
+    draindown_hrs <- round(draindown_hrs,4)
     
     return(as.double(draindown_hrs))
     

@@ -211,7 +211,7 @@ marsStormDuration_hr <- function(dtime_est) {
   duration <- as.double(duration_calc) + 0.25 
   #15-minutes added to account for time subtraction
   
-  return(as.double(duration))
+  return(round(as.double(duration), 4))
 }
 
 
@@ -268,7 +268,7 @@ marsStormPeakIntensity_inhr <- function(dtime_est, rainfall_in) {
   maximum <- max(rainfall_in)
   peak <- maximum * mult
 
-  return(peak)
+  return(round(peak, 4))
 }
 
 # marsStormAvgIntensity -------------------------------
@@ -299,6 +299,6 @@ marsStormAverageIntensity_inhr <- function(dtime_est, rainfall_in) {
 
   # 2. Calculate average intensity
   result <- marsStormDepth_in(rainfall_in) / marsStormDuration_hr(dtime_est)
-  return(result)
+  return(round(result, 4))
 }
 
