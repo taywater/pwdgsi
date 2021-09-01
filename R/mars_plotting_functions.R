@@ -267,7 +267,6 @@ get_legend<-function(myggplot){
 #' @param  storage_depth_ft                   Maximum storage depth of system (ft)
 #' @param  orifice_show                       TRUE if user wants to include the orifice height as dashed line on plot (optional)
 #' @param  orifice_height_ft                  Orifice height, in feet (optional)
-#' @param  snapshot                           Dataframe of design metrics
 #' 
 #' @return Output is a ggplot2 object of the water level plot.
 #' 
@@ -402,9 +401,6 @@ marsWaterLevelPlot <- function(event,
                       color = "red",
                       size = ggplot2::rel(5))+
     
-    #orifice (covered by structure bottom if option is not selected)
-    ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, size = 1.2) +
-    
     #Structure top and bottom
     ggplot2::geom_hline(yintercept = 0, color = "black", size = 1.2)+ #bottom
     
@@ -416,17 +412,6 @@ marsWaterLevelPlot <- function(event,
                         size = ggplot2::rel(5),
                         fill = "white", 
                         label.size = 0) +
-    
-    # ggplot2::geom_label(ggplot2::aes(x=min_date, + event_duration/4, 
-    #                                y = orifice_plot*1.04, 
-    #                                label = if(orifice_show == TRUE){
-    #                                  "Orifice"
-    #                                }else{
-    #                                  ""
-    #                                }), 
-    #                                size = ggplot2::rel(5), 
-    #                                fill = "white", 
-    #                                label.size = 0) +
     
     #Observed water level
     ggplot2::geom_line(data = obs_df,
@@ -481,6 +466,20 @@ marsWaterLevelPlot <- function(event,
       )
   }
   
+  if(orifice_show == TRUE){
+    level_plot <- level_plot + 
+      
+      ggplot2::geom_label(ggplot2::aes(x=min_date, + event_duration/4,
+                                       y = orifice_plot*1.04,
+                                       label = "Orifice"),
+                          size = ggplot2::rel(5),
+                          fill = "white",
+                          label.size = 0) +
+      #orifice (covered by structure bottom if option is not selected)
+      ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, size = 1.2) 
+    
+  }
+  
   return(level_plot)
   
 }
@@ -520,15 +519,23 @@ marsCombinedPlot <- function(event,
                              orifice_height_ft = NULL,
                              rainfall_datetime,
                              rainfall_in,
-                             draindown_hr = NA,
-                             infiltration_rate_inhr = NA,
-                             percent_storage_relative = NA
+                             obs_peak_level_ft = NA, 
+                             obs_infiltration_rate_inhr = NA,
+                             obs_percent_storage_relative = NA,
+                             obs_draindown_hr = NA,
+                             sim_peak_level_ft = NA, 
+                             sim_infiltration_rate_inhr = NA,
+                             sim_percent_storage_relative = NA,
+                             sim_draindown_hr = NA
                              ){
   
   
-  if(!is.na(draindown_hr) | !is.na(infiltration_rate_inhr) | !is.na(percent_storage_relative)){
-    metrics_caption <- paste0(paste0(if(infiltration_rate_inhr[1] >= -800) "Infiltration Rate (in/hr): " else "Infiltration Error Code: "), infiltration_rate_inhr[1], "<br />  Draindown (hr): ", draindown_hr[1],
-                      "<br />  Relative Storage Used: ", percent_storage_relative[1], "%")
+  if(!is.na(obs_peak_level_ft) | !is.na(obs_infiltration_rate_inhr) | !is.na(obs_percent_storage_relative) | !is.na(obs_draindown_hr)){
+    metrics_caption <- paste0("Performance Metrics  Obs. Sim. <br />
+                               Peak Level     (ft)  ", obs_peak_level_ft[1], "  ",  sim_peak_level_ft[1], "<br />
+                               Sat. Infil  (in/hr)  ", obs_infiltration_rate_inhr[1], "  ", sim_infiltration_rate_inhr[1], "<br />
+                               Rel Storage Use   %  ", obs_percent_storage_relative[1], "  ", sim_percent_storage_relative[1], "<br />
+                               Draindown Time (hr)  ", obs_draindown_hr[1], "  ", sim_draindown_hr[1])
   }else{
     metrics_caption <- ""
   }
