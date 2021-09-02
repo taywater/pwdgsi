@@ -469,13 +469,6 @@ marsWaterLevelPlot <- function(event,
   if(orifice_show == TRUE){
     level_plot <- level_plot + 
       
-      ggplot2::geom_label(ggplot2::aes(x=min_date, + event_duration/4,
-                                       y = orifice_plot*1.04,
-                                       label = "Orifice"),
-                          size = ggplot2::rel(5),
-                          fill = "white",
-                          label.size = 0) +
-      #orifice (covered by structure bottom if option is not selected)
       ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, size = 1.2) 
     
   }
