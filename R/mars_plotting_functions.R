@@ -12,7 +12,6 @@
 #'
 #' @param dtime_est vector, POSIXct datetimes representing a single rain event
 #' @param rainfall_in vector, num, rainfall in inches for that rain event
-#' @param raingage chr, Label for the hyetograph for what rain gage the data came from
 #' @param event chr, label for the hyetograph for what rain gage the data came from
 #' @param reverse_y logical, whether the Y axes should be reversed
 #'
@@ -29,11 +28,11 @@
 #'   iet_hr = 6, mindepth_in = 0.10)) %>% filter(event_id == 2)
 #'   
 #' marsRainfallPlot(dtime_edt = gage_temp$dtime_edt, 
-#'   rainfall_in = gage_temp$rainfall_in, raingage = 2, event = 2)   
+#'   rainfall_in = gage_temp$rainfall_in, event = 2)   
 
 
 
-marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y = FALSE){
+marsRainfallPlot <- function(dtime_est, rainfall_in, event, reverse_y = FALSE){
   
   #0. check data
   if(length(dtime_est) != length(rainfall_in)){
@@ -61,8 +60,7 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, raingage, event, reverse_y 
   
   #1.5 Generate title block
   startdate <- min(rain_data$dtimeEST) - min_interval
-  title_text <- paste0("Hyetograph\nRaingage: ", raingage[1],
-                       " | Event: ", event[1],
+  title_text <- paste0("Hyetograph\n| Event: ", event[1],
                        " | Start Date and Time: ",
                        scales::date_format("%Y-%m-%d %H:%M", tz = "EST")(startdate),
                        sep = "")
@@ -283,7 +281,8 @@ marsWaterLevelPlot <- function(event,
                                sim_datetime = NA,
                                sim_level_ft = NA,
                                orifice_show = FALSE,
-                               orifice_height_ft = NULL){
+                               orifice_height_ft = NULL, 
+                               snapshot = NA){
   
   #1 Process Data
   
@@ -402,9 +401,6 @@ marsWaterLevelPlot <- function(event,
                       color = "red",
                       size = ggplot2::rel(5))+
     
-    #orifice (covered by structure bottom if option is not selected)
-    ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, size = 1.2) +
-    
     #Structure top and bottom
     ggplot2::geom_hline(yintercept = 0, color = "black", size = 1.2)+ #bottom
     
@@ -470,6 +466,13 @@ marsWaterLevelPlot <- function(event,
       )
   }
   
+  if(orifice_show == TRUE){
+    level_plot <- level_plot + 
+      
+      ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, size = 1.2) 
+    
+  }
+  
   return(level_plot)
   
 }
@@ -491,7 +494,6 @@ marsWaterLevelPlot <- function(event,
 #' @param orifice_height_ft Orifice height, in feet (optional)
 #' @param rainfall_datetime vector, POSIXct datetimes corresponding to \code{rainfall_in}
 #' @param rainfall_in vector, num, rainfall in inches corresponding to \code{rainfall_datetime}
-#' @param raingage chr, Label for the hyetograph for what rain gage the data came from
 #'
 #' @return Output will be a gridExtra object of the two plots
 #'
@@ -510,18 +512,23 @@ marsCombinedPlot <- function(event,
                              orifice_height_ft = NULL,
                              rainfall_datetime,
                              rainfall_in,
-                             raingage, 
-                             draindown_hr = NA,
-                             infiltration_rate_inhr = NA,
-                             percent_storage_relative = NA,
-                             baseline_ft = NA
+                             obs_peak_level_ft = NA, 
+                             obs_infiltration_rate_inhr = NA,
+                             obs_percent_storage_relative = NA,
+                             obs_draindown_hr = NA,
+                             sim_peak_level_ft = NA, 
+                             sim_infiltration_rate_inhr = NA,
+                             sim_percent_storage_relative = NA,
+                             sim_draindown_hr = NA
                              ){
   
   
-  if(!is.na(draindown_hr) | !is.na(infiltration_rate_inhr) | !is.na(percent_storage_relative) |
-     !is.na(baseline_ft)){
-    metrics_caption <- paste0(paste0(if(infiltration_rate_inhr[1] >= -800) "Infiltration Rate (in/hr): " else "Infiltration Error Code: "), infiltration_rate_inhr[1], "<br />  Draindown (hr): ", draindown_hr[1],
-                      "<br />  Relative Storage Used: ", percent_storage_relative[1], "%<br />  Baseline (ft): ", baseline_ft[1], " ")
+  if(!is.na(obs_peak_level_ft) | !is.na(obs_infiltration_rate_inhr) | !is.na(obs_percent_storage_relative) | !is.na(obs_draindown_hr)){
+    metrics_caption <- paste0("Performance Metrics  Obs. Sim. <br />
+                               Peak Level     (ft)  ", obs_peak_level_ft[1], "  ",  sim_peak_level_ft[1], "<br />
+                               Sat. Infil  (in/hr)  ", obs_infiltration_rate_inhr[1], "  ", sim_infiltration_rate_inhr[1], "<br />
+                               Rel Storage Use   %  ", obs_percent_storage_relative[1], "  ", sim_percent_storage_relative[1], "<br />
+                               Draindown Time (hr)  ", obs_draindown_hr[1], "  ", sim_draindown_hr[1])
   }else{
     metrics_caption <- ""
   }
@@ -548,7 +555,6 @@ marsCombinedPlot <- function(event,
   rainfall_plot <- pwdgsi::marsRainfallPlot(event = event, 
                                             dtime_est = rainfall_datetime, 
                                             rainfall_in = rainfall_in,
-                                            raingage = raingage, 
                                             reverse_y = TRUE)
   
   #2 Combine Plots
@@ -590,7 +596,6 @@ marsCombinedPlot <- function(event,
   
   #Title
   title_text <- paste0("Water Level\nSMP ID: ", structure_name,
-                       " | Raingage: ", raingage,
                        " | Event: ", event[1],
                        " | Start Date and Time: ", 
                        scales::date_format("%Y-%m-%d %H:%M", tz = "EST")(min_date),
