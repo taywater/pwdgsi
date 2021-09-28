@@ -1,11 +1,12 @@
 Package: pwdgsi
 Type: Package
 Title: Philadelphia Water Department Green Stormwater Infrastructure
-Version: 0.7.3
+Version: 0.7.4
 Authors@R: c(
     person("Taylor", "Heffernan", role = c("aut", "cre"), comment = "PWD", email = "taylor.heffernan@phila.gov"),
     person("Nicholas", "Manna", role = c("aut"), comment = "AKRF", email = "nmanna@akrf.com"),
-    person("Katie", "Swanson", role = c("aut"), comment = "CDM Smith", email = "SwansonK@cdmsmith.com"))
+    person("Katie", "Swanson", role = c("aut"), comment = "CDM Smith", email = "SwansonK@cdmsmith.com"),
+    person("Brian", "Cruice", role = c("aut"), comment = "AKRF", email = "bcruice@akrf.com"))
 Description: R functions and sample datasets related to the analysis
     of green stormwater infrastructure (GSI). Functions for analyzing
     rainfall, barometric pressure, water level recession rates, and

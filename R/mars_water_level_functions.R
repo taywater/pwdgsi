@@ -421,7 +421,7 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
                                         orifice_diam_in = NA, #default to NA if no orifice outlet
                                         storage_depth_ft,
                                         storage_vol_ft3,
-                                        infil_rate_inhr,
+                                        infil_rate_inhr = 0.06, #New default based on Compliance guidance
                                         #default values
                                         initial_water_level_ft = 0, 
                                         runoff_coeff = 1, #rational method coefficient
@@ -636,14 +636,10 @@ sim_loop <- function(x, debug, simseries_total, infil_rate_inhr, orifice_if, ori
     simseries$end_vol_ft3[i] <- volume_check_cf
     simseries$check[i] <- 0
   
-    #break loop following last rainfall if volume is 0 or NA, or if 2 measurements in a row are very near orifice height
-    if((simseries$vol_ft3[i] == 0 | # if volume is 0 
-        is.na(simseries$vol_ft3[i]) | # if volume is NA
-              ifelse(!is.na(orifice_height_ft[1]), #if orifice is NA, disregard this part
-                     (simseries$depth_ft[i] < (orifice_height_ft[1] + 0.01) & #if depth ft is equal to orifice height (or within .01 of it)
-                      simseries$depth_ft[i -1] < (orifice_height_ft[1] + 0.01)), #for two consecutive timestipes
-                      FALSE)) && 
-        i > last_rainfall){ #if time exceeds last rainfall
+    #break loop following last rainfall if volume is 0 or NA
+    if(i > last_rainfall &&
+        (simseries$vol_ft3[i] == 0 | # if volume is 0 
+        is.na(simseries$vol_ft3[i]))){ # if volume is NA)
       simseries %<>% dplyr::filter(check == 0) #remove excess pre-allocated rows
       break
     }
