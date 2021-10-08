@@ -377,7 +377,8 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 
 #' Simulated Water Level
 #' 
-#' Simulates water level in subsurface stormwater infiltration system with underdrain
+#' Simulates water level in subsurface stormwater infiltration system with underdrain.
+#' Note: This version of the package targets the PG12 database, and simulating rain gage events is deprecated. The rain event variable name is hard-coded to the radar IDs.
 #' 
 #' @param  dtime_est               A vector of POSIXct date times, in ascending order
 #' @param  rainfall_in             Rainfall depths during periods corresponding to times in  dtime_est (in)
@@ -393,7 +394,7 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' @param  runoff_coeff            Rational method coefficient (Default = 1)
 #' @param  discharge_coeff         Orifice discharge coefficient (Default = 0.62)
 #' 
-#' @return Output is a dataframe with the following columns: dtime_est, rainfall_in, rainfall_gage_event_uid, Simulated_depth_ft, Simulated_vol_ft3, Simulated_orifice_vol_ft3
+#' @return Output is a dataframe with the following columns: dtime_est, rainfall_in, radar_event_uid, simulated_depth_ft, simulated_vol_ft3, simulated_orifice_vol_ft3
 #' 
 #' @seealso \code{\link{simulation.stats}}
 #' 
@@ -451,6 +452,8 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
   }
   
  # browser()
+
+  
   
   
   #Prepare data
@@ -498,10 +501,10 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
   simseries_total$dtime_est %<>% lubridate::force_tz("EST")
   colnames(simseries_total) <- c("dtime_est", 
                                  "rainfall_in", 
-                                 "rainfall_gage_event_uid", 
-                                 "Simulated_depth_ft", 
-                                 "Simulated_vol_ft3", 
-                                 "Simulated_orifice_vol_ft3")
+                                 "radar_event_uid", 
+                                 "simulated_depth_ft", 
+                                 "simulated_vol_ft3", 
+                                 "simulated_orifice_vol_ft3")
   
   return(simseries_total)
   
