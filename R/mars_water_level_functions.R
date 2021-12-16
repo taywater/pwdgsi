@@ -450,10 +450,13 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
   if((infil_footprint_ft2 == 0 | is.na(infil_footprint_ft2)) & is.na(orifice_diam_in)){
     stop("infil_footprint_ft2 is 0 or NA, and orifice_diam_in is NA")
   }
-  
+
+  if(infil_rate_inhr == 0){
+    infil_rate_inhr <- 0.06 #Overload existing snapshots
+  }
+    
  # browser()
 
-  
   
   
   #Prepare data
