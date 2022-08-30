@@ -4,14 +4,12 @@
 \alias{marsRainfallPlot}
 \title{Plot hyetograph}
 \usage{
-marsRainfallPlot(dtime_est, rainfall_in, raingage, event, reverse_y = FALSE)
+marsRainfallPlot(dtime_est, rainfall_in, event, reverse_y = FALSE)
 }
 \arguments{
 \item{dtime_est}{vector, POSIXct datetimes representing a single rain event}
 
 \item{rainfall_in}{vector, num, rainfall in inches for that rain event}
-
-\item{raingage}{chr, Label for the hyetograph for what rain gage the data came from}
 
 \item{event}{chr, label for the hyetograph for what rain gage the data came from}
 
@@ -30,7 +28,7 @@ gage_temp <- mutate(marsSampleRain,
   iet_hr = 6, mindepth_in = 0.10)) \%>\% filter(event_id == 2)
   
 marsRainfallPlot(dtime_edt = gage_temp$dtime_edt, 
-  rainfall_in = gage_temp$rainfall_in, raingage = 2, event = 2)   
+  rainfall_in = gage_temp$rainfall_in, event = 2)   
 }
 \seealso{
 \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{filter}}

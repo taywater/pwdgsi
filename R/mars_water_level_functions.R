@@ -530,7 +530,7 @@ sim_loop <- function(x, debug, simseries_total, infil_rate_inhr, orifice_if, ori
   by_event %<>% dplyr::bind_rows(by_event_new_row)
   
   #pad dataset
-  output <- padr::pad(by_event, interval = '15 min') %>% tidyr::fill(event) %>% tidyr::replace_na(list(rainfall_in=0))
+  output <- padr::pad(by_event) %>% tidyr::fill(event) %>% tidyr::replace_na(list(rainfall_in=0))
   
   #Create dataframe to be filled                         
   simseries <- tibble::tibble(dtime_est = lubridate::force_tz(output$dtime_est, tz = "EST"),

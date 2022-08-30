@@ -7,9 +7,10 @@
 marsWriteDraindownData(
   con,
   draindown_hr,
+  performance_draindown_assessment_lookup_uid,
   ow_uid,
   source = c("gage", "radarcell"),
-  rainfall_gage_event_uid,
+  event_uid,
   snapshot_uid,
   observed_simulated_lookup_uid
 )
@@ -23,11 +24,11 @@ marsWriteDraindownData(
 
 \item{source}{string, one of "gage" or "radarcell" for whether rain gage events or radar rainfall events have been processed}
 
+\item{event_uid}{vector, numeric}
+
 \item{snapshot_uid}{vector, numeric}
 
 \item{observed_simulated_lookup_uid}{vector, numeric, 1 if observed, 2 if simulated}
-
-\item{event_uid}{vector, numeric}
 }
 \value{
 \code{TRUE} if the write is succesful, or an error message if unsuccessful
