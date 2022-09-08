@@ -16,14 +16,14 @@ marsWaterLevelPlot(
   orifice_height_ft = NULL,
   snapshot = NA,
   metrics_show = FALSE,
-  obs_RSPU = NA,
-  sim_RSPU = NA,
-  obs_infil = NA,
-  sim_infil = NA,
-  obs_draindown = NA,
-  sim_draindown = NA,
-  obs_overtopping = NA,
-  sim_overtopping = NA
+  obs_RSPU,
+  sim_RSPU,
+  obs_infil_inhr,
+  sim_infil_inhr,
+  obs_draindown_hr,
+  sim_draindown_hr,
+  obs_overtopping,
+  sim_overtopping
 )
 }
 \arguments{
@@ -51,13 +51,13 @@ marsWaterLevelPlot(
 
 \item{sim_RSPU}{Num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)}
 
-\item{obs_infil}{Num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
+\item{obs_infil_inhr}{Num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
 
-\item{sim_infil}{Num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
+\item{sim_infil_inhr}{Num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
 
-\item{obs_draindown}{Num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)}
+\item{obs_draindown_hr}{Num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)}
 
-\item{sim_draindown}{Num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)}
+\item{sim_draindown_hr}{Num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)}
 
 \item{obs_overtopping}{Bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)}
 
