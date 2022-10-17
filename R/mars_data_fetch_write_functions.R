@@ -32,7 +32,7 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 
   #Rather than validating each individual tracking number and selecting them one at a time
   #We can grab the entire table and filter by our tracking numbers to find the valid ones
-  planreviewtable <- odbc::dbGetQuery(con, "select p.\"TrackingNumber\" as tracking_number, p.\"Projectname\" as project_name, p.\"SMPID\" as smp_id, p.\"Plan Label\" as plan_label from external.planreview_view_smpsummary_crosstab_asbuiltall p")
+  planreviewtable <- odbc::dbGetQuery(con, "select p.\"TrackingNumber\" as tracking_number, p.\"Projectname\" as project_name, p.\"SMPID\" as smp_id, p.\"Plan Label\" as plan_label from external.tbl_planreview_crosstab p")
   hits <- dplyr::filter(planreviewtable, tracking_number %in% tracking_numbers)
 
   #If any of the tracking numbers weren't found, we can return an error message
@@ -77,18 +77,19 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
   if(!odbc::dbIsValid(con)){
     stop("Argument 'con' is not an open ODBC channel")
   }
+  # browser()
   start_date %<>% as.POSIXct()
   end_date %<>% as.POSIXct()
   
   #Are we working with gages or radarcells?
   if(source == "gage"){
-    rainparams <- data.frame(smptable = "admin.smp_gage", raintable = "data.gage_rainfall", uidvar = "gage_uid", loctable = "admin.gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
+    rainparams <- data.frame(smptable = "admin.tbl_smp_gage", raintable = "data.viw_gage_rainfall", uidvar = "gage_uid", loctable = "admin.tbl_gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
   } else if(source == "radar"){
-    rainparams <- data.frame(smptable = "admin.smp_radar", raintable = "data.radar_rainfall", uidvar = "radar_uid", loctable = "admin.radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)
+    rainparams <- data.frame(smptable = "admin.tbl_smp_radar", raintable = "data.viw_radar_rainfall", uidvar = "radar_uid", loctable = "admin.tbl_radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)
   } else { #Parameter is somehow invalid
     stop("Argument 'source' is not one of 'gage' or 'radar'")
   }
-  
+
   #Get closest rainfall source
   smp_query <- paste0("SELECT * FROM ", rainparams$smptable)
   #print(smp_query)
@@ -354,16 +355,16 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 
 
   #Get SMP locations, and the locations of the baro sensors
-  smp_loc <- odbc::dbGetQuery(con, "SELECT * FROM admin.smp_loc")
+  smp_loc <- odbc::dbGetQuery(con, "SELECT * FROM admin.tbl_smp_loc")
   locus_loc <- dplyr::filter(smp_loc, smp_id == target_id)
-  baro_smp <- odbc::dbGetQuery(con, "SELECT DISTINCT smp_id FROM admin.baro_rawfile;") %>% dplyr::pull(smp_id)
+  baro_smp <- odbc::dbGetQuery(con, "SELECT DISTINCT smp_id FROM admin.tbl_baro_rawfile;") %>% dplyr::pull(smp_id)
 
   #Collect baro data
   #Get all baro data for the specified time period
-  baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM data.barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "' order by dtime_est;"))
+  baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM data.viw_barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "' order by dtime_est;"))
   
-  baro_latest_dtime <- odbc::dbGetQuery(con, paste0("SELECT max(dtime_est) FROM data.baro WHERE dtime_est < '", end_date + lubridate::days(1), "'")) %>% dplyr::pull()
-  baro_latest_valid <- odbc::dbGetQuery(con, paste0("SELECT max(dtime_est) FROM data.barodata_neighbors WHERE neighbors >= 4 and dtime_est < '", end_date + lubridate::days(1), "'")) %>% dplyr::pull()
+  baro_latest_dtime <- odbc::dbGetQuery(con, paste0("SELECT max(dtime_est) FROM data.tbl_baro WHERE dtime_est < '", end_date + lubridate::days(1), "'")) %>% dplyr::pull()
+  baro_latest_valid <- odbc::dbGetQuery(con, paste0("SELECT max(dtime_est) FROM data.viw_barodata_neighbors WHERE neighbors >= 4 and dtime_est < '", end_date + lubridate::days(1), "'")) %>% dplyr::pull()
   
   if(length(baro$dtime_est) == 0){
     stop (paste0("No data available in the reqested interval. The latest available baro data is from ", baro_latest_dtime, "."))
@@ -586,17 +587,17 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
   #1.4.1 Create dataframe
   request_df <- data.frame(smp_id, ow_suffix, request_date, stringsAsFactors = FALSE)
   
-  #1.4.2 Query fieldwork.ow and check if each smp id and observation well are there
+  #1.4.2 Query fieldwork.tbl_ow and check if each smp id and observation well are there
   # Initialize dataframe
   ow_validity <- data.frame(ow_uid = numeric(), 
                             smp_id =  character(),  
                             ow_suffix = character(), 
                             stringsAsFactors = FALSE)
   
-  # Check if smp_id and ow_suffix are in the MARS table "fieldwork.ow"
+  # Check if smp_id and ow_suffix are in the MARS table "fieldwork.tbl_ow"
   # Return matches
   for(i in 1:length(request_df$smp_id)){
-    ow_valid_check <- odbc::dbGetQuery(con, "SELECT * FROM fieldwork.ow") %>% dplyr::select(-facility_id) %>%  dplyr::filter(smp_id == request_df$smp_id[i] & ow_suffix == request_df$ow_suffix[i])
+    ow_valid_check <- odbc::dbGetQuery(con, "SELECT * FROM fieldwork.tbl_ow") %>% dplyr::select(-facility_id) %>%  dplyr::filter(smp_id == request_df$smp_id[i] & ow_suffix == request_df$ow_suffix[i])
     ow_validity <- dplyr::bind_rows(ow_validity, ow_valid_check)
   }
   
@@ -622,7 +623,7 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
   
   #2.2 Run get_arbitrary_snapshot in a loop and bind results
   for(i in 1:length(ow_validity$smp_id)){
-    snapshot_query <- paste0("SELECT * FROM metrics.get_arbitrary_snapshot('", ow_validity$smp_id[i], "','", ow_validity$ow_suffix[i], "','", ow_validity$request_date[i], "') ORDER BY snapshot_uid DESC LIMIT 1")
+    snapshot_query <- paste0("SELECT * FROM metrics.fun_get_arbitrary_snapshot('", ow_validity$smp_id[i], "','", ow_validity$ow_suffix[i], "','", ow_validity$request_date[i], "') ORDER BY snapshot_uid DESC LIMIT 1")
     new_result <- odbc::dbGetQuery(con, snapshot_query)
     result <- dplyr::bind_rows(result, new_result)
   }
@@ -670,16 +671,16 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
   
   #1.2 Check if smp_id and ow_suffix are in the MARS table "ow_validity"
   # Return match
-  validity_query <- paste0("select * from fieldwork.get_ow_uid('",target_id,"','",ow_suffix,"', NULL)")
+  validity_query <- paste0("select * from fieldwork.fun_get_ow_uid('",target_id,"','",ow_suffix,"', NULL)")
   ow_uid <- odbc::dbGetQuery(con, validity_query)
   
   #1.3 Pick which table to query
   if(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")){
-    level_table <- "data.gw_depthdata_raw"
+    level_table <- "data.tbl_gw_depthdata_raw"
   }else if(!(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")) & sump_correct == TRUE){
-    level_table <- "data.ow_leveldata_sumpcorrected"
+    level_table <- "data.viw_ow_leveldata_sumpcorrected"
   }else if(!(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")) & sump_correct == FALSE){
-    level_table <- "data.ow_leveldata_raw"
+    level_table <- "data.tbl_ow_leveldata_raw"
   }
   start_date %<>% as.POSIXct()
   end_date %<>% as.POSIXct()
@@ -741,9 +742,9 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
   
   #Are we working with gages or radarcells?
   if(source == "gage"){
-    rainparams <- data.frame(smptable = "admin.smp_gage", eventtable = "data.gage_event", uidvar = "gage_uid", loctable = "admin.gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
+    rainparams <- data.frame(smptable = "admin.tbl_smp_gage", eventtable = "data.tbl_gage_event", uidvar = "gage_uid", loctable = "admin.tbl_gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
   } else if(source == "radar"){
-    rainparams <- data.frame(smptable = "admin.smp_radar", eventtable = "data.radar_event", uidvar = "radar_uid", loctable = "admin.radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)
+    rainparams <- data.frame(smptable = "admin.tbl_smp_radar", eventtable = "data.tbl_radar_event", uidvar = "radar_uid", loctable = "admin.tbl_radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)
   } else { #Parameter is somehow invalid
     stop("Argument 'source' is not one of 'gage' or 'radar'")
   }
@@ -810,9 +811,9 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   
   #Are we working with gages or radarcells?
   if(source == "gage"){
-    rainparams <- data.frame(smptable = "admin.smp_gage", eventtable = "gage_event", uidvar = "gage_uid", loctable = "admin.gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
+    rainparams <- data.frame(smptable = "admin.tbl_smp_gage", eventtable = "data.tbl_gage_event", uidvar = "gage_uid", loctable = "admin.tbl_gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
   } else if(source == "radar"){
-    rainparams <- data.frame(smptable = "admin.smp_radar", eventtable = "radar_event", uidvar = "radar_uid", loctable = "admin.radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)
+    rainparams <- data.frame(smptable = "admin.tbl_smp_radar", eventtable = "data.tbl_radar_event", uidvar = "radar_uid", loctable = "admin.tbl_radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)
   } else { #Parameter is somehow invalid
     stop("Argument 'source' is not one of 'gage' or 'radar'")
   }
@@ -825,9 +826,9 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   if(debug){
     ptm <- proc.time()
   }
-  
+
   smp_rain <- odbc::dbGetQuery(con, paste0("SELECT * FROM ", rainparams$smptable)) %>% dplyr::filter(smp_id %in% target_id)
-  ow_validity <- odbc::dbGetQuery(con, "SELECT * FROM fieldwork.ow")
+  ow_validity <- odbc::dbGetQuery(con, "SELECT * FROM fieldwork.tbl_ow")
   ow_uid_gage <- ow_validity %>% dplyr::right_join(smp_rain, by = "smp_id")
   
   if(debug){
@@ -1032,7 +1033,7 @@ marsWriteInfiltrationData <- function(con,
                                                      NA, infiltration_rate_inhr))
     
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.infiltration"), saturatedperformance_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.tbl_infiltration"), saturatedperformance_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }
@@ -1115,7 +1116,7 @@ marsWritePercentStorageData <- function(con,
 
   
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.percentstorage"), percentstorage_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.tbl_percentstorage"), percentstorage_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }
@@ -1177,7 +1178,7 @@ marsWriteOvertoppingData <- function(con,
                                snapshot_uid)
   
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.overtopping"), overtopping_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.tbl_overtopping"), overtopping_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }
@@ -1249,7 +1250,7 @@ marsWriteDraindownData <- function(con,
                                                   NA, draindown_hr))
   
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.draindown"), draindown_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.tbl_draindown"), draindown_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }

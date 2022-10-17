@@ -1,6 +1,6 @@
 # marsRainfallPlot ------------------------------------------
 # NOTES: Based on plots developed by Dwayne Myers and modified by Katie Swanson 2/4/2019
-# Plots hyetographs of events processed by marsDetectEvents funtion
+# Plots hyetographs of events processed by marsDetectEvents function
 
 # IN: dtime_est A vector of times at which rainfall was collected in the storm
 # IN: rainfall_in The depth of water that fell at each time, in inches
@@ -267,6 +267,16 @@ get_legend<-function(myggplot){
 #' @param  storage_depth_ft                   Maximum storage depth of system (ft)
 #' @param  orifice_show                       TRUE if user wants to include the orifice height as dashed line on plot (optional)
 #' @param  orifice_height_ft                  Orifice height, in feet (optional)
+#' @param  metrics_show                       Bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)
+#' @param  obs_RSPU                           Num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
+#' @param  obs_infil_inhr                     Num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
+#' @param  obs_draindown_hr                   Num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)
+#' @param  obs_overtopping                    Bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+#' @param  sim_RSPU                           Num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
+#' @param  sim_infil_inhr                     Num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
+#' @param  sim_draindown_hr                   Num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)
+#' @param  sim_overtopping                    Bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+
 #' 
 #' @return Output is a ggplot2 object of the water level plot.
 #' 
@@ -282,7 +292,16 @@ marsWaterLevelPlot <- function(event,
                                sim_level_ft = NA,
                                orifice_show = FALSE,
                                orifice_height_ft = NULL, 
-                               snapshot = NA){
+                               snapshot = NA,
+                               metrics_show = FALSE,
+                               obs_RSPU,
+                               sim_RSPU,
+                               obs_infil_inhr,
+                               sim_infil_inhr,
+                               obs_draindown_hr,
+                               sim_draindown_hr,
+                               obs_overtopping ,
+                               sim_overtopping){
   
   #1 Process Data
   
@@ -327,6 +346,7 @@ marsWaterLevelPlot <- function(event,
   #Check is orifice should be shown
   if(orifice_show == TRUE){
     orifice_plot <- orifice_height_ft
+    orifice_lab <- paste0("orifice elevation: ",round(orifice_height_ft, 2))
   }else{
     orifice_plot <- 0 #line will be covered by bottom of structure if option is not selected
   }
@@ -469,7 +489,76 @@ marsWaterLevelPlot <- function(event,
   if(orifice_show == TRUE){
     level_plot <- level_plot + 
       
-      ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, size = 1.2) 
+      ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, size = 1.2) +
+      ggplot2::geom_label(label = orifice_lab,
+                          y = orifice_height_ft*1.1,
+                          x = obs_datetime[round(0.75*length(obs_datetime))])
+    
+  }
+  
+  if(metrics_show == TRUE){
+    
+    #set missing values to ""
+    if( missing(obs_draindown_hr) ){obs_draindown_hr <- ""}
+    if( missing(sim_draindown_hr) ){sim_draindown_hr <- ""}
+    if( missing(obs_infil_inhr) ){obs_infil_inhr <- ""}
+    if( missing(sim_infil_inhr) ){sim_infil_inhr <- ""}
+    if( missing(obs_RSPU) ){obs_RSPU <- ""}
+    if( missing(sim_RSPU) ){sim_RSPU <- ""}
+    if( missing(obs_overtopping) ){obs_overtopping <- ""}
+    if( missing(sim_overtopping) ){sim_overtopping <- ""}
+    
+    if( is.numeric(obs_infil_inhr) & obs_infil_inhr < 0 ){
+      obs_infil_inhr <- paste0("ERR: ", obs_infil_inhr)
+    }
+    if( is.numeric(sim_infil_inhr) & sim_infil_inhr < 0 ){
+      sim_infil_inhr <- paste0("ERR: ", sim_infil_inhr)
+    }
+    
+    if(is.numeric(obs_draindown_hr)){ obs_draindown_hr <- round(obs_draindown_hr,2)}
+    if(is.numeric(sim_draindown_hr)){ sim_draindown_hr <- round(sim_draindown_hr,2)}
+    if(is.numeric(obs_infil_inhr)){ obs_infil_inhr <- round(obs_infil_inhr,2)}
+    if(is.numeric(sim_infil_inhr)){ sim_infil_inhr <- round(sim_infil_inhr,2)}
+    if(is.numeric(obs_RSPU)){ obs_RSPU <- round(obs_RSPU,2)}
+    if(is.numeric(sim_RSPU)){ sim_RSPU <- round(sim_RSPU,2)}
+    
+    # browser()
+    #------ table version
+    metric_table <- as.data.frame(matrix(nrow=4))
+    colnames(metric_table) <- "Metrics"
+    metric_table$Metrics <- c("Drain down (hrs)",
+                              "Infiltration rate (in/hr)",
+                              "RSPU (%)",
+                              "Overtopping (T/F)")
+    
+    if(obs_infil_inhr < 0){obs_infil_inhr <- paste0("ERR: ",obs_infil_inhr)}
+    
+    obs_mets <- c(obs_draindown_hr,obs_infil_inhr, obs_RSPU, obs_overtopping)
+    sim_mets <- c(sim_draindown_hr,sim_infil_inhr, sim_RSPU, sim_overtopping)
+    
+    #add columns if obs/sim exists
+    if(sum(is.na(obs_mets)) < 4){metric_table$Observed <- obs_mets}
+    if(sum(is.na(sim_mets)) < 4){metric_table$Simulated <- sim_mets}
+    
+    #remove rows if both are empty
+    # browser()
+    remove <- c()
+    if(sum(metric_table[1,] == "") == 2){ remove <- c(remove,1)}
+    if(sum(metric_table[2,] == "") == 2){ remove <- c(remove,2)}
+    if(sum(metric_table[3,] == "") == 2){ remove <- c(remove,3)}
+    if(sum(metric_table[4,] == "") == 2){ remove <- c(remove,4)}
+    metric_table <- metric_table[c(1:4)[!(c(1:4) %in% remove)],]
+    
+    
+    level_plot <- level_plot +
+      
+      ggplot2::annotation_custom (grob = tableGrob(metric_table,
+                                                   rows = NULL,
+                                                   theme = ggpp::ttheme_gtlight()),
+                                  ymin = (storage_depth_ft*0.70),
+                                  ymax = (storage_depth_ft*0.95),
+                                  xmin = obs_datetime[round(length(obs_datetime)*0.5)],
+                                  xmax = obs_datetime[round(length(obs_datetime))])
     
   }
   
@@ -483,17 +572,26 @@ marsWaterLevelPlot <- function(event,
 #'
 #' Return hyetograph and observed and simulated (optional) water level plot for the same rain event on the same chart
 #'
-#' @param event chr, rain gage event UID
-#' @param structure_name   chr, SMP ID and OW Suffix
-#' @param obs_datetime vector, POSIXct datetimes corresponding to \code{obs_level_ft}
-#' @param obs_level_ft vector, water level data (ft), corresponding to \code{obs_datetime}
-#' @param sim_datetime vector, POSIXct datetimes corresponding to \code{sim_level_ft} (optional)
-#' @param sim_level_ft vector, water level data (ft), corresponding to \code{sim_datetime} (optional)
-#' @param storage_depth_ft num, maximum storage depth of system (ft)
-#' @param orifice_show TRUE if user wants to include the orifice height as dashed line on plot (optional)
-#' @param orifice_height_ft Orifice height, in feet (optional)
-#' @param rainfall_datetime vector, POSIXct datetimes corresponding to \code{rainfall_in}
-#' @param rainfall_in vector, num, rainfall in inches corresponding to \code{rainfall_datetime}
+#' @param event                               chr, rain gage event UID
+#' @param structure_name                      chr, SMP ID and OW Suffix
+#' @param obs_datetime                        vector, POSIXct datetimes corresponding to \code{obs_level_ft}
+#' @param obs_level_ft                        vector, water level data (ft), corresponding to \code{obs_datetime}
+#' @param sim_datetime                        vector, POSIXct datetimes corresponding to \code{sim_level_ft} (optional)
+#' @param sim_level_ft                        vector, water level data (ft), corresponding to \code{sim_datetime} (optional)
+#' @param storage_depth_ft                    num, maximum storage depth of system (ft)
+#' @param orifice_show                        TRUE if user wants to include the orifice height as dashed line on plot (optional)
+#' @param orifice_height_ft                   Orifice height, in feet (optional)
+#' @param rainfall_datetime                   vector, POSIXct datetimes corresponding to \code{rainfall_in}
+#' @param rainfall_in                         vector, num, rainfall in inches corresponding to \code{rainfall_datetime}
+#' @param metrics_show                        bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)
+#' @param obs_RSPU                            num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
+#' @param obs_infil_inhr                      num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
+#' @param obs_draindown_hr                    num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)
+#' @param obs_overtopping                     bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+#' @param sim_RSPU                            num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
+#' @param sim_infil_inhr                      num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
+#' @param sim_draindown_hr                    num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)
+#' @param sim_overtopping                     bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
 #'
 #' @return Output will be a gridExtra object of the two plots
 #'
@@ -512,26 +610,27 @@ marsCombinedPlot <- function(event,
                              orifice_height_ft = NULL,
                              rainfall_datetime,
                              rainfall_in,
-                             obs_peak_level_ft = NA, 
-                             obs_infiltration_rate_inhr = NA,
-                             obs_percent_storage_relative = NA,
-                             obs_draindown_hr = NA,
-                             sim_peak_level_ft = NA, 
-                             sim_infiltration_rate_inhr = NA,
-                             sim_percent_storage_relative = NA,
-                             sim_draindown_hr = NA
+                             metrics_show = FALSE,
+                             obs_RSPU,
+                             sim_RSPU,
+                             obs_infil_inhr,
+                             sim_infil_inhr,
+                             obs_draindown_hr,
+                             sim_draindown_hr,
+                             obs_overtopping,
+                             sim_overtopping
                              ){
   
-  
-  if(!is.na(obs_peak_level_ft) | !is.na(obs_infiltration_rate_inhr) | !is.na(obs_percent_storage_relative) | !is.na(obs_draindown_hr)){
-    metrics_caption <- paste0("Performance Metrics  Obs. Sim. <br />
-                               Peak Level     (ft)  ", obs_peak_level_ft[1], "  ",  sim_peak_level_ft[1], "<br />
-                               Sat. Infil  (in/hr)  ", obs_infiltration_rate_inhr[1], "  ", sim_infiltration_rate_inhr[1], "<br />
-                               Rel Storage Use   %  ", obs_percent_storage_relative[1], "  ", sim_percent_storage_relative[1], "<br />
-                               Draindown Time (hr)  ", obs_draindown_hr[1], "  ", sim_draindown_hr[1])
-  }else{
-    metrics_caption <- ""
-  }
+  # potential to add back in; updated variable names; kept obs_peak_level_ft
+  # if(!is.na(obs_peak_level_ft) | !is.na(obs_infil_inhr) | !is.na(obs_percent_storage_relative) | !is.na(obs_draindown_hr)){
+  #   metrics_caption <- paste0("Performance Metrics  Obs. Sim. <br />
+  #                              Peak Level     (ft)  ", obs_peak_level_ft[1], "  ",  sim_peak_level_ft[1], "<br />
+  #                              Sat. Infil  (in/hr)  ", obs_infil_inhr[1], "  ", sim_infil_inhr[1], "<br />
+  #                              Rel Storage Use   %  ", obs_RSPU[1], "  ", sim_RSPU[1], "<br />
+  #                              Draindown Time (hr)  ", obs_draindown_hr[1], "  ", sim_draindown_hr[1])
+  # }else{
+  #   metrics_caption <- ""
+  # }
   
   #Add a last date so the hyetograph looks better
     rainfall_in <- append(rainfall_in, 0)
@@ -628,8 +727,72 @@ marsCombinedPlot <- function(event,
     #                     size = 4.7,
     #                     fill = "white", 
     #                     label.size = 0)
-    ggplot2::annotate("richtext", y = Inf, x = max_date - (max_date - min_date)*0.01, vjust=0, hjust = 1, size = 4.7, label = metrics_caption, fill = "white")
-    #ggplot2::annotate("text", x = max_date - lubridate::minutes(60), y = max(rainfall_in), vjust=0, hjust = 1, label = metrics_caption)
+    # ggplot2::annotate("richtext", y = Inf, x = max_date - (max_date - min_date)*0.01, vjust=0, hjust = 1, size = 4.7, label = metrics_caption, fill = "white")
+    # ggplot2::annotate("text", x = max_date - lubridate::minutes(60), y = max(rainfall_in), vjust=0, hjust = 1, label = metrics_caption)
+  
+  if(metrics_show == TRUE){
+    
+    #set missing values to ""
+    if( missing(obs_draindown_hr) ){obs_draindown_hr <- ""}
+    if( missing(sim_draindown_hr) ){sim_draindown_hr <- ""}
+    if( missing(obs_infil_inhr) ){obs_infil_inhr <- ""}
+    if( missing(sim_infil_inhr) ){sim_infil_inhr <- ""}
+    if( missing(obs_RSPU) ){obs_RSPU <- ""}
+    if( missing(sim_RSPU) ){sim_RSPU <- ""}
+    if( missing(obs_overtopping) ){obs_overtopping <- ""}
+    if( missing(sim_overtopping) ){sim_overtopping <- ""}
+    
+    if( is.numeric(obs_infil_inhr) & obs_infil_inhr < 0 ){
+      obs_infil_inhr <- paste0("ERR: ", obs_infil_inhr)
+    }
+    if( is.numeric(sim_infil_inhr) & sim_infil_inhr < 0 ){
+      sim_infil_inhr <- paste0("ERR: ", sim_infil_inhr)
+    }
+    
+    if(is.numeric(obs_draindown_hr)){ obs_draindown_hr <- round(obs_draindown_hr,2)}
+    if(is.numeric(sim_draindown_hr)){ sim_draindown_hr <- round(sim_draindown_hr,2)}
+    if(is.numeric(obs_infil_inhr)){ obs_infil_inhr <- round(obs_infil_inhr,2)}
+    if(is.numeric(sim_infil_inhr)){ sim_infil_inhr <- round(sim_infil_inhr,2)}
+    if(is.numeric(obs_RSPU)){ obs_RSPU <- round(obs_RSPU,2)}
+    if(is.numeric(sim_RSPU)){ sim_RSPU <- round(sim_RSPU,2)}
+    
+    # browser()
+    #------ table version
+    metric_table <- as.data.frame(matrix(nrow=4))
+    colnames(metric_table) <- "Metrics"
+    metric_table$Metrics <- c("Drain down (hrs)",
+                              "Infiltration rate (in/hr)",
+                              "RSPU (%)",
+                              "Overtopping (T/F)")
+    
+    obs_mets <- c(obs_draindown_hr,obs_infil_inhr, obs_RSPU, obs_overtopping)
+    sim_mets <- c(sim_draindown_hr,sim_infil_inhr, sim_RSPU, sim_overtopping)
+    
+    #add columns if obs/sim exists
+    if(sum(is.na(obs_mets)) < 4){metric_table$Observed <- obs_mets}
+    if(sum(is.na(sim_mets)) < 4){metric_table$Simulated <- sim_mets}
+    
+    #remove rows if both are empty
+    remove <- c()
+    if(sum(metric_table[1,] == "") == 2){ remove <- c(remove,1)}
+    if(sum(metric_table[2,] == "") == 2){ remove <- c(remove,2)}
+    if(sum(metric_table[3,] == "") == 2){ remove <- c(remove,3)}
+    if(sum(metric_table[4,] == "") == 2){ remove <- c(remove,4)}
+    
+    metric_table <- metric_table[c(1:4)[!(c(1:4) %in% remove)],]
+    
+    #add table to plot
+    level_plot <- level_plot +
+      
+      ggplot2::annotation_custom (grob = tableGrob(metric_table,
+                                                   rows = NULL,
+                                                   theme = ggpp::ttheme_gtlight()),
+                                  ymin = (storage_depth_ft*0.70),
+                                  ymax = (storage_depth_ft*0.95),
+                                  xmin = obs_datetime[round(length(obs_datetime)*0.5)],
+                                  xmax = obs_datetime[round(length(obs_datetime))])
+  }
+  
   
   #Calculate max width and set both to that value
   #Grob
