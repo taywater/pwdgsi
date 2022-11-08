@@ -16,11 +16,15 @@ marsCombinedPlot(
   orifice_height_ft = NULL,
   rainfall_datetime,
   rainfall_in,
-  raingage,
-  draindown_hr = NA,
-  infiltration_rate_inhr = NA,
-  percent_storage_relative = NA,
-  baseline_ft = NA
+  metrics_show = FALSE,
+  obs_RSPU,
+  sim_RSPU,
+  obs_infil_inhr,
+  sim_infil_inhr,
+  obs_draindown_hr,
+  sim_draindown_hr,
+  obs_overtopping,
+  sim_overtopping
 )
 }
 \arguments{
@@ -46,7 +50,23 @@ marsCombinedPlot(
 
 \item{rainfall_in}{vector, num, rainfall in inches corresponding to \code{rainfall_datetime}}
 
-\item{raingage}{chr, Label for the hyetograph for what rain gage the data came from}
+\item{metrics_show}{bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)}
+
+\item{obs_RSPU}{num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)}
+
+\item{sim_RSPU}{num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)}
+
+\item{obs_infil_inhr}{num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
+
+\item{sim_infil_inhr}{num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
+
+\item{obs_draindown_hr}{num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)}
+
+\item{sim_draindown_hr}{num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)}
+
+\item{obs_overtopping}{bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)}
+
+\item{sim_overtopping}{bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)}
 }
 \value{
 Output will be a gridExtra object of the two plots

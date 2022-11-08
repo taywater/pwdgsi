@@ -13,7 +13,17 @@ marsWaterLevelPlot(
   sim_datetime = NA,
   sim_level_ft = NA,
   orifice_show = FALSE,
-  orifice_height_ft = NULL
+  orifice_height_ft = NULL,
+  snapshot = NA,
+  metrics_show = FALSE,
+  obs_RSPU,
+  sim_RSPU,
+  obs_infil_inhr,
+  sim_infil_inhr,
+  obs_draindown_hr,
+  sim_draindown_hr,
+  obs_overtopping,
+  sim_overtopping
 )
 }
 \arguments{
@@ -34,6 +44,24 @@ marsWaterLevelPlot(
 \item{orifice_show}{TRUE if user wants to include the orifice height as dashed line on plot (optional)}
 
 \item{orifice_height_ft}{Orifice height, in feet (optional)}
+
+\item{metrics_show}{Bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)}
+
+\item{obs_RSPU}{Num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)}
+
+\item{sim_RSPU}{Num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)}
+
+\item{obs_infil_inhr}{Num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
+
+\item{sim_infil_inhr}{Num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
+
+\item{obs_draindown_hr}{Num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)}
+
+\item{sim_draindown_hr}{Num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)}
+
+\item{obs_overtopping}{Bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)}
+
+\item{sim_overtopping}{Bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)}
 }
 \value{
 Output is a ggplot2 object of the water level plot.

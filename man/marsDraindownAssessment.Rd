@@ -30,11 +30,11 @@ marsDraindownAssessment(
 \value{
 Output is a number based on draindown time and draindown time is rain event was scaled to the design depth. Outputs are codes for the following messages: 
  \describe{
-       \item{\code{2}}{Draindown is below the target duration, and scaled draindown is below the target duration.}
-       \item{\code{1}}{Draindown is above the target duration, but scaled draindown is below the target duration.}
-       \item{\code{0}}{Rainfall occurs during recession period in specified depth range.}
-       \item{\code{-1}}{Draindown is below the target duration, but scaled draindown is above the target duration.}
-       \item{\code{-2}}{Draindown is above the target duration, and scaled draindown is above the target duration.}
+       \item{\code{5}}{Draindown is below the target duration, and scaled draindown is below the target duration.}
+       \item{\code{4}}{Draindown is above the target duration, but scaled draindown is below the target duration.}
+       \item{\code{3}}{Draindown is below the target duration, but scaled draindown is above the target duration.}
+       \item{\code{2}}{Draindown is above the target duration, and scaled draindown is above the target duration.}
+       \item{\code{1}}{Draindown was not calculated.}
  }
 }
 \description{

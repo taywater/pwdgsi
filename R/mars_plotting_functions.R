@@ -276,7 +276,7 @@ get_legend<-function(myggplot){
 #' @param  sim_infil_inhr                     Num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
 #' @param  sim_draindown_hr                   Num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)
 #' @param  sim_overtopping                    Bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
-
+#' 
 #' 
 #' @return Output is a ggplot2 object of the water level plot.
 #' 
@@ -530,6 +530,7 @@ marsWaterLevelPlot <- function(event,
                               "Infiltration rate (in/hr)",
                               "RSPU (%)",
                               "Overtopping (T/F)")
+
     
     if(obs_infil_inhr < 0){obs_infil_inhr <- paste0("ERR: ",obs_infil_inhr)}
     
@@ -559,7 +560,7 @@ marsWaterLevelPlot <- function(event,
                                   ymax = (storage_depth_ft*0.95),
                                   xmin = obs_datetime[round(length(obs_datetime)*0.5)],
                                   xmax = obs_datetime[round(length(obs_datetime))])
-    
+
   }
   
   return(level_plot)
@@ -592,6 +593,7 @@ marsWaterLevelPlot <- function(event,
 #' @param sim_infil_inhr                      num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
 #' @param sim_draindown_hr                    num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)
 #' @param sim_overtopping                     bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+
 #'
 #' @return Output will be a gridExtra object of the two plots
 #'
@@ -719,7 +721,7 @@ marsCombinedPlot <- function(event,
       limits = c(min_date - lubridate::minutes(15), max_date + lubridate::minutes(60)),
       breaks = major_date_breaks,
       minor_breaks = minor_date_breaks)  +
-    ggplot2::labs(title = title_text) +
+    ggplot2::labs(title = title_text)
     # ggplot2::geom_label(ggplot2::aes(x = max_date - (max_date - min_date)*0.1, 
     #                                  y = Inf, 
     #                                  label = metrics_caption),
@@ -793,6 +795,8 @@ marsCombinedPlot <- function(event,
                                   xmax = obs_datetime[round(length(obs_datetime))])
   }
   
+
+
   
   #Calculate max width and set both to that value
   #Grob
@@ -848,3 +852,4 @@ marsBaroRasterPlot <- function(baro){
   return(p)
   
 }
+
