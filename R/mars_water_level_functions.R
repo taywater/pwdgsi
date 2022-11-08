@@ -377,7 +377,8 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 
 #' Simulated Water Level
 #' 
-#' Simulates water level in subsurface stormwater infiltration system with underdrain
+#' Simulates water level in subsurface stormwater infiltration system with underdrain.
+#' Note: This version of the package targets the PG12 database, and simulating rain gage events is deprecated. The rain event variable name is hard-coded to the radar IDs.
 #' 
 #' @param  dtime_est               A vector of POSIXct date times, in ascending order
 #' @param  rainfall_in             Rainfall depths during periods corresponding to times in  dtime_est (in)
@@ -393,7 +394,7 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' @param  runoff_coeff            Rational method coefficient (Default = 1)
 #' @param  discharge_coeff         Orifice discharge coefficient (Default = 0.62)
 #' 
-#' @return Output is a dataframe with the following columns: dtime_est, rainfall_in, rainfall_gage_event_uid, Simulated_depth_ft, Simulated_vol_ft3, Simulated_orifice_vol_ft3
+#' @return Output is a dataframe with the following columns: dtime_est, rainfall_in, radar_event_uid, simulated_depth_ft, simulated_vol_ft3, simulated_orifice_vol_ft3
 #' 
 #' @seealso \code{\link{simulation.stats}}
 #' 
@@ -421,7 +422,7 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
                                         orifice_diam_in = NA, #default to NA if no orifice outlet
                                         storage_depth_ft,
                                         storage_vol_ft3,
-                                        infil_rate_inhr,
+                                        infil_rate_inhr = 0.06, #New default based on Compliance guidance
                                         #default values
                                         initial_water_level_ft = 0, 
                                         runoff_coeff = 1, #rational method coefficient
@@ -449,8 +450,13 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
   if((infil_footprint_ft2 == 0 | is.na(infil_footprint_ft2)) & is.na(orifice_diam_in)){
     stop("infil_footprint_ft2 is 0 or NA, and orifice_diam_in is NA")
   }
-  
+
+  if(infil_rate_inhr == 0){
+    infil_rate_inhr <- 0.06 #Overload existing snapshots
+  }
+    
  # browser()
+
   
   
   #Prepare data
@@ -498,10 +504,10 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
   simseries_total$dtime_est %<>% lubridate::force_tz("EST")
   colnames(simseries_total) <- c("dtime_est", 
                                  "rainfall_in", 
-                                 "rainfall_gage_event_uid", 
-                                 "Simulated_depth_ft", 
-                                 "Simulated_vol_ft3", 
-                                 "Simulated_orifice_vol_ft3")
+                                 "radar_event_uid", 
+                                 "simulated_depth_ft", 
+                                 "simulated_vol_ft3", 
+                                 "simulated_orifice_vol_ft3")
   
   return(simseries_total)
   
@@ -636,14 +642,10 @@ sim_loop <- function(x, debug, simseries_total, infil_rate_inhr, orifice_if, ori
     simseries$end_vol_ft3[i] <- volume_check_cf
     simseries$check[i] <- 0
   
-    #break loop following last rainfall if volume is 0 or NA, or if 2 measurements in a row are very near orifice height
-    if((simseries$vol_ft3[i] == 0 | # if volume is 0 
-        is.na(simseries$vol_ft3[i]) | # if volume is NA
-              ifelse(!is.na(orifice_height_ft[1]), #if orifice is NA, disregard this part
-                     (simseries$depth_ft[i] < (orifice_height_ft[1] + 0.01) & #if depth ft is equal to orifice height (or within .01 of it)
-                      simseries$depth_ft[i -1] < (orifice_height_ft[1] + 0.01)), #for two consecutive timestipes
-                      FALSE)) && 
-        i > last_rainfall){ #if time exceeds last rainfall
+    #break loop following last rainfall if volume is 0 or NA
+    if(i > last_rainfall &&
+        (simseries$vol_ft3[i] == 0 | # if volume is 0 
+        is.na(simseries$vol_ft3[i]))){ # if volume is NA)
       simseries %<>% dplyr::filter(check == 0) #remove excess pre-allocated rows
       break
     }

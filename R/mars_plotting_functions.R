@@ -530,6 +530,7 @@ marsWaterLevelPlot <- function(event,
                               "Infiltration rate (in/hr)",
                               "RSPU (%)",
                               "Overtopping (T/F)")
+
     
     if(obs_infil_inhr < 0){obs_infil_inhr <- paste0("ERR: ",obs_infil_inhr)}
     
@@ -583,15 +584,16 @@ marsWaterLevelPlot <- function(event,
 #' @param orifice_height_ft                   Orifice height, in feet (optional)
 #' @param rainfall_datetime                   vector, POSIXct datetimes corresponding to \code{rainfall_in}
 #' @param rainfall_in                         vector, num, rainfall in inches corresponding to \code{rainfall_datetime}
-#' @param  metrics_show                       bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)
-#' @param  obs_RSPU                           num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
-#' @param  obs_infil_inhr                    num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
-#' @param  obs_draindown_hr                      num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)
-#' @param  obs_overtopping                    bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
-#' @param  sim_RSPU                           num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
-#' @param  sim_infil_inhr                    num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
-#' @param  sim_draindown_hr                      num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)
-#' @param  sim_overtopping                    bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+#' @param metrics_show                        bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)
+#' @param obs_RSPU                            num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
+#' @param obs_infil_inhr                      num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
+#' @param obs_draindown_hr                    num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)
+#' @param obs_overtopping                     bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+#' @param sim_RSPU                            num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
+#' @param sim_infil_inhr                      num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
+#' @param sim_draindown_hr                    num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)
+#' @param sim_overtopping                     bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+
 #'
 #' @return Output will be a gridExtra object of the two plots
 #'
@@ -622,11 +624,11 @@ marsCombinedPlot <- function(event,
                              ){
   
   # potential to add back in; updated variable names; kept obs_peak_level_ft
-  # if(!is.na(obs_peak_level_ft) | !is.na(obs_infil_inhr) | !is.na(obs_RSPU) | !is.na(obs_draindown_hr)){
+  # if(!is.na(obs_peak_level_ft) | !is.na(obs_infil_inhr) | !is.na(obs_percent_storage_relative) | !is.na(obs_draindown_hr)){
   #   metrics_caption <- paste0("Performance Metrics  Obs. Sim. <br />
   #                              Peak Level     (ft)  ", obs_peak_level_ft[1], "  ",  sim_peak_level_ft[1], "<br />
   #                              Sat. Infil  (in/hr)  ", obs_infil_inhr[1], "  ", sim_infil_inhr[1], "<br />
-  #                              Rel Storage Use   %  ", obs_percent_storage_relative[1], "  ", sim_percent_storage_relative[1], "<br />
+  #                              Rel Storage Use   %  ", obs_RSPU[1], "  ", sim_RSPU[1], "<br />
   #                              Draindown Time (hr)  ", obs_draindown_hr[1], "  ", sim_draindown_hr[1])
   # }else{
   #   metrics_caption <- ""
@@ -728,8 +730,7 @@ marsCombinedPlot <- function(event,
     #                     fill = "white", 
     #                     label.size = 0)
     # ggplot2::annotate("richtext", y = Inf, x = max_date - (max_date - min_date)*0.01, vjust=0, hjust = 1, size = 4.7, label = metrics_caption, fill = "white")
-    #ggplot2::annotate("text", x = max_date - lubridate::minutes(60), y = max(rainfall_in), vjust=0, hjust = 1, label = metrics_caption)
-  
+    # ggplot2::annotate("text", x = max_date - lubridate::minutes(60), y = max(rainfall_in), vjust=0, hjust = 1, label = metrics_caption)
   
   if(metrics_show == TRUE){
     
@@ -779,8 +780,10 @@ marsCombinedPlot <- function(event,
     if(sum(metric_table[2,] == "") == 2){ remove <- c(remove,2)}
     if(sum(metric_table[3,] == "") == 2){ remove <- c(remove,3)}
     if(sum(metric_table[4,] == "") == 2){ remove <- c(remove,4)}
+    
     metric_table <- metric_table[c(1:4)[!(c(1:4) %in% remove)],]
     
+    #add table to plot
     level_plot <- level_plot +
       
       ggplot2::annotation_custom (grob = tableGrob(metric_table,
@@ -791,6 +794,9 @@ marsCombinedPlot <- function(event,
                                   xmin = obs_datetime[round(length(obs_datetime)*0.5)],
                                   xmax = obs_datetime[round(length(obs_datetime))])
   }
+  
+
+
   
   #Calculate max width and set both to that value
   #Grob

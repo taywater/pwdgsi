@@ -32,7 +32,7 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 
   #Rather than validating each individual tracking number and selecting them one at a time
   #We can grab the entire table and filter by our tracking numbers to find the valid ones
-  planreviewtable <- odbc::dbGetQuery(con, "select p.\"TrackingNumber\" as tracking_number, p.\"Projectname\" as project_name, p.\"SMPID\" as smp_id, p.\"Plan Label\" as plan_label from planreview_view_smpsummary_crosstab_asbuiltall p")
+  planreviewtable <- odbc::dbGetQuery(con, "select p.\"TrackingNumber\" as tracking_number, p.\"Projectname\" as project_name, p.\"SMPID\" as smp_id, p.\"Plan Label\" as plan_label from external.tbl_planreview_crosstab p")
   hits <- dplyr::filter(planreviewtable, tracking_number %in% tracking_numbers)
 
   #If any of the tracking numbers weren't found, we can return an error message
@@ -55,7 +55,7 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 #'
 #' @param con Formal class 'PostgreSQL', a connection to the MARS Analysis database
 #' @param target_id chr, an SMP_ID that where the user has requested data
-#' @param source chr, either "gage" or "radarcell" to retrieve rain gage data or radar rainfall data
+#' @param source chr, either "gage" or "radar" to retrieve rain gage data or radar rainfall data
 #' @param start_date string, format: "YYYY-MM-DD", start of data request range
 #' @param end_date string, format: "YYYY-MM-DD", end of data request range
 #' @param daylight_savings logi, Adjust for daylight savings time? when doing QAQC
@@ -65,7 +65,7 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 #' 
 #'   \item{dtime_est OR dtime_edt}{POSIXct datetime with tz = EST or EDT as specified by \code{daylight_savings}}
 #'   \item{rainfall_in}{num, rainfall for the 15 minute preceding the corresponding datetime}
-#'   \item{gage_uid OR radarcell_uid}{Unique identifier for where the data came from}
+#'   \item{gage_uid OR radar_uid}{Unique identifier for where the data came from}
 #'   \item{event_id}{event number during this timestep}
 #' 
 #' 
@@ -73,30 +73,31 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 #'
 #' @export
 
-marsFetchRainfallData <- function(con, target_id, source = c("gage", "radarcell"), start_date, end_date, daylightsavings){
+marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), start_date, end_date, daylightsavings){
   if(!odbc::dbIsValid(con)){
     stop("Argument 'con' is not an open ODBC channel")
   }
+  # browser()
   start_date %<>% as.POSIXct()
   end_date %<>% as.POSIXct()
   
   #Are we working with gages or radarcells?
   if(source == "gage"){
-    rainparams <- data.frame(smptable = "smp_gage", raintable = "rainfall_gage", uidvar = "gage_uid", loctable = "gage", eventuidvar = "rainfall_gage_event_uid", stringsAsFactors=FALSE)
-  } else if(source == "radarcell"){
-    rainparams <- data.frame(smptable = "smp_radarcell", raintable = "rainfall_radarcell", uidvar = "radarcell_uid", loctable = "radarcell", eventuidvar = "rainfall_radarcell_event_uid", stringsAsFactors=FALSE)
+    rainparams <- data.frame(smptable = "admin.tbl_smp_gage", raintable = "data.viw_gage_rainfall", uidvar = "gage_uid", loctable = "admin.tbl_gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
+  } else if(source == "radar"){
+    rainparams <- data.frame(smptable = "admin.tbl_smp_radar", raintable = "data.viw_radar_rainfall", uidvar = "radar_uid", loctable = "admin.tbl_radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)
   } else { #Parameter is somehow invalid
-    stop("Argument 'source' is not one of 'gage' or 'radarcell'")
+    stop("Argument 'source' is not one of 'gage' or 'radar'")
   }
-  
+
   #Get closest rainfall source
-  smp_query <- paste0("SELECT * FROM public.", rainparams$smptable)
+  smp_query <- paste0("SELECT * FROM ", rainparams$smptable)
   #print(smp_query)
   rainsource <- odbc::dbGetQuery(con, smp_query) %>% dplyr::filter(smp_id == target_id) %>% dplyr::pull(rainparams$uidvar)
   
   #Collect gage data
   #First, get all the relevant data from the closest gage
-  rain_query <- paste(paste0("SELECT * FROM public.", rainparams$raintable, " "),
+  rain_query <- paste(paste0("SELECT * FROM ", rainparams$raintable, " "),
                       paste0("WHERE ", rainparams$uidvar, " = CAST('", rainsource, "' as int)"),
                       "AND dtime_edt >= Date('", start_date, "')",
                       "AND dtime_edt <= Date('", end_date + lubridate::days(1), "');")
@@ -178,7 +179,7 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radarcell"
   }
 
   #Replace UIDs with SMP IDs
-  rainlocs <- odbc::dbGetQuery(con, paste0("SELECT * FROM public.", rainparams$loctable))
+  rainlocs <- odbc::dbGetQuery(con, paste0("SELECT * FROM ", rainparams$loctable))
   finalseries <- dplyr::bind_rows(rain_temp, zeroFills) %>%
     dplyr::left_join(rainlocs, by = rainparams$uidvar) %>%
     dplyr::select(dtime_edt, rainfall_in, rainparams$uidvar, rainparams$eventuidvar) %>%
@@ -354,16 +355,16 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 
 
   #Get SMP locations, and the locations of the baro sensors
-  smp_loc <- odbc::dbGetQuery(con, "SELECT * FROM public.smp_loc")
+  smp_loc <- odbc::dbGetQuery(con, "SELECT * FROM admin.tbl_smp_loc")
   locus_loc <- dplyr::filter(smp_loc, smp_id == target_id)
-  baro_smp <- odbc::dbGetQuery(con, "SELECT DISTINCT smp_id FROM public.baro_rawfile;") %>% dplyr::pull(smp_id)
+  baro_smp <- odbc::dbGetQuery(con, "SELECT DISTINCT smp_id FROM admin.tbl_baro_rawfile;") %>% dplyr::pull(smp_id)
 
   #Collect baro data
   #Get all baro data for the specified time period
-  baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "' order by dtime_est;"))
+  baro <- odbc::dbGetQuery(con, paste0("SELECT * FROM data.viw_barodata_smp b WHERE b.dtime_est >= '", start_date, "'", " AND b.dtime_est <= '", end_date + lubridate::days(1), "' order by dtime_est;"))
   
-  baro_latest_dtime <- odbc::dbGetQuery(con, paste0("SELECT max(dtime_est) FROM baro WHERE dtime_est < '", end_date + lubridate::days(1), "'")) %>% dplyr::pull()
-  baro_latest_valid <- odbc::dbGetQuery(con, paste0("SELECT max(dtime_est) FROM barodata_neighbors WHERE neighbors >= 4 and dtime_est < '", end_date + lubridate::days(1), "'")) %>% dplyr::pull()
+  baro_latest_dtime <- odbc::dbGetQuery(con, paste0("SELECT max(dtime_est) FROM data.tbl_baro WHERE dtime_est < '", end_date + lubridate::days(1), "'")) %>% dplyr::pull()
+  baro_latest_valid <- odbc::dbGetQuery(con, paste0("SELECT max(dtime_est) FROM data.viw_barodata_neighbors WHERE neighbors >= 4 and dtime_est < '", end_date + lubridate::days(1), "'")) %>% dplyr::pull()
   
   if(length(baro$dtime_est) == 0){
     stop (paste0("No data available in the reqested interval. The latest available baro data is from ", baro_latest_dtime, "."))
@@ -586,17 +587,17 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
   #1.4.1 Create dataframe
   request_df <- data.frame(smp_id, ow_suffix, request_date, stringsAsFactors = FALSE)
   
-  #1.4.2 Query fieldwork.ow_all and check if each smp id and observation well are there
+  #1.4.2 Query fieldwork.tbl_ow and check if each smp id and observation well are there
   # Initialize dataframe
   ow_validity <- data.frame(ow_uid = numeric(), 
                             smp_id =  character(),  
                             ow_suffix = character(), 
                             stringsAsFactors = FALSE)
   
-  # Check if smp_id and ow_suffix are in the MARS table "fieldwork.ow_all"
+  # Check if smp_id and ow_suffix are in the MARS table "fieldwork.tbl_ow"
   # Return matches
   for(i in 1:length(request_df$smp_id)){
-    ow_valid_check <- odbc::dbGetQuery(con, "SELECT * FROM fieldwork.ow_all") %>% dplyr::select(-facility_id) %>%  dplyr::filter(smp_id == request_df$smp_id[i] & ow_suffix == request_df$ow_suffix[i])
+    ow_valid_check <- odbc::dbGetQuery(con, "SELECT * FROM fieldwork.tbl_ow") %>% dplyr::select(-facility_id) %>%  dplyr::filter(smp_id == request_df$smp_id[i] & ow_suffix == request_df$ow_suffix[i])
     ow_validity <- dplyr::bind_rows(ow_validity, ow_valid_check)
   }
   
@@ -622,7 +623,7 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
   
   #2.2 Run get_arbitrary_snapshot in a loop and bind results
   for(i in 1:length(ow_validity$smp_id)){
-    snapshot_query <- paste0("SELECT * FROM get_arbitrary_snapshot('", ow_validity$smp_id[i], "','", ow_validity$ow_suffix[i], "','", ow_validity$request_date[i], "') ORDER BY snapshot_uid DESC LIMIT 1")
+    snapshot_query <- paste0("SELECT * FROM metrics.fun_get_arbitrary_snapshot('", ow_validity$smp_id[i], "','", ow_validity$ow_suffix[i], "','", ow_validity$request_date[i], "') ORDER BY snapshot_uid DESC LIMIT 1")
     new_result <- odbc::dbGetQuery(con, snapshot_query)
     result <- dplyr::bind_rows(result, new_result)
   }
@@ -670,16 +671,16 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
   
   #1.2 Check if smp_id and ow_suffix are in the MARS table "ow_validity"
   # Return match
-  validity_query <- paste0("select * from get_ow_uid('",target_id,"','",ow_suffix,"')")
+  validity_query <- paste0("select * from fieldwork.fun_get_ow_uid('",target_id,"','",ow_suffix,"', NULL)")
   ow_uid <- odbc::dbGetQuery(con, validity_query)
   
   #1.3 Pick which table to query
   if(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")){
-    level_table <- "gw_depthdata"
+    level_table <- "data.tbl_gw_depthdata_raw"
   }else if(!(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")) & sump_correct == TRUE){
-    level_table <- "ow_leveldata_sumpcorrected"
+    level_table <- "data.viw_ow_leveldata_sumpcorrected"
   }else if(!(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")) & sump_correct == FALSE){
-    level_table <- "ow_leveldata_raw"
+    level_table <- "data.tbl_ow_leveldata_raw"
   }
   start_date %<>% as.POSIXct()
   end_date %<>% as.POSIXct()
@@ -709,14 +710,14 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
 #'   
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param target_id vector of chr, SMP ID, where the user has requested data
-#' @param source string, one of "gage" or "radarcell" to select rain gage events or radar rainfall events
+#' @param source string, one of "gage" or "radar" to select rain gage events or radar rainfall events
 #' @param start_date string, format: "YYYY-MM-DD", start of data request range
 #' @param end_date string, format: "YYYY-MM-DD", end of data request range
 #'
 #' @return Output will be a dataframe with the following columns: 
 #' 
 #'     \item{rainfall_gage_event_uid}{int}
-#'     \item{gage_uid OR radarcell_uid}{int, unique identifier for rain source, depending on value of source argument}
+#'     \item{gage_uid OR radar_uid}{int, unique identifier for rain source, depending on value of source argument}
 #'     \item{eventdatastart_edt}{POSIXct datetime}
 #'     \item{eventdataend_edt}{POSIXct datetime}
 #'     \item{eventduration_hr}{num, duration of event}
@@ -728,7 +729,7 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
 #' 
 #' @seealso \code{\link{marsFetchRainfallData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchMonitoringData}}
 #' 
-marsFetchRainEventData <- function(con, target_id, source = c("gage", "radarcell"), start_date, end_date){
+marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), start_date, end_date){
   #1 Argument validation
   #1.1 Check database connection
   if(!odbc::dbIsValid(con)){
@@ -741,21 +742,21 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radarcell
   
   #Are we working with gages or radarcells?
   if(source == "gage"){
-    rainparams <- data.frame(smptable = "smp_gage", eventtable = "rainfall_gage_event", uidvar = "gage_uid", loctable = "gage", eventuidvar = "rainfall_gage_event_uid", stringsAsFactors=FALSE)
-  } else if(source == "radarcell"){
-    rainparams <- data.frame(smptable = "smp_radarcell", eventtable = "rainfall_radarcell_event", uidvar = "radarcell_uid", loctable = "radarcell", eventuidvar = "rainfall_radarcell_event_uid", stringsAsFactors=FALSE)
+    rainparams <- data.frame(smptable = "admin.tbl_smp_gage", eventtable = "data.tbl_gage_event", uidvar = "gage_uid", loctable = "admin.tbl_gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
+  } else if(source == "radar"){
+    rainparams <- data.frame(smptable = "admin.tbl_smp_radar", eventtable = "data.tbl_radar_event", uidvar = "radar_uid", loctable = "admin.tbl_radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)
   } else { #Parameter is somehow invalid
-    stop("Argument 'source' is not one of 'gage' or 'radarcell'")
+    stop("Argument 'source' is not one of 'gage' or 'radar'")
   }
   
   
   #2 Get closest rain source
-  rainsource <- odbc::dbGetQuery(con, paste0("SELECT * FROM public.", rainparams$smptable)) %>% 
+  rainsource <- odbc::dbGetQuery(con, paste0("SELECT * FROM ", rainparams$smptable)) %>% 
     dplyr::filter(smp_id == target_id) %>%
     dplyr::pull(rainparams$uidvar)
   
   #2.1 Query event data
-  event_query <- paste(paste0("SELECT * FROM public.", rainparams$eventtable),
+  event_query <- paste(paste0("SELECT * FROM ", rainparams$eventtable),
                        "WHERE", rainparams$uidvar, "= CAST('", rainsource, "' as int)",
                        "AND eventdatastart_edt >= Date('", start_date, "')",
                        "AND eventdataend_edt <= Date('", end_date + lubridate::days(1), "');")
@@ -777,7 +778,7 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radarcell
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param target_id vector of chr, SMP ID, where the user has requested data
 #' @param ow_suffix vector of chr, OW suffixes corresponding to SMP IDs, where the user has requested data
-#' @param source string, one of "gage" or "radarcell" to select rain gage events or radar rainfall events
+#' @param source string, one of "gage" or "radar" to select rain gage events or radar rainfall events
 #' @param start_date string, format: "YYYY-MM-DD", start of data request range
 #' @param end_date string, format: "YYYY-MM-DD", end of data request range
 #' @param sump_correct logical, TRUE if water level should be corrected for to account for sump depth
@@ -798,7 +799,7 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radarcell
 #' 
 
 
-marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage", "radarcell"), start_date, end_date,
+marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage", "radar"), start_date, end_date,
                                     sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE, daylight_savings = FALSE,
                                     debug = FALSE){
 #browser()
@@ -810,11 +811,11 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   
   #Are we working with gages or radarcells?
   if(source == "gage"){
-    rainparams <- data.frame(smptable = "smp_gage", eventtable = "rainfall_gage_event", uidvar = "gage_uid", loctable = "gage", eventuidvar = "rainfall_gage_event_uid", stringsAsFactors=FALSE)
-  } else if(source == "radarcell"){
-    rainparams <- data.frame(smptable = "smp_radarcell", eventtable = "rainfall_radarcell_event", uidvar = "radarcell_uid", loctable = "radarcell", eventuidvar = "rainfall_radarcell_event_uid", stringsAsFactors=FALSE)
+    rainparams <- data.frame(smptable = "admin.tbl_smp_gage", eventtable = "data.tbl_gage_event", uidvar = "gage_uid", loctable = "admin.tbl_gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
+  } else if(source == "radar"){
+    rainparams <- data.frame(smptable = "admin.tbl_smp_radar", eventtable = "data.tbl_radar_event", uidvar = "radar_uid", loctable = "admin.tbl_radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)
   } else { #Parameter is somehow invalid
-    stop("Argument 'source' is not one of 'gage' or 'radarcell'")
+    stop("Argument 'source' is not one of 'gage' or 'radar'")
   }
   
   #2 Initialize list
@@ -825,9 +826,9 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   if(debug){
     ptm <- proc.time()
   }
-  
-  smp_rain <- odbc::dbGetQuery(con, paste0("SELECT * FROM public.", rainparams$smptable)) %>% dplyr::filter(smp_id %in% target_id)
-  ow_validity <- odbc::dbGetQuery(con, "SELECT * FROM fieldwork.ow_all")
+
+  smp_rain <- odbc::dbGetQuery(con, paste0("SELECT * FROM ", rainparams$smptable)) %>% dplyr::filter(smp_id %in% target_id)
+  ow_validity <- odbc::dbGetQuery(con, "SELECT * FROM fieldwork.tbl_ow")
   ow_uid_gage <- ow_validity %>% dplyr::right_join(smp_rain, by = "smp_id")
   
   if(debug){
@@ -982,8 +983,7 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
 #' @param baseline_ft vector, numeric, point that water level returns to at the end of an event (default ??)
 #' @param infiltration_rate_inhr vector, numeric, infiltration rate (in/hr)
 #' @param ow_uid vector, numeric observation well UID
-#' @param source string, one of "gage" or "radarcell" for whether rain gage events or radar rainfall events have been processed
-#' @param event_uid vector, numeric event UIDs for rain events from the chosen source
+#' @param radar_event_uid vector, numeric event UIDs for rain events from radar data
 #' @param snapshot_uid vector, numeric
 #' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
 #' 
@@ -998,8 +998,7 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
 #' marsWriteInfiltrationData(con = mars, 
 #'   infiltration_rate_inhr = summary_250$infiltration_rate_inhr,
 #'   ow_uid = summary_250$ow_uid,
-#'   source = "gage",
-#'   event_uid = summary_250$rainfall_gage_event_uid,
+#'   radar_event_uid = summary_250$rainfall_gage_event_uid,
 #'   snapshot_uid = summary_250$snapshot_uid,
 #'   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 #' 
@@ -1007,32 +1006,22 @@ marsWriteInfiltrationData <- function(con,
                                    infiltration_rate_inhr,
                                    baseline_ft = NA,
                                    ow_uid,
-                                   source = c("gage", "radarcell"),
-                                   event_uid,
+                                   radar_event_uid,
                                    snapshot_uid,
                                    observed_simulated_lookup_uid){
 
   #check that vectors are the same length
   if(!(length(infiltration_rate_inhr) == length(ow_uid) &
-       length(infiltration_rate_inhr) == length(event_uid) &
+       length(infiltration_rate_inhr) == length(radar_event_uid) &
        length(infiltration_rate_inhr) == length(snapshot_uid))){
     stop("Vectors must be the same length")
   }
-  
-  #Are we working with gages or radarcells?
-  if(source == "gage"){
-    rainparams <- data.frame(eventuidvar = "rainfall_gage_event_uid", performancetable = "performance_infiltration", stringsAsFactors=FALSE)
-  } else if(source == "radarcell"){
-    rainparams <- data.frame(eventuidvar = "rainfall_radarcell_event_uid", performancetable = "performance_infiltration_radarcell", stringsAsFactors=FALSE)
-  } else { #Parameter is somehow invalid
-    stop("Argument 'source' is not one of 'gage' or 'radarcell'")
-  }
-  
+    
   #add vectors to dataframe
   summary_df <- data.frame(infiltration_rate_inhr,
                            baseline_ft,
                            ow_uid,
-                           event_uid,
+                           radar_event_uid,
                            snapshot_uid) %>% 
     dplyr::filter(observed_simulated_lookup_uid == 1)
   
@@ -1042,15 +1031,9 @@ marsWriteInfiltrationData <- function(con,
                                               infiltration_rate_inhr, NA),
                   infiltration_rate_inhr = ifelse(!is.na(error_lookup_uid),
                                                      NA, infiltration_rate_inhr))
-  
-  #name column appropriately for performance table
-  saturatedperformance_df[[rainparams$eventuidvar]] <- saturatedperformance_df$event_uid
-  saturatedperformance_df %<>% dplyr::select(1, 2, 3, 7, 5, 6)
-  
-  #browser()
-  
+    
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(odbc::dbWriteTable(con, rainparams$performancetable, saturatedperformance_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.tbl_infiltration"), saturatedperformance_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }
@@ -1070,8 +1053,7 @@ marsWriteInfiltrationData <- function(con,
 #' @param percent_of_storage_used vector, numeric, raw percent storage (in/hr)
 #' @param relative_percent_of_storage_used vector, numeric, relative percent storage (in/hr)
 #' @param ow_uid vector, numeric observation well UID
-#' @param source string, one of "gage" or "radarcell" for whether rain gage events or radar rainfall events have been processed
-#' @param event_uid vector, numeric event UIDs for rain events from the chosen source
+#' @param radar_event_uid vector, numeric event UIDs for rain events from radar data
 #' @param snapshot_uid vector, numeric
 #' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
 #' 
@@ -1087,8 +1069,7 @@ marsWriteInfiltrationData <- function(con,
 #'    percentstorageused_peak = summary_250$percentstorageused_peak,
 #'    percentstorageused_relative = summary_250%percentstorageused_relative,
 #'    ow_uid = summary_250%ow_uid,
-#'    source = "gage",
-#'    event_uid = summary_250$rainfall_gage_event_uid,
+#'    radar_event_uid = summary_250$rainfall_gage_event_uid,
 #'    snapshot_uid = summary_250$snapshot_uid,
 #'    observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 #' 
@@ -1096,34 +1077,24 @@ marsWritePercentStorageData <- function(con,
                                         percentstorageused_peak,
                                         percentstorageused_relative,
                                         ow_uid,
-                                        source = c("gage", "radarcell"),
-                                        event_uid,
+                                        radar_event_uid,
                                         snapshot_uid,
                                         observed_simulated_lookup_uid){
   
   #check that vectors are the same length
   if(!(length(percentstorageused_peak) == length(ow_uid) &
-       length(percentstorageused_peak) == length(event_uid) &
+       length(percentstorageused_peak) == length(radar_event_uid) &
        length(percentstorageused_peak) == length(snapshot_uid) &
        length(percentstorageused_peak) == length(observed_simulated_lookup_uid) &
        length(percentstorageused_peak) == length(percentstorageused_relative))){
     stop("Vectors must be the same length")
   }
-  
-  #Are we working with gages or radarcells?
-  if(source == "gage"){
-    rainparams <- data.frame(eventuidvar = "rainfall_gage_event_uid", performancetable = "performance_percentstorage", stringsAsFactors=FALSE)
-  } else if(source == "radarcell"){
-    rainparams <- data.frame(eventuidvar = "rainfall_radarcell_event_uid", performancetable = "performance_percentstorage_radarcell", stringsAsFactors=FALSE)
-  } else { #Parameter is somehow invalid
-    stop("Argument 'source' is not one of 'gage' or 'radarcell'")
-  }
-  
+    
   #add vectors to dataframe
   summary_df <- data.frame(percentstorageused_peak,
                            percentstorageused_relative,
                            ow_uid,
-                           event_uid,
+                           radar_event_uid,
                            observed_simulated_lookup_uid,
                            snapshot_uid)
   
@@ -1140,15 +1111,12 @@ marsWritePercentStorageData <- function(con,
                   relative,
                   observed_simulated_lookup_uid,
                   ow_uid,
-                  event_uid,
+                  radar_event_uid,
                   snapshot_uid)
-  
-  #name column appropriately by source
-  percentstorage_df[[rainparams$eventuidvar]] <- percentstorage_df$event_uid
-  percentstorage_df %<>% dplyr::select(-event_uid)
+
   
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(odbc::dbWriteTable(con, rainparams$performancetable, percentstorage_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.tbl_percentstorage"), percentstorage_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }
@@ -1167,8 +1135,7 @@ marsWritePercentStorageData <- function(con,
 #' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' @param overtopping vector, logical, TRUE if water level reaches max storage depth
 #' @param ow_uid vector, numeric observation well UID
-#' @param source string, one of "gage" or "radarcell" for whether rain gage events or radar rainfall events have been processed
-#' @param rainfall_gage_event_uid vector, numeric
+#' @param radar_event_uid vector, numeric event UIDs for rain events from radar data
 #' @param snapshot_uid vector, numeric
 #' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
 #' 
@@ -1184,8 +1151,7 @@ marsWritePercentStorageData <- function(con,
 #'   overtopping = summary_250$overtop, 
 #'   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid, 
 #'   ow_uid = summary_250$ow_uid, 
-#'   source = "gage",
-#'   event_uid = summary_250$rainfall_gage_event_uid,
+#'   radar_event_uid = summary_250$rainfall_gage_event_uid,
 #'   snapshot_uid = summary_250$snapshot_uid)
 #' 
 #' 
@@ -1193,43 +1159,26 @@ marsWriteOvertoppingData <- function(con,
                                      overtopping, 
                                      observed_simulated_lookup_uid, 
                                      ow_uid, 
-                                     source = c("gage", "radarcell"),
-                                     event_uid,
+                                     radar_event_uid,
                                      snapshot_uid){
   
   #check that vectors are the same length
   if(!(length(overtopping) == length(ow_uid) &
-       length(overtopping) == length(event_uid) &
+       length(overtopping) == length(radar_event_uid) &
        length(overtopping) == length(snapshot_uid) &
        length(overtopping) == length(observed_simulated_lookup_uid))){
     stop("Vectors must be the same length")
   }
   
-  #Are we working with gages or radarcells?
-  if(source == "gage"){
-    rainparams <- data.frame(eventuidvar = "rainfall_gage_event_uid", performancetable = "performance_overtopping", stringsAsFactors=FALSE)
-  } else if(source == "radarcell"){
-    rainparams <- data.frame(eventuidvar = "rainfall_radarcell_event_uid", performancetable = "performance_overtopping_radarcell", stringsAsFactors=FALSE)
-  } else { #Parameter is somehow invalid
-    stop("Argument 'source' is not one of 'gage' or 'radarcell'")
-  }
-  
-  
   #add vectors to dataframe
   overtopping_df <- data.frame(overtopping,
                                observed_simulated_lookup_uid,
                                ow_uid,
-                               event_uid,
+                               radar_event_uid,
                                snapshot_uid)
   
-  #name column appropriately by source
-  overtopping_df[[rainparams$eventuidvar]] <- overtopping_df$event_uid
-  overtopping_df %<>% dplyr::select(-event_uid)
-  
-  #browser()
-  
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(odbc::dbWriteTable(con, rainparams$performancetable, overtopping_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.tbl_overtopping"), overtopping_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }
@@ -1248,8 +1197,7 @@ marsWriteOvertoppingData <- function(con,
 #' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' @param draindown_hr vector, numeric, draindown time (hr)
 #' @param ow_uid vector, numeric observation well UID
-#' @param source string, one of "gage" or "radarcell" for whether rain gage events or radar rainfall events have been processed
-#' @param event_uid vector, numeric
+#' @param radar_event_uid vector, numeric
 #' @param snapshot_uid vector, numeric
 #' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
 #' 
@@ -1271,39 +1219,28 @@ marsWriteOvertoppingData <- function(con,
 #' 
 marsWriteDraindownData <- function(con,
                                    draindown_hr,
-                                   performance_draindown_assessment_lookup_uid,
+                                   draindown_assessment_lookup_uid,
                                    ow_uid,
-                                   source = c("gage", "radarcell"),
-                                   event_uid, 
+                                   radar_event_uid, 
                                    snapshot_uid,
                                    observed_simulated_lookup_uid){
   
   #check that vectors are the same length
   if(!(length(draindown_hr) == length(ow_uid) &
-       length(draindown_hr) == length(performance_draindown_assessment_lookup_uid) &
-       length(draindown_hr) == length(event_uid) &
+       length(draindown_hr) == length(draindown_assessment_lookup_uid) &
+       length(draindown_hr) == length(radar_event_uid) &
        length(draindown_hr) == length(snapshot_uid) &
        length(draindown_hr) == length(observed_simulated_lookup_uid))){
     stop("Vectors must be the same length")
-  }
-  
-  #Are we working with gages or radarcells?
-  if(source == "gage"){
-    rainparams <- data.frame(eventuidvar = "rainfall_gage_event_uid", performancetable = "performance_draindown", stringsAsFactors=FALSE)
-  } else if(source == "radarcell"){
-    rainparams <- data.frame(eventuidvar = "rainfall_radarcell_event_uid", performancetable = "performance_draindown_radarcell", stringsAsFactors=FALSE)
-  } else { #Parameter is somehow invalid
-    stop("Argument 'source' is not one of 'gage' or 'radarcell'")
-  }
-  
+  }  
   
   #add vectors to dataframe
   draindown_df <- data.frame(draindown_hr,
                              observed_simulated_lookup_uid,
                              ow_uid,
-                             event_uid,
+                             radar_event_uid,
                              snapshot_uid, 
-                             performance_draindown_assessment_lookup_uid)
+                             draindown_assessment_lookup_uid)
   
   #select columns for dataframe
   draindown_df <- draindown_df %>% 
@@ -1312,13 +1249,8 @@ marsWriteDraindownData <- function(con,
                   draindown_hr = ifelse(!is.na(error_lookup_uid),
                                                   NA, draindown_hr))
   
-  #name column appropriately by source
-  draindown_df[[rainparams$eventuidvar]] <- draindown_df$event_uid
-  draindown_df %<>% dplyr::select(-event_uid)
-  
-  
   #write to table, and return either TRUE (for a succesful write) or the error (upon failure)
-  result <- tryCatch(odbc::dbWriteTable(con, rainparams$performancetable, draindown_df, overwrite = FALSE, append = TRUE), 
+  result <- tryCatch(odbc::dbWriteTable(con, DBI::SQL("metrics.tbl_draindown"), draindown_df, overwrite = FALSE, append = TRUE), 
                      error = function(error_message){
                        return(error_message$message)
                      }
