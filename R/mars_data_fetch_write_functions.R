@@ -56,8 +56,8 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 #' @param con Formal class 'PostgreSQL', a connection to the MARS Analysis database
 #' @param target_id chr, an SMP_ID that where the user has requested data
 #' @param source chr, either "gage" or "radar" to retrieve rain gage data or radar rainfall data
-#' @param start_date string, format: "YYYY-MM-DD", start of data request range
-#' @param end_date string, format: "YYYY-MM-DD", end of data request range
+#' @param start_date string or POSIXCT date, format: "YYYY-MM-DD", start of data request range
+#' @param end_date stringor POSIXCT date, format: "YYYY-MM-DD", end of data request range
 #' @param daylight_savings logi, Adjust for daylight savings time? when doing QAQC
 #'   this should be \code{FALSE} because the water level data does not spring forwards.
 #'
@@ -78,8 +78,13 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
     stop("Argument 'con' is not an open ODBC channel")
   }
   # browser()
-  start_date %<>% as.POSIXct()
-  end_date %<>% as.POSIXct()
+  start_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  end_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  
+  # Was a string supplied to source?
+  if( isTRUE(all.equal(source, c("gage","radar"))) ){
+    stop("No argument supplied for 'source'. Provide a string of either 'gage' or 'radar'")
+  }
   
   #Are we working with gages or radarcells?
   if(source == "gage"){
@@ -107,7 +112,7 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
   if(nrow(rain_temp) == 0){
     
     if(lubridate::month(start_date) == lubridate::month(lubridate::today())){
-      stop(paste("Rainfall data appears in the MARS database on about a 5 week delay. \nData for", lubridate::month(start_date, label = TRUE, abbr = FALSE), "should be available in the second week of", lubridate::month(lubridate::today() + lubridate::months(1), label = TRUE, abbr = FALSE)))
+      stop(paste("Rainfall data appears in the MARS database on about a 5 week delay. \nData for", lubridate::month(start_date, label = TRUE, abbr = FALSE), "should be available in the second week of", lubridate::month(lubridate::today() + lubridate::dmonths(1), label = TRUE, abbr = FALSE)))
     }
     stop("There is no data in the database for this date range.")
   }
@@ -324,8 +329,8 @@ yday_decimal <- function(dtime_est){
 #'   
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param target_id chr, single SMP ID where the user has requested data
-#' @param start_date POSIXct, format: "YYYY-MM-DD", start of data request range
-#' @param end_date POSIXct, format: "YYYY-MM-DD", end of data request range
+#' @param start_date string or POSIXct, format: "YYYY-MM-DD", start of data request range
+#' @param end_date string or POSIXct, format: "YYYY-MM-DD", end of data request range
 #' @param data_interval chr, \code{"5 mins"} or \code{"15 mins"}, interval at which baro data will be returned.
 #'
 #' @return Output will be a dataframe with four columns: 
@@ -354,6 +359,10 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   }
 
 
+  #Handle date Conversion
+  start_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  end_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  
   #Get SMP locations, and the locations of the baro sensors
   smp_loc <- odbc::dbGetQuery(con, "SELECT * FROM admin.tbl_smp_loc")
   locus_loc <- dplyr::filter(smp_loc, smp_id == target_id)
@@ -682,8 +691,8 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
   }else if(!(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")) & sump_correct == FALSE){
     level_table <- "data.tbl_ow_leveldata_raw"
   }
-  start_date %<>% as.POSIXct()
-  end_date %<>% as.POSIXct()
+  start_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  end_date %<>% as.POSIXct(format = '%Y-%m-%d')
   
   #1.4 Add buffer to requested dates
   start_date <- lubridate::round_date(start_date) - lubridate::days(1)
@@ -737,8 +746,13 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
   }
   
   #Sanitize start and end date
-  start_date %<>% lubridate::ymd()
-  end_date %<>% lubridate::ymd()
+  start_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  end_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  
+  # Was a string supplied to source?
+  if( isTRUE(all.equal(source, c("gage","radar"))) ){
+    stop("No argument supplied for 'source'. Provide a string of either 'gage' or 'radar'")
+  }
   
   #Are we working with gages or radarcells?
   if(source == "gage"){
@@ -762,8 +776,11 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
                        "AND eventdataend_edt <= Date('", end_date + lubridate::days(1), "');")
   
   events <- odbc::dbGetQuery(con, event_query) 
-  events$eventdatastart_edt %<>% lubridate::force_tz("America/New_York")
-  events$eventdataend_edt %<>% lubridate::force_tz("America/New_York")
+  # making this "EST"
+  events %<>% mutate(eventdatastart_est = lubridate::force_tz(eventdatastart_edt,"EST"))
+  events %<>% mutate(eventdataend_est = lubridate::force_tz(eventdataend_edt,"EST"))
+  events %<>% select(-eventdatastart_edt,
+                     -eventdataend_edt)
   
   #3 return event data
   return(events)
@@ -809,6 +826,11 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
     stop("Argument 'con' is not an open ODBC channel")
   }
   
+  # Was a string supplied to source?
+  if( isTRUE(all.equal(source, c("gage","radar"))) ){
+    stop("No argument supplied for 'source'. Provide a string of either 'gage' or 'radar'")
+  }
+  
   #Are we working with gages or radarcells?
   if(source == "gage"){
     rainparams <- data.frame(smptable = "admin.tbl_smp_gage", eventtable = "data.tbl_gage_event", uidvar = "gage_uid", loctable = "admin.tbl_gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
@@ -836,8 +858,8 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   }
   
   #Set datetime date types
-  start_date %<>% as.POSIXct()
-  end_date %<>% as.POSIXct()
+  start_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  end_date %<>% as.POSIXct(format = '%Y-%m-%d')
   
   if(debug){
     ptm <- proc.time()
