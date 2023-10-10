@@ -118,23 +118,25 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
   }
   
   rain_temp$rainfall_in %<>% as.numeric
-  rain_temp$dtime_edt %<>% lubridate::ymd_hms(tz = "America/New_York")
+  # rain_temp$dtime_edt %<>% lubridate::ymd_hms(tz = "America/New_York")
+  rain_temp %<>% dplyr::mutate(dtime_est = lubridate::ymd_hms(dtime_edt, tz = "EST")) %>% dplyr::select(-dtime_edt)
   
   #Apparently, attempting to set the time zone on a datetime that falls squarely on the spring forward datetime
   #Such as 2005-04-03 02:00:00
   #Returns NA, because the time is impossible.
   #I hate this so, so much
   #To mitigate this, we will strip NA values from the new object
-  rain_temp %<>% dplyr::filter(!is.na(dtime_edt)) %>% dplyr::arrange(dtime_edt)
+  # rain_temp %<>% dplyr::filter(!is.na(dtime_edt)) %>% dplyr::arrange(dtime_edt)
+  rain_temp %<>% dplyr::filter(!is.na(dtime_est)) %>% dplyr::arrange(dtime_est)
   
   #Our water level data is not corrected for daylight savings time. ie it doesn't spring forwards
   #So we must shift back any datetimes within the DST window
   #Thankfully, the dst() function returns TRUE if a dtime is within that zone
-  if(daylightsavings == FALSE){
-    dst_index <- lubridate::dst(rain_temp$dtime_edt)
-    rain_temp$dtime_edt %<>% lubridate::force_tz("EST") #Assign new TZ without changing dates
-    rain_temp$dtime_edt[dst_index] <- rain_temp$dtime_edt[dst_index] - lubridate::hours(1)
-  }
+  # if(daylightsavings == FALSE){
+  #   dst_index <- lubridate::dst(rain_temp$dtime_edt)
+  #   rain_temp$dtime_edt %<>% lubridate::force_tz("EST") #Assign new TZ without changing dates
+  #   rain_temp$dtime_edt[dst_index] <- rain_temp$dtime_edt[dst_index] - lubridate::hours(1)
+  # }
   
   #Punctuate data with zeroes to prevent linear interpolation when plotting
   #If the time between data points A and B is greater than 15 minutes (the normal timestep), we must insert a zero 15 minutes after A
@@ -144,7 +146,8 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
   zeroFills <- rain_temp[0,]
   #print("Begin zero-filling process")
   for(i in 1:(nrow(rain_temp) - 1)){
-    k <- difftime(rain_temp$dtime_edt[i+1], rain_temp$dtime_edt[i], units = "min")
+    # k <- difftime(rain_temp$dtime_edt[i+1], rain_temp$dtime_edt[i], units = "min")
+    k <- difftime(rain_temp$dtime_est[i+1], rain_temp$dtime_est[i], units = "min")    
     
     #If gap is > 15 mins, put a zero 15 minutes after the gap starts
     if(k > 15){
@@ -153,8 +156,10 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
       zeroFillIndex <- nrow(zeroFills)+1
       
       #Boundaries of the interval to be zeroed
-      boundary.low <- rain_temp$dtime_edt[i]
-      boundary.high <- rain_temp$dtime_edt[i+1]
+      boundary.low <- rain_temp$dtime_est[i]
+      boundary.high <- rain_temp$dtime_est[i+1]
+      # boundary.low <- rain_temp$dtime_edt[i]
+      # boundary.high <- rain_temp$dtime_edt[i+1]
       
       #The zero goes 15 minutes (900 seconds) after the first boundary
       #Filled by index because R is weird about partially filled data frame rows
@@ -185,10 +190,14 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
 
   #Replace UIDs with SMP IDs
   rainlocs <- odbc::dbGetQuery(con, paste0("SELECT * FROM ", rainparams$loctable))
+  # finalseries <- dplyr::bind_rows(rain_temp, zeroFills) %>%
+  #   dplyr::left_join(rainlocs, by = rainparams$uidvar) %>%
+  #   dplyr::select(dtime_edt, rainfall_in, rainparams$uidvar, rainparams$eventuidvar) %>%
+  #   dplyr::arrange(dtime_edt)
   finalseries <- dplyr::bind_rows(rain_temp, zeroFills) %>%
     dplyr::left_join(rainlocs, by = rainparams$uidvar) %>%
-    dplyr::select(dtime_edt, rainfall_in, rainparams$uidvar, rainparams$eventuidvar) %>%
-    dplyr::arrange(dtime_edt)
+    dplyr::select(dtime_est, rainfall_in, rainparams$uidvar, rainparams$eventuidvar) %>%
+    dplyr::arrange(dtime_est)
   
   #round date to nearest minute
   finalseries$dtime_est %<>% lubridate::round_date("minute")
