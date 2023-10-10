@@ -188,9 +188,9 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
     return(-910)
   }
   
-  #2.4.4 Does rainfall occur during the recession period between 7" and 5" (or whatever the specified range is)?
-  if(sum(tempseries$rainfall_in, na.rm = TRUE) != 0){
-    message(paste0("Rainfall occurs during recession period between ", depth_in + 1, " in. and ", depth_in - 1, " in. in Event ", event[1], "."))
+  #2.4.4 Does significant ( > 0.05") amount of rainfall occur during the recession period between 7" and 5" (or whatever the specified range is)?
+  if(sum(tempseries$rainfall_in, na.rm = TRUE) > 0.05){
+    message(paste0("Rainfall greater than 0.05\" occurs during the recession period in Event ", event[1], "."))
     return(-920)
   }
   
