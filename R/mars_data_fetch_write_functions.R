@@ -203,12 +203,12 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
   finalseries$dtime_est %<>% lubridate::round_date("minute")
   
   #Rename dtime column if we are undoing daylight savings time
-  if(daylightsavings == FALSE){
-    finalseries <- finalseries %>%
-      dplyr::mutate(dtime_est = dtime_edt) %>%
-      dplyr::select(-dtime_edt)
-    finalseries <- dplyr::select(finalseries, dtime_est, rainfall_in, rainparams$uidvar, rainparams$eventuidvar)
-  }
+  # if(daylightsavings == FALSE){
+  #   finalseries <- finalseries %>%
+  #     dplyr::mutate(dtime_est = dtime_edt) %>%
+  #     dplyr::select(-dtime_edt)
+  #   finalseries <- dplyr::select(finalseries, dtime_est, rainfall_in, rainparams$uidvar, rainparams$eventuidvar)
+  # }
   
   
   return(finalseries)
