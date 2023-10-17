@@ -55,10 +55,10 @@ Estimated infiltration rate based on observed data
 }
 \examples{
 obs_250_fill \%>\%
-  filter(is.na(event) == FALSE) \%>\%
-  group_by(event) \%>\%
-  arrange(dtime_est)\%>\%
-  summarize( #Calculate performance metrics
+  dplyr::filter(is.na(event) == FALSE) \%>\%
+  dplyr::group_by(event) \%>\%
+  dplyr::arrange(dtime_est)\%>\%
+  dplyr::summarize( #Calculate performance metrics
     #Observed infiltration rate
     Infiltration_Rate_inhr = marsInfiltrationRate_inhr(event, dtime_est,
                                                rainfall_in,

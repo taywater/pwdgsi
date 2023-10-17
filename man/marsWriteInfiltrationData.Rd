@@ -9,8 +9,7 @@ marsWriteInfiltrationData(
   infiltration_rate_inhr,
   baseline_ft = NA,
   ow_uid,
-  source = c("gage", "radarcell"),
-  event_uid,
+  radar_event_uid,
   snapshot_uid,
   observed_simulated_lookup_uid
 )
@@ -24,9 +23,7 @@ marsWriteInfiltrationData(
 
 \item{ow_uid}{vector, numeric observation well UID}
 
-\item{source}{string, one of "gage" or "radarcell" for whether rain gage events or radar rainfall events have been processed}
-
-\item{event_uid}{vector, numeric event UIDs for rain events from the chosen source}
+\item{radar_event_uid}{vector, numeric event UIDs for rain events from radar data}
 
 \item{snapshot_uid}{vector, numeric}
 
@@ -45,8 +42,7 @@ them to a separate column, \code{error_lookup_uid}.
 marsWriteInfiltrationData(con = mars, 
   infiltration_rate_inhr = summary_250$infiltration_rate_inhr,
   ow_uid = summary_250$ow_uid,
-  source = "gage",
-  event_uid = summary_250$rainfall_gage_event_uid,
+  radar_event_uid = summary_250$rainfall_gage_event_uid,
   snapshot_uid = summary_250$snapshot_uid,
   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 

@@ -31,9 +31,9 @@ Total observed orifice outflow volume (cf)
 }
 \examples{
 obs_250_fill <- obs_250_all \%>\%  
-arrange(dtime_est)\%>\%
-  fill(event) \%>\% #Fill NA's
-  mutate( # Pull in system specs from smp_stats table    
+dplyr::arrange(dtime_est) \%>\%
+  tidyr::fill(event) \%>\% #Fill NA's
+  dplyr::mutate( # Pull in system specs from smp_stats table    
     storage_depth_ft = smp_stats$storage_depth_ft[7], 
     storage_vol_ft3 = smp_stats$storage_vol_ft3[7],
     infil_footprint_ft2 = smp_stats$infil_footprint_ft2[7],

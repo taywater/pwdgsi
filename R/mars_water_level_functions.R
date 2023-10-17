@@ -79,10 +79,10 @@ marsWaterLevelBaseline_ft <- function(dtime_est, level_ft, event_check, max_infi
 #' 
 #' @examples
 #' obs_250_fill %>%
-#'   filter(is.na(event) == FALSE) %>%
-#'   group_by(event) %>%
-#'   arrange(dtime_est)%>%
-#'   summarize( #Calculate performance metrics
+#'   dplyr::filter(is.na(event) == FALSE) %>%
+#'   dplyr::group_by(event) %>%
+#'   dplyr::arrange(dtime_est)%>%
+#'   dplyr::summarize( #Calculate performance metrics
 #'     #Observed infiltration rate
 #'     Infiltration_Rate_inhr = marsInfiltrationRate_inhr(event, dtime_est,
 #'                                                rainfall_in,
@@ -189,8 +189,8 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
   }
   
   #2.4.4 Does significant ( > 0.05") amount of rainfall occur during the recession period between 7" and 5" (or whatever the specified range is)?
-  if(sum(tempseries$rainfall_in, na.rm = TRUE) > 0.05){
-    message(paste0("Rainfall greater than 0.05\" occurs during the recession period in Event ", event[1], "."))
+  if(sum(tempseries$rainfall_in, na.rm = TRUE) >= 0.05){
+    message(paste0('Rainfall greater than 0.05 inches occurs during the recession period in Event ', event[1], '.'))
     return(-920)
   }
   
@@ -255,9 +255,9 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
 #' 
 #' @examples
 #' obs_250_fill <- obs_250_all %>%  
-#' arrange(dtime_est)%>%
-#'   fill(event) %>% #Fill NA's
-#'   mutate( # Pull in system specs from smp_stats table    
+#' dplyr::arrange(dtime_est) %>%
+#'   tidyr::fill(event) %>% #Fill NA's
+#'   dplyr::mutate( # Pull in system specs from smp_stats table    
 #'     storage_depth_ft = smp_stats$storage_depth_ft[7], 
 #'     storage_vol_ft3 = smp_stats$storage_vol_ft3[7],
 #'     infil_footprint_ft2 = smp_stats$infil_footprint_ft2[7],
@@ -399,9 +399,9 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' @seealso \code{\link{simulation.stats}}
 #' 
 #' @examples 
-#' simulated_data <- marsSimulatedLevelSeries_ft(dtime_est = rain_data_filtered$dtime_est, 
-#'   rainfall_in = rain_data_filtered$rainfall_in, 
-#'   event = rain_data_filtered$event,
+#' simulated_data <- marsSimulatedLevelSeries_ft(dtime_est = marsSampleRain$dtime_est, 
+#'   rainfall_in = marsSampleRain$rainfall_in, 
+#'   event = marsSampleRain$event,
 #'   infil_footprint_ft2 = smp_stats$infil_footprint_ft2[7], 
 #'   dcia_ft2 = smp_stats$dcia_ft2[7],
 #'   orifice_height_ft = smp_stats$orifice_height_ft[7],

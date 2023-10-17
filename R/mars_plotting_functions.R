@@ -22,12 +22,12 @@
 #' @export
 #' 
 #' @examples
-#' gage_temp <- mutate(marsSampleRain, 
-#'   event_id = marsDetectEvents(dtime_edt = marsSampleRain$dtime_edt, 
+#' gage_temp <- dplyr::mutate(marsSampleRain, 
+#'   event_id = marsDetectEvents(dtime_est = marsSampleRain$dtime_est, 
 #'   rainfall_in = marsSampleRain$rainfall_in, 
-#'   iet_hr = 6, mindepth_in = 0.10)) %>% filter(event_id == 2)
+#'   iet_hr = 6, mindepth_in = 0.10)) %>% dplyr::filter(event_id == 2)
 #'   
-#' marsRainfallPlot(dtime_edt = gage_temp$dtime_edt, 
+#' marsRainfallPlot(dtime_est = gage_temp$dtime_est, 
 #'   rainfall_in = gage_temp$rainfall_in, event = 2)   
 
 
@@ -496,6 +496,17 @@ marsWaterLevelPlot <- function(event,
     
   }
   
+  
+  level_plot %<>% metricsTable_show(metrics_show = metrics_show,
+                                    obs_RSPU = obs_RSPU,
+                                    obs_infil_inhr = obs_infil_inhr,
+                                    obs_draindown_hr = obs_draindown_hr,
+                                    obs_overtopping = obs_overtopping,
+                                    sim_RSPU = sim_RSPU,
+                                    sim_infil_inhr = sim_infil_inhr,
+                                    sim_draindown_hr = sim_draindown_hr,
+                                    sim_overtopping = sim_overtopping)
+  
   if(metrics_show == TRUE){
     
     #set missing values to ""
@@ -732,6 +743,108 @@ marsCombinedPlot <- function(event,
     # ggplot2::annotate("richtext", y = Inf, x = max_date - (max_date - min_date)*0.01, vjust=0, hjust = 1, size = 4.7, label = metrics_caption, fill = "white")
     # ggplot2::annotate("text", x = max_date - lubridate::minutes(60), y = max(rainfall_in), vjust=0, hjust = 1, label = metrics_caption)
   
+
+  level_plot %<>% metricsTable_show(metrics_show = metrics_show,
+                                    obs_RSPU = obs_RSPU,
+                                    obs_infil_inhr = obs_infil_inhr,
+                                    obs_draindown_hr = obs_draindown_hr,
+                                    obs_overtopping = obs_overtopping,
+                                    sim_RSPU = sim_RSPU,
+                                    sim_infil_inhr = sim_infil_inhr,
+                                    sim_draindown_hr = sim_draindown_hr,
+                                    sim_overtopping = sim_overtopping) 
+
+  
+  #Calculate max width and set both to that value
+  #Grob
+  level_grob <- ggplot2::ggplotGrob(level_plot)
+  rainfall_grob <- ggplot2::ggplotGrob(rainfall_plot)
+  
+  #Set max width
+  maxWidth = grid::unit.pmax(level_grob$widths[2:9], rainfall_grob$widths[2:9])
+  level_grob$widths[2:9] <- maxWidth
+  rainfall_grob$widths[2:9] <- maxWidth
+  
+  #Arrange the plots and export
+  combined_plot <- gridExtra::grid.arrange(rainfall_grob, level_grob, #plots
+                                           rainfall_legend, level_legend, #legends
+                                           ncol = 1,
+                                           heights = c(1.1, 2, 0.15, 0.15))
+  
+  return(combined_plot)
+}
+
+# marsBaroRasterPlot --------------------------------------------------------
+#' Barometric Pressure Raster Plot
+#' 
+#' Create a raster plot of barometric pressures from each sensor for each day
+#' 
+#' @param baro a dataframe with columns: \code{smp_id, baro_psi, day, year}
+#' 
+#' @return p, a ggplot2 plot
+#' 
+#' @export
+#' 
+#' @examples 
+#' marsSampleBaro_plot %<>% dplyr::mutate("day" = yday_decimal(marsSampleBaro_plot$dtime_est),
+#'                                "year" = lubridate::year(marsSampleBaro_plot$dtime_est))
+#' marsBaroRasterPlot(marsSampleBaro_plot)
+#'
+
+marsBaroRasterPlot <- function(baro){
+  p <- ggplot2::ggplot(baro, ggplot2::aes(x = day, y = smp_id)) +
+    ggplot2::facet_grid(. ~ year) +
+    ggplot2::geom_tile(ggplot2::aes(fill = baro_psi)) +
+    ggplot2::scale_fill_gradientn(colours = rev(RColorBrewer::brewer.pal(11, "RdBu")), name = "Pressure (psi)") +
+    ggplot2::theme(axis.text=ggplot2::element_text(colour="black", size=15),
+          axis.title.x=ggplot2::element_text(colour="black", size=15),
+          axis.title.y=ggplot2::element_text(colour="black", size=15),
+          legend.text=ggplot2::element_text(size=15),
+          legend.title=ggplot2::element_text(size = 15),
+          strip.text.x = ggplot2::element_text(size = 15),
+          legend.background = ggplot2::element_blank(),
+          panel.background = ggplot2::element_blank()) +
+    ggplot2::xlab("Day") + ggplot2::ylab("Baro Sites")
+  
+  return(p)
+  
+}
+
+
+# metricsTable_show ------------------------------------------------------------
+
+#' Add metrics to an existing water level or combined plot
+#'
+#' Return the gpglot object, with the metrics added to the object as a tableGrob annotation
+#'
+#' @param in_plot                             ggplot object without annotative metrics table 
+#' @param obs_RSPU                            num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
+#' @param obs_infil_inhr                      num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
+#' @param obs_draindown_hr                    num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)
+#' @param obs_overtopping                     bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+#' @param sim_RSPU                            num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
+#' @param sim_infil_inhr                      num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
+#' @param sim_draindown_hr                    num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)
+#' @param sim_overtopping                     bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+#' @param metrics_show                        bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)
+#' 
+#' @return Output ggplot object adding metrics when necessary
+#' 
+#' @examples 
+#' level_plot %<>% metricsTable_show(metrics_show = metrics_show)
+#'
+
+metricsTable_show <- function(in_plot,
+                              metrics_show = FALSE,
+                              obs_RSPU = obs_RSPU,
+                              obs_infil_inhr = obs_infil_inhr,
+                              obs_draindown_hr = obs_draindown_hr,
+                              obs_overtopping = obs_overtopping,
+                              sim_RSPU = sim_RSPU,
+                              sim_infil_inhr = sim_infil_inhr,
+                              sim_draindown_hr = sim_draindown_hr,
+                              sim_overtopping = sim_overtopping){
+  
   if(metrics_show == TRUE){
     
     #set missing values to ""
@@ -793,63 +906,13 @@ marsCombinedPlot <- function(event,
                                   ymax = (storage_depth_ft*0.95),
                                   xmin = obs_datetime[round(length(obs_datetime)*0.5)],
                                   xmax = obs_datetime[round(length(obs_datetime))])
+    return(level_plot)
+    
+  } else {
+    
+    return(in_plot)
+    
   }
-  
-
-
-  
-  #Calculate max width and set both to that value
-  #Grob
-  level_grob <- ggplot2::ggplotGrob(level_plot)
-  rainfall_grob <- ggplot2::ggplotGrob(rainfall_plot)
-  
-  #Set max width
-  maxWidth = grid::unit.pmax(level_grob$widths[2:9], rainfall_grob$widths[2:9])
-  level_grob$widths[2:9] <- maxWidth
-  rainfall_grob$widths[2:9] <- maxWidth
-  
-  #Arrange the plots and export
-  combined_plot <- gridExtra::grid.arrange(rainfall_grob, level_grob, #plots
-                                           rainfall_legend, level_legend, #legends
-                                           ncol = 1,
-                                           heights = c(1.1, 2, 0.15, 0.15))
-  
-  return(combined_plot)
-}
-
-# marsBaroRasterPlot --------------------------------------------------------
-#' Barometric Pressure Raster Plot
-#' 
-#' Create a raster plot of barometric pressures from each sensor for each day
-#' 
-#' @param baro a dataframe with columns: \code{smp_id, baro_psi, day, year}
-#' 
-#' @return p, a ggplot2 plot
-#' 
-#' @export
-#' 
-#' @examples 
-#' marsSampleBaro_plot %<>% dplyr::mutate("day" = yday_decimal(marsSampleBaro_plot$dtime_est),
-#'                                "year" = lubridate::year(marsSampleBaro_plot$dtime_est))
-#' marsBaroRasterPlot(marsSampleBaro_plot)
-#'
-
-marsBaroRasterPlot <- function(baro){
-  p <- ggplot2::ggplot(baro, ggplot2::aes(x = day, y = smp_id)) +
-    ggplot2::facet_grid(. ~ year) +
-    ggplot2::geom_tile(ggplot2::aes(fill = baro_psi)) +
-    ggplot2::scale_fill_gradientn(colours = rev(RColorBrewer::brewer.pal(11, "RdBu")), name = "Pressure (psi)") +
-    ggplot2::theme(axis.text=ggplot2::element_text(colour="black", size=15),
-          axis.title.x=ggplot2::element_text(colour="black", size=15),
-          axis.title.y=ggplot2::element_text(colour="black", size=15),
-          legend.text=ggplot2::element_text(size=15),
-          legend.title=ggplot2::element_text(size = 15),
-          strip.text.x = ggplot2::element_text(size = 15),
-          legend.background = ggplot2::element_blank(),
-          panel.background = ggplot2::element_blank()) +
-    ggplot2::xlab("Day") + ggplot2::ylab("Baro Sites")
-  
-  return(p)
   
 }
 

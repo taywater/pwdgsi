@@ -27,7 +27,7 @@
 #' @export
 #' 
 #' @examples
-#' gage_temp <- mutate(marsSampleRain, 
+#' gage_temp <- dplyr::mutate(marsSampleRain, 
 #'   event_id = marsDetectEvents(dtime_est = marsSampleRain$dtime_est, 
 #'   rainfall_in = marsSampleRain$rainfall_in, 
 #'   iet_hr = 6, mindepth_in = 0.10))
@@ -144,7 +144,7 @@ NULL
 #' rain_newevents <- marsSampleRain %>%  #use dplyr pipe to update dataframe
 #'  group_by(gage_uid) %>% 
 #'   arrange(dtime_est) %>% 
-#'   mutate(event_id = marsDetectEvents(dtime_est, rainfall_in)) %>%
+#'   dplyr::mutate(event_id = marsDetectEvents(dtime_est, rainfall_in)) %>%
 #'   group_by(gage_uid, event_id) %>%
 #'   summarize(eventdatastart_edt = first(dtime_est),
 #'             eventdataend_edt = last(dtime_est),

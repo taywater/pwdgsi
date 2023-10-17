@@ -8,7 +8,7 @@ marsFetchMonitoringData(
   con,
   target_id,
   ow_suffix,
-  source = c("gage", "radarcell"),
+  source = c("gage", "radar"),
   start_date,
   end_date,
   sump_correct = TRUE,
@@ -26,7 +26,7 @@ marsFetchMonitoringData(
 
 \item{ow_suffix}{vector of chr, OW suffixes corresponding to SMP IDs, where the user has requested data}
 
-\item{source}{string, one of "gage" or "radarcell" to select rain gage events or radar rainfall events}
+\item{source}{string, one of "gage" or "radar" to select rain gage events or radar rainfall events}
 
 \item{start_date}{string, format: "YYYY-MM-DD", start of data request range}
 
@@ -46,12 +46,12 @@ marsFetchMonitoringData(
 Output will be a list consisting of a combination of the following:
 
     \item{Rain Event Data}{dataframe, output from \code{\link{marsFetchRainEventData}}}
-    \item{Rain Gage Data}{dataframe, output from \code{\link{marsFetchRainGageData}}}
+    \item{Rain Gage Data}{dataframe, output from \code{\link{marsFetchRainfallData}}}
     \item{Level Data}{dataframe, output from \code{\link{marsFetchLevelData}}, plus rainfall_gage_event_uids}
 }
 \description{
 Returns a list with data frames with rain data and rain event data from the rain gage closest to the request SMP, and level data
 }
 \seealso{
-\code{\link{marsFetchRainGageData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchRainEventData}}
+\code{\link{marsFetchRainfallData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchRainEventData}}
 }

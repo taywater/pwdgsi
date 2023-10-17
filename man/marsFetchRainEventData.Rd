@@ -7,7 +7,7 @@
 marsFetchRainEventData(
   con,
   target_id,
-  source = c("gage", "radarcell"),
+  source = c("gage", "radar"),
   start_date,
   end_date
 )
@@ -17,7 +17,7 @@ marsFetchRainEventData(
 
 \item{target_id}{vector of chr, SMP ID, where the user has requested data}
 
-\item{source}{string, one of "gage" or "radarcell" to select rain gage events or radar rainfall events}
+\item{source}{string, one of "gage" or "radar" to select rain gage events or radar rainfall events}
 
 \item{start_date}{string, format: "YYYY-MM-DD", start of data request range}
 
@@ -27,7 +27,7 @@ marsFetchRainEventData(
 Output will be a dataframe with the following columns: 
 
     \item{rainfall_gage_event_uid}{int}
-    \item{gage_uid OR radarcell_uid}{int, unique identifier for rain source, depending on value of source argument}
+    \item{gage_uid OR radar_uid}{int, unique identifier for rain source, depending on value of source argument}
     \item{eventdatastart_edt}{POSIXct datetime}
     \item{eventdataend_edt}{POSIXct datetime}
     \item{eventduration_hr}{num, duration of event}

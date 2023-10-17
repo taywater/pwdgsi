@@ -7,7 +7,7 @@
 marsFetchRainfallData(
   con,
   target_id,
-  source = c("gage", "radarcell"),
+  source = c("gage", "radar"),
   start_date,
   end_date,
   daylightsavings
@@ -18,11 +18,11 @@ marsFetchRainfallData(
 
 \item{target_id}{chr, an SMP_ID that where the user has requested data}
 
-\item{source}{chr, either "gage" or "radarcell" to retrieve rain gage data or radar rainfall data}
+\item{source}{chr, either "gage" or "radar" to retrieve rain gage data or radar rainfall data}
 
-\item{start_date}{string, format: "YYYY-MM-DD", start of data request range}
+\item{start_date}{string or POSIXCT date, format: "YYYY-MM-DD", start of data request range}
 
-\item{end_date}{string, format: "YYYY-MM-DD", end of data request range}
+\item{end_date}{stringor POSIXCT date, format: "YYYY-MM-DD", end of data request range}
 
 \item{daylight_savings}{logi, Adjust for daylight savings time? when doing QAQC
 this should be \code{FALSE} because the water level data does not spring forwards.}
@@ -32,7 +32,7 @@ Output will be a data frame with four columns, which corresponds to the specifie
 
   \item{dtime_est OR dtime_edt}{POSIXct datetime with tz = EST or EDT as specified by \code{daylight_savings}}
   \item{rainfall_in}{num, rainfall for the 15 minute preceding the corresponding datetime}
-  \item{gage_uid OR radarcell_uid}{Unique identifier for where the data came from}
+  \item{gage_uid OR radar_uid}{Unique identifier for where the data came from}
   \item{event_id}{event number during this timestep}
 }
 \description{

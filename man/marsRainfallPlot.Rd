@@ -22,12 +22,12 @@ Output is a ggplot2 object of the hyetograph.
 Return hyetograph of events processed by \code{\link{marsDetectEvents}}
 }
 \examples{
-gage_temp <- mutate(marsSampleRain, 
-  event_id = marsDetectEvents(dtime_edt = marsSampleRain$dtime_edt, 
+gage_temp <- dplyr::mutate(marsSampleRain, 
+  event_id = marsDetectEvents(dtime_est = marsSampleRain$dtime_est, 
   rainfall_in = marsSampleRain$rainfall_in, 
-  iet_hr = 6, mindepth_in = 0.10)) \%>\% filter(event_id == 2)
+  iet_hr = 6, mindepth_in = 0.10)) \%>\% dplyr::filter(event_id == 2)
   
-marsRainfallPlot(dtime_edt = gage_temp$dtime_edt, 
+marsRainfallPlot(dtime_est = gage_temp$dtime_est, 
   rainfall_in = gage_temp$rainfall_in, event = 2)   
 }
 \seealso{

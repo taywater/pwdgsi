@@ -676,7 +676,7 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
 #'     
 #' @export
 #' 
-#' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchRainEventData}}, \code{\link{marsFetchMonitoringData}}
+#' @seealso \code{\link{marsFetchRainfallData}}, \code{\link{marsFetchRainEventData}}, \code{\link{marsFetchMonitoringData}}
 #' 
 marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, sump_correct){
   
@@ -786,9 +786,9 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
   
   events <- odbc::dbGetQuery(con, event_query) 
   # making this "EST"
-  events %<>% mutate(eventdatastart_est = lubridate::force_tz(eventdatastart_edt,"EST"))
-  events %<>% mutate(eventdataend_est = lubridate::force_tz(eventdataend_edt,"EST"))
-  events %<>% select(-eventdatastart_edt,
+  events %<>% dplyr::mutate(eventdatastart_est = lubridate::force_tz(eventdatastart_edt,"EST"))
+  events %<>% dplyr::mutate(eventdataend_est = lubridate::force_tz(eventdataend_edt,"EST"))
+  events %<>% dplyr::select(-eventdatastart_edt,
                      -eventdataend_edt)
   
   #3 return event data
@@ -816,12 +816,12 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
 #' @return Output will be a list consisting of a combination of the following:
 #' 
 #'     \item{Rain Event Data}{dataframe, output from \code{\link{marsFetchRainEventData}}}
-#'     \item{Rain Gage Data}{dataframe, output from \code{\link{marsFetchRainGageData}}}
+#'     \item{Rain Gage Data}{dataframe, output from \code{\link{marsFetchRainfallData}}}
 #'     \item{Level Data}{dataframe, output from \code{\link{marsFetchLevelData}}, plus rainfall_gage_event_uids}
 #'     
 #' @export
 #' 
-#' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchRainEventData}}
+#' @seealso \code{\link{marsFetchRainfallData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchRainEventData}}
 #' 
 
 
@@ -1081,14 +1081,14 @@ marsWriteInfiltrationData <- function(con,
 #' gather data, and write to MARS Analysis performance_percentstorage table
 #' 
 #' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
-#' @param percent_of_storage_used vector, numeric, raw percent storage (in/hr)
-#' @param relative_percent_of_storage_used vector, numeric, relative percent storage (in/hr)
+#' @param percentstorageused_peak vector, numeric, peak percent of storage (%)
+#' @param percentstorageused_relative vector, numeric, relative percent storage (%) 
 #' @param ow_uid vector, numeric observation well UID
 #' @param radar_event_uid vector, numeric event UIDs for rain events from radar data
 #' @param snapshot_uid vector, numeric
 #' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
 #' 
-#' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWriteOvertoppingData}},  \code{\link{marsWriteDraindownData}}
+#' @seealso \code{\link{marsWriteOvertoppingData}},  \code{\link{marsWriteDraindownData}}
 #' 
 #' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
 #' 
@@ -1172,7 +1172,7 @@ marsWritePercentStorageData <- function(con,
 #' 
 #' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
 #' 
-#' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWritePercentStorageData}},  \code{\link{marsWriteDraindownData}}
+#' @seealso \code{\link{marsWritePercentStorageData}},  \code{\link{marsWriteDraindownData}}
 #' 
 #' @export
 #' 
@@ -1234,7 +1234,7 @@ marsWriteOvertoppingData <- function(con,
 #' 
 #' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
 #' 
-#' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWritePercentStorageData}}, \code{\link{marsWriteOvertoppingData}}, 
+#' @seealso \code{\link{marsWritePercentStorageData}}, \code{\link{marsWriteOvertoppingData}}, 
 #' 
 #' @export
 #' 
@@ -1243,8 +1243,7 @@ marsWriteOvertoppingData <- function(con,
 #' marsWriteDraindownData(con,
 #'   draindown_hr = summary_250$draindown_hr,
 #'   ow_uid = summary_250$ow_uid,
-#'   source = "gage",
-#'   event_uid = summary_250$rainfall_gage_event_uid, 
+#'   radar_event_uid = summary_250$rainfall_gage_event_uid, 
 #'   snapshot_uid = summary_250$snapshot_uid,
 #'   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 #' 

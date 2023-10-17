@@ -45,7 +45,7 @@ Return storm depth, duration, average intensity, and peak intensity of an event 
 rain_newevents <- marsSampleRain \%>\%  #use dplyr pipe to update dataframe
  group_by(gage_uid) \%>\% 
   arrange(dtime_est) \%>\% 
-  mutate(event_id = marsDetectEvents(dtime_est, rainfall_in)) \%>\%
+  dplyr::mutate(event_id = marsDetectEvents(dtime_est, rainfall_in)) \%>\%
   group_by(gage_uid, event_id) \%>\%
   summarize(eventdatastart_edt = first(dtime_est),
             eventdataend_edt = last(dtime_est),

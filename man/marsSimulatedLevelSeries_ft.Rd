@@ -14,7 +14,7 @@ marsSimulatedLevelSeries_ft(
   orifice_diam_in = NA,
   storage_depth_ft,
   storage_vol_ft3,
-  infil_rate_inhr,
+  infil_rate_inhr = 0.06,
   initial_water_level_ft = 0,
   runoff_coeff = 1,
   discharge_coeff = 0.62,
@@ -49,15 +49,16 @@ marsSimulatedLevelSeries_ft(
 \item{discharge_coeff}{Orifice discharge coefficient (Default = 0.62)}
 }
 \value{
-Output is a dataframe with the following columns: dtime_est, rainfall_in, rainfall_gage_event_uid, Simulated_depth_ft, Simulated_vol_ft3, Simulated_orifice_vol_ft3
+Output is a dataframe with the following columns: dtime_est, rainfall_in, radar_event_uid, simulated_depth_ft, simulated_vol_ft3, simulated_orifice_vol_ft3
 }
 \description{
-Simulates water level in subsurface stormwater infiltration system with underdrain
+Simulates water level in subsurface stormwater infiltration system with underdrain.
+Note: This version of the package targets the PG12 database, and simulating rain gage events is deprecated. The rain event variable name is hard-coded to the radar IDs.
 }
 \examples{
-simulated_data <- marsSimulatedLevelSeries_ft(dtime_est = rain_data_filtered$dtime_est, 
-  rainfall_in = rain_data_filtered$rainfall_in, 
-  event = rain_data_filtered$event,
+simulated_data <- marsSimulatedLevelSeries_ft(dtime_est = marsSampleRain$dtime_est, 
+  rainfall_in = marsSampleRain$rainfall_in, 
+  event = marsSampleRain$event,
   infil_footprint_ft2 = smp_stats$infil_footprint_ft2[7], 
   dcia_ft2 = smp_stats$dcia_ft2[7],
   orifice_height_ft = smp_stats$orifice_height_ft[7],

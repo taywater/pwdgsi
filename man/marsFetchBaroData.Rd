@@ -17,9 +17,9 @@ marsFetchBaroData(
 
 \item{target_id}{chr, single SMP ID where the user has requested data}
 
-\item{start_date}{POSIXct, format: "YYYY-MM-DD", start of data request range}
+\item{start_date}{string or POSIXct, format: "YYYY-MM-DD", start of data request range}
 
-\item{end_date}{POSIXct, format: "YYYY-MM-DD", end of data request range}
+\item{end_date}{string or POSIXct, format: "YYYY-MM-DD", end of data request range}
 
 \item{data_interval}{chr, \code{"5 mins"} or \code{"15 mins"}, interval at which baro data will be returned.}
 }

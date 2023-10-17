@@ -38,5 +38,5 @@ Output will be a dataframe with the following columns:
 Returns a data frame with requested SMP water level data
 }
 \seealso{
-\code{\link{marsFetchRainGageData}}, \code{\link{marsFetchRainEventData}}, \code{\link{marsFetchMonitoringData}}
+\code{\link{marsFetchRainfallData}}, \code{\link{marsFetchRainEventData}}, \code{\link{marsFetchMonitoringData}}
 }

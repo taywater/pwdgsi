@@ -26,7 +26,7 @@ Return a dataset of rainfall event IDs for a time period
 Function should be used inside \code{\link[dplyr]{mutate}} to add output to the corresponding table.
 }
 \examples{
-gage_temp <- mutate(marsSampleRain, 
+gage_temp <- dplyr::mutate(marsSampleRain, 
   event_id = marsDetectEvents(dtime_est = marsSampleRain$dtime_est, 
   rainfall_in = marsSampleRain$rainfall_in, 
   iet_hr = 6, mindepth_in = 0.10))
