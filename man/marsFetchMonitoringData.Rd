@@ -41,6 +41,8 @@ marsFetchMonitoringData(
 \item{level}{logical, TRUE if water level should be included in result}
 
 \item{daylight_savings}{logical, Adjust for daylight savings time? when doing QAQC this should be FALSE because the water level data does not spring forward}
+
+\item{debug}{logical, whether to print lookup times and outputs}
 }
 \value{
 Output will be a list consisting of a combination of the following:

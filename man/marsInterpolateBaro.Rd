@@ -11,9 +11,9 @@ marsInterpolateBaro(baro_psi, smp_id, weight, target_id)
 
 \item{smp_id}{vector, chr, SMP IDs where the measurements took place}
 
-\item{target_id}{chr, single SMP ID where the user has requested data}
+\item{weight}{vector, num, of inverse distances weights for each baro, calculated by \code{\link{marsFetchBaroData}}}
 
-\item{weights}{vector, num, of inverse distances weights for each baro, calculated by \code{\link{marsFetchBaroData}}}
+\item{target_id}{chr, single SMP ID where the user has requested data}
 }
 \value{
 Output will be a single barometric pressure reading.

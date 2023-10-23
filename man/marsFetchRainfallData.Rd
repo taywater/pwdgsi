@@ -24,7 +24,7 @@ marsFetchRainfallData(
 
 \item{end_date}{stringor POSIXCT date, format: "YYYY-MM-DD", end of data request range}
 
-\item{daylight_savings}{logi, Adjust for daylight savings time? when doing QAQC
+\item{daylightsavings}{logi, Adjust for daylight savings time? when doing QAQC
 this should be \code{FALSE} because the water level data does not spring forwards.}
 }
 \value{

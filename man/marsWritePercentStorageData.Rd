@@ -17,9 +17,9 @@ marsWritePercentStorageData(
 \arguments{
 \item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}
 
-\item{percentstorageused_peak}{vector, numeric, peak percent of storage (%)}
+\item{percentstorageused_peak}{vector, numeric, peak percent of storage (\%)}
 
-\item{percentstorageused_relative}{vector, numeric, relative percent storage (%)}
+\item{percentstorageused_relative}{vector, numeric, relative percent storage (\%)}
 
 \item{ow_uid}{vector, numeric observation well UID}
 
@@ -30,7 +30,7 @@ marsWritePercentStorageData(
 \item{observed_simulated_lookup_uid}{vector, numeric, 1 if observed, 2 if simulated}
 }
 \value{
-\code{TRUE} if the write is succesful, or an error message if unsuccessful
+\code{TRUE} if the write is successful, or an error message if unsuccessful
 }
 \description{
 Receive vectors of raw and relative percent storage data, calculated with \code{\link{marsPeakStorage_percent}},
@@ -40,8 +40,8 @@ gather data, and write to MARS Analysis performance_percentstorage table
 
 marsWritePercentStorageData(con = mars, 
    percentstorageused_peak = summary_250$percentstorageused_peak,
-   percentstorageused_relative = summary_250\%percentstorageused_relative,
-   ow_uid = summary_250\%ow_uid,
+   percentstorageused_relative = summary_250$percentstorageused_relative,
+   ow_uid = summary_250$ow_uid,
    radar_event_uid = summary_250$rainfall_gage_event_uid,
    snapshot_uid = summary_250$snapshot_uid,
    observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)

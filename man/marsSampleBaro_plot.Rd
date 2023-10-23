@@ -11,10 +11,11 @@ a dataframe with 2890 rows and 5 variables
   \item{smp_id}{factor, SMP ID}
   \item{baro_psi}{num, barometric pressure (psi)}
   \item{neighbors}{int, number of nearby barometric sensors with recorded data}
-  \item{weight}{num, weight of baro data based on distance, for interpolation}}
+  \item{weight}{num, weight of baro data based on distance, for interpolation}
+  }
 }
 \usage{
-\code{marsBaroRasterPlot}
+marsBaroRasterPlot
 }
 \description{
 A dataset containing datetime, smp_id, barometric pressure, number of neighbors, and weight

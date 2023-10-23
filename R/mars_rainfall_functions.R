@@ -69,7 +69,7 @@ marsDetectEvents <- function(dtime_est, rainfall_in,
   prepseries <- tibble::tibble(dtime = dtime_est,
                             rf_in = rainfall_in) %>%
     dplyr::mutate(lag_time = dplyr::lag(dtime, 1, default = dplyr::first(dtime) - interval_sec)) %>%
-    dplyr::mutate(gap_hr = difftime(dtime, lag_time, unit = "hours"))
+    dplyr::mutate(gap_hr = difftime(dtime, lag_time, units = "hours"))
 
   min_interval <- min(prepseries$gap_hr, na.rm = TRUE)
   
@@ -142,12 +142,12 @@ NULL
 #' 
 #' @examples 
 #' rain_newevents <- marsSampleRain %>%  #use dplyr pipe to update dataframe
-#'  group_by(gage_uid) %>% 
-#'   arrange(dtime_est) %>% 
+#'  dplyr::group_by(gage_uid) %>% 
+#'   dplyr::arrange(dtime_est) %>% 
 #'   dplyr::mutate(event_id = marsDetectEvents(dtime_est, rainfall_in)) %>%
-#'   group_by(gage_uid, event_id) %>%
-#'   summarize(eventdatastart_edt = first(dtime_est),
-#'             eventdataend_edt = last(dtime_est),
+#'   dplyr::group_by(gage_uid, event_id) %>%
+#'   dplyr::summarize(eventdatastart_edt = dplyr::first(dtime_est),
+#'             eventdataend_edt = dplyr::last(dtime_est),
 #'             eventduration_hr = marsStormDuration_hr(dtime_est),
 #'             eventpeakintensity_inhr = marsStormPeakIntensity_inhr(dtime_est, rainfall_in),
 #'             eventavgintensity_inhr = marsStormAverageIntensity_inhr(dtime_est, rainfall_in),
@@ -207,7 +207,7 @@ marsStormDuration_hr <- function(dtime_est) {
   #Notes: Assumes 15-minute time increments. As written, code should 
   #only be applied to ONE EVENT at a time
 
-  duration_calc <- difftime(dtime_est[length(dtime_est)], event_start, unit = "hours")
+  duration_calc <- difftime(dtime_est[length(dtime_est)], event_start, units = "hours")
   duration <- as.double(duration_calc) + 0.25 
   #15-minutes added to account for time subtraction
   

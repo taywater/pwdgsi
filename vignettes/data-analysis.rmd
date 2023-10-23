@@ -210,7 +210,7 @@ In order to illustrate the difference between the observed performance data and 
 
 ```{r simulate, echo = TRUE, message = FALSE}
 #isolate rain data from top events
-rain_data <- monitoringdata[["Rain Gage Data"]]%>% 
+rain_data <- monitoringdata[["Rain Gage Data"]] %>% 
   dplyr::filter(rainfall_gage_event_uid %in% percent_storage_top$rainfall_gage_event_uid)
 
 #simulate water level

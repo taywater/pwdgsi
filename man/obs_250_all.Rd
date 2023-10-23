@@ -18,7 +18,7 @@ a dataframe with 2890 rows and 5 variables
  }
 }
 \usage{
-\code{obs_250_all}
+obs_250_all
 }
 \description{
 A dataset containing water level, rain, and SMP data. \code{obs_250_fill} is joined with SMP stats.

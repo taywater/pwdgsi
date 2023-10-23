@@ -13,12 +13,12 @@ A dataframe with 105 rows and 3 variables
 }
 }
 \usage{
-\code{marsSampleRain}
+marsSampleRain
 }
 \description{
 A dataset containing datetimes, rainfall in inches, and rainfall gage id.
 }
 \seealso{
-\code{\link{detectEvents}}, \code{\link{storm}}, \code{\link{hyetograph}}
+\code{\link{marsDetectEvents}}, \code{\link{marsRainfallPlot}}
 }
 \keyword{datasets}

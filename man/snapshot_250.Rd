@@ -8,7 +8,7 @@
 a dataframe with 1 row and 16 columns
 }
 \usage{
-\code{snapshot_250}
+snapshot_250
 }
 \description{
 A dataset containing stats like footprint and storage depth for SMP 250-1-1

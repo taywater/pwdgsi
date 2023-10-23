@@ -8,7 +8,7 @@
 a list with 3 dataframes
 }
 \usage{
-\code{monitoringdata_250}
+monitoringdata_250
 }
 \description{
 A dataset containing water level, rainfall, and rain event data for SMP 250-1-1 from 2018-01-01 to 2018-03-01.

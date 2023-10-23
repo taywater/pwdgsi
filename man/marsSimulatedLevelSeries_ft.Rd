@@ -17,8 +17,7 @@ marsSimulatedLevelSeries_ft(
   infil_rate_inhr = 0.06,
   initial_water_level_ft = 0,
   runoff_coeff = 1,
-  discharge_coeff = 0.62,
-  debug = FALSE
+  discharge_coeff = 0.62
 )
 }
 \arguments{

@@ -14,7 +14,6 @@ marsWaterLevelPlot(
   sim_level_ft = NA,
   orifice_show = FALSE,
   orifice_height_ft = NULL,
-  snapshot = NA,
   metrics_show = FALSE,
   obs_RSPU,
   sim_RSPU,

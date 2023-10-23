@@ -51,5 +51,5 @@ dplyr::arrange(dtime_est) \%>\%
 
 }
 \seealso{
-\code{\link{marsSaturatedPerformance_inhr}}
+\code{\link{marsInfiltrationRate_inhr}}
 }

@@ -44,7 +44,3 @@ Output ggplot object adding metrics when necessary
 \description{
 Return the gpglot object, with the metrics added to the object as a tableGrob annotation
 }
-\examples{
-level_plot \%<>\% metricsTable_show(metrics_show = metrics_show)
-
-}

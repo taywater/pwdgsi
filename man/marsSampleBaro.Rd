@@ -14,7 +14,7 @@ A list containing a dataframe with 9 rows and 3 variables, and a character.
 }
 }
 \usage{
-\code{marsSampleBaro}
+marsSampleBaro
 }
 \description{
 A dataset containing barometric pressures and inverse distance weights for SMPs,

@@ -24,7 +24,7 @@
 #' 
 
 
-marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
+marsFetchPrivateSMPRecords <- function(con, tracking_number){
   #Validate DB connection
   if(!odbc::dbIsValid(con)){
     stop("Argument 'con' is not an open ODBC channel")
@@ -58,7 +58,7 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 #' @param source chr, either "gage" or "radar" to retrieve rain gage data or radar rainfall data
 #' @param start_date string or POSIXCT date, format: "YYYY-MM-DD", start of data request range
 #' @param end_date stringor POSIXCT date, format: "YYYY-MM-DD", end of data request range
-#' @param daylight_savings logi, Adjust for daylight savings time? when doing QAQC
+#' @param daylightsavings logi, Adjust for daylight savings time? when doing QAQC
 #'   this should be \code{FALSE} because the water level data does not spring forwards.
 #'
 #' @return Output will be a data frame with four columns, which corresponds to the specified SMP and date range:
@@ -169,7 +169,7 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
       zeroFills[zeroFillIndex, 3] <- rainsource   #gage_uid or radarcell_uid
       #browser()
       #print(paste("Gap-filling event ID. Before:", rain_temp$event[i], "After:", rain_temp$event[i+1]))
-      zeroFills[zeroFillIndex, 5] <- pwdgsi:::marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
+      zeroFills[zeroFillIndex, 5] <- marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
       
       #If the boundary is longer than 30 minutes, we need a second zero
       if(k > 30){
@@ -181,7 +181,7 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
         zeroFills[zeroFillIndex + 1, 3] <- rainsource   #gage_uid or radarcell_uid
         
         #print(paste("Gap-filling event ID. Before:", rain_temp[i, 5], "After:", rain_temp[i+1, 5]))
-        zeroFills[zeroFillIndex + 1, 5] <- pwdgsi:::marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
+        zeroFills[zeroFillIndex + 1, 5] <- marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
         
       }
       
@@ -274,7 +274,7 @@ marsGapFillEventID <- function(event_low, event_high){
 #'
 #' @param baro_psi vector, num, barometric pressures measured at the same timestamp
 #' @param smp_id vector, chr, SMP IDs where the measurements took place
-#' @param weights vector, num, of inverse distances weights for each baro, calculated by \code{\link{marsFetchBaroData}}
+#' @param weight vector, num, of inverse distances weights for each baro, calculated by \code{\link{marsFetchBaroData}}
 #' @param target_id chr, single SMP ID where the user has requested data
 #'
 #' @return Output will be a single barometric pressure reading.
@@ -812,6 +812,7 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
 #' @param rainfall logical, TRUE if rainfall data should be included in result
 #' @param level logical, TRUE if water level should be included in result
 #' @param daylight_savings logical, Adjust for daylight savings time? when doing QAQC this should be FALSE because the water level data does not spring forward 
+#' @param debug logical, whether to print lookup times and outputs
 #'
 #' @return Output will be a list consisting of a combination of the following:
 #' 
@@ -1081,8 +1082,8 @@ marsWriteInfiltrationData <- function(con,
 #' gather data, and write to MARS Analysis performance_percentstorage table
 #' 
 #' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
-#' @param percentstorageused_peak vector, numeric, peak percent of storage (%)
-#' @param percentstorageused_relative vector, numeric, relative percent storage (%) 
+#' @param percentstorageused_peak vector, numeric, peak percent of storage (\%)
+#' @param percentstorageused_relative vector, numeric, relative percent storage (\%) 
 #' @param ow_uid vector, numeric observation well UID
 #' @param radar_event_uid vector, numeric event UIDs for rain events from radar data
 #' @param snapshot_uid vector, numeric
@@ -1090,7 +1091,7 @@ marsWriteInfiltrationData <- function(con,
 #' 
 #' @seealso \code{\link{marsWriteOvertoppingData}},  \code{\link{marsWriteDraindownData}}
 #' 
-#' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
+#' @return \code{TRUE} if the write is successful, or an error message if unsuccessful
 #' 
 #' @export
 #' 
@@ -1098,12 +1099,14 @@ marsWriteInfiltrationData <- function(con,
 #' 
 #' marsWritePercentStorageData(con = mars, 
 #'    percentstorageused_peak = summary_250$percentstorageused_peak,
-#'    percentstorageused_relative = summary_250%percentstorageused_relative,
-#'    ow_uid = summary_250%ow_uid,
+#'    percentstorageused_relative = summary_250$percentstorageused_relative,
+#'    ow_uid = summary_250$ow_uid,
 #'    radar_event_uid = summary_250$rainfall_gage_event_uid,
 #'    snapshot_uid = summary_250$snapshot_uid,
 #'    observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 #' 
+
+
 marsWritePercentStorageData <- function(con, 
                                         percentstorageused_peak,
                                         percentstorageused_relative,
@@ -1227,6 +1230,7 @@ marsWriteOvertoppingData <- function(con,
 #' 
 #' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' @param draindown_hr vector, numeric, draindown time (hr)
+#' @param draindown_assessment_lookup_uid vector, int, assessment of draindown duration from \code{\link{marsDraindownAssessment}} 
 #' @param ow_uid vector, numeric observation well UID
 #' @param radar_event_uid vector, numeric
 #' @param snapshot_uid vector, numeric
@@ -1242,6 +1246,7 @@ marsWriteOvertoppingData <- function(con,
 #' 
 #' marsWriteDraindownData(con,
 #'   draindown_hr = summary_250$draindown_hr,
+#'   draindown_assessment_lookup_uid = summary_250$draindown_assessment_lookup_uid,
 #'   ow_uid = summary_250$ow_uid,
 #'   radar_event_uid = summary_250$rainfall_gage_event_uid, 
 #'   snapshot_uid = summary_250$snapshot_uid,

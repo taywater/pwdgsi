@@ -12,7 +12,7 @@
 #' @export
 #'
 
-marsWaterLevelBaseline_ft <- function(dtime_est, level_ft, event_check, max_infil_rate_inhr = 1){
+marsWaterLevelBaseline_ft <- function(dtime_est, level_ft, max_infil_rate_inhr = 1){
   
   #get difference in timesteps to determine steps needed in moving average
   step_diff <- as.numeric(difftime(dtime_est[length(dtime_est)], dtime_est[length(dtime_est) - 1], units = "mins"))
@@ -117,7 +117,7 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
                        slow_release_ft3 = 0)
   
   #1.2 Calculate volume
-  df$vol_ft3 <- pwdgsi:::depth.to.vol(maxdepth_ft = storage_depth_ft[1],
+  df$vol_ft3 <- depth.to.vol(maxdepth_ft = storage_depth_ft[1],
                                       maxvol_cf = storage_vol_ft3[1],
                                       depth_ft = df$depth_ft)
   
@@ -249,7 +249,7 @@ marsInfiltrationRate_inhr <- function(event, #for warning messages
 #' 
 #' @return Output is total observed orifice outflow volume (cf)
 #' 
-#' @seealso \code{\link{marsSaturatedPerformance_inhr}}
+#' @seealso \code{\link{marsInfiltrationRate_inhr}}
 #' 
 #' @export
 #' 
@@ -298,7 +298,7 @@ marsUnderdrainOutflow_cf <- function(dtime_est,
   
   df <- df %>%
     dplyr:: mutate(#2.2 calculate elapsed time (hrs) 
-      elapsed_time_hr = difftime(dtime_est, dplyr::lag(dtime_est), unit = "hours"), #difftime(lead(dtime_est), dtime_est, unit = "hours"),
+      elapsed_time_hr = difftime(dtime_est, dplyr::lag(dtime_est), units = "hours"), #difftime(lead(dtime_est), dtime_est, units = "hours"),
       
       #2.3 Calculate height of water above orifice (ft)
       WL_above_orifice_ft = depth_ft - orifice_height_ft[1],
@@ -394,6 +394,7 @@ depth.to.vol <- function(maxdepth_ft, maxvol_cf, depth_ft){
 #' @param  runoff_coeff            Rational method coefficient (Default = 1)
 #' @param  discharge_coeff         Orifice discharge coefficient (Default = 0.62)
 #' 
+#' 
 #' @return Output is a dataframe with the following columns: dtime_est, rainfall_in, radar_event_uid, simulated_depth_ft, simulated_vol_ft3, simulated_orifice_vol_ft3
 #' 
 #' @seealso \code{\link{simulation.stats}}
@@ -426,8 +427,7 @@ marsSimulatedLevelSeries_ft <- function(dtime_est,
                                         #default values
                                         initial_water_level_ft = 0, 
                                         runoff_coeff = 1, #rational method coefficient
-                                        discharge_coeff = 0.62, #Orifice discharge coefficient
-                                        debug = FALSE
+                                        discharge_coeff = 0.62 #Orifice discharge coefficient
 ){ 
   
   #Data Validation 
@@ -689,7 +689,7 @@ NULL
 #' @examples
 #' 
 #' simulation_summary <- simulated_data %>%
-#'   dplyr::group_by(rainfall_gage_event_uid) %>%
+#'   dplyr::group_by(event) %>%
 #'   dplyr::summarize(startdate = min(dtime_est), #add start date of event to summary table,
 #'                   
 #'    #1. Overtopping check
@@ -798,7 +798,7 @@ marsPeakReleaseRate_cfs <- function(dtime_est,
   
   #2. Calculate timestep and pull maximum value
   df_max <- df %>%
-    dplyr::mutate(elapsed_time_hr = difftime(dplyr::lead(dtime_est), dtime_est, unit = "hours")) %>%
+    dplyr::mutate(elapsed_time_hr = difftime(dplyr::lead(dtime_est), dtime_est, units = "hours")) %>%
     dplyr::filter(is.na(orifice_ft3) == FALSE) %>%
     dplyr::arrange(orifice_ft3) %>%
     dplyr::slice(dplyr::n()) #pull row containing max orifice volume
@@ -905,7 +905,7 @@ marsDraindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
   #4. Assure that water level dropped below baseline + 0.01 (i think it has to right?)
   if(nrow(stor_end_time) > 0){
     #4.1 Calculate draindown time
-    draindown_hrs <- difftime(stor_end_time$dtime_est, peak_time, unit = "hours")
+    draindown_hrs <- difftime(stor_end_time$dtime_est, peak_time, units = "hours")
     
     #4.2 Round to 4 digits
     draindown_hrs <- round(draindown_hrs,4)
@@ -943,7 +943,7 @@ marsDraindown_hr <- function(dtime_est, rainfall_in, waterlevel_ft){
 #' @export
 #'  
 
-marsDraindownAssessment <- function(level_ft, eventdepth_in, event_id_check, designdepth_in, storage_depth_ft, draindown_hr, subsurface = c(TRUE, FALSE)){
+marsDraindownAssessment <- function(level_ft, eventdepth_in, designdepth_in, storage_depth_ft, draindown_hr, subsurface = c(TRUE, FALSE)){
   
   #this is a function to assess draindown based on relationship between storm size and design storm size
   #if there is a draindown error code, return 0.

@@ -19,6 +19,8 @@ marsWriteDraindownData(
 
 \item{draindown_hr}{vector, numeric, draindown time (hr)}
 
+\item{draindown_assessment_lookup_uid}{vector, int, assessment of draindown duration from \code{\link{marsDraindownAssessment}}}
+
 \item{ow_uid}{vector, numeric observation well UID}
 
 \item{radar_event_uid}{vector, numeric}
@@ -38,6 +40,7 @@ and write to MARS Analysis Database performance_draindwown table
 
 marsWriteDraindownData(con,
   draindown_hr = summary_250$draindown_hr,
+  draindown_assessment_lookup_uid = summary_250$draindown_assessment_lookup_uid,
   ow_uid = summary_250$ow_uid,
   radar_event_uid = summary_250$rainfall_gage_event_uid, 
   snapshot_uid = summary_250$snapshot_uid,

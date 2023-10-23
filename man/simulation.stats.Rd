@@ -57,7 +57,7 @@ Summarize and Evaluate System Performance
 \examples{
 
 simulation_summary <- simulated_data \%>\%
-  dplyr::group_by(rainfall_gage_event_uid) \%>\%
+  dplyr::group_by(event) \%>\%
   dplyr::summarize(startdate = min(dtime_est), #add start date of event to summary table,
                   
    #1. Overtopping check

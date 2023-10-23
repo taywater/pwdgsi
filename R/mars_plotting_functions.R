@@ -291,8 +291,7 @@ marsWaterLevelPlot <- function(event,
                                sim_datetime = NA,
                                sim_level_ft = NA,
                                orifice_show = FALSE,
-                               orifice_height_ft = NULL, 
-                               snapshot = NA,
+                               orifice_height_ft = NULL,
                                metrics_show = FALSE,
                                obs_RSPU,
                                sim_RSPU,
@@ -331,7 +330,7 @@ marsWaterLevelPlot <- function(event,
   prepseries <- obs_datetime %>%
     data.frame() %>% 
     dplyr::mutate(lag_time = dplyr::lag(obs_datetime, 1)) %>%
-    dplyr::mutate(gap_hr = difftime(obs_datetime, lag_time, unit = "hours")) %>%
+    dplyr::mutate(gap_hr = difftime(obs_datetime, lag_time, units = "hours")) %>%
     dplyr::filter(gap_hr > 6)
   
   if(nrow(prepseries) > 0){
@@ -672,8 +671,8 @@ marsCombinedPlot <- function(event,
   #2 Combine Plots
   
   #Save out legends
-  level_legend <- pwdgsi:::get_legend(level_plot)
-  rainfall_legend <- pwdgsi:::get_legend(rainfall_plot)
+  level_legend <- get_legend(level_plot)
+  rainfall_legend <- get_legend(rainfall_plot)
   
   #Calculate date plotting limits(x-axis) 
   #Calculate minimum and maximum data values
@@ -818,6 +817,7 @@ marsBaroRasterPlot <- function(baro){
 #' Return the gpglot object, with the metrics added to the object as a tableGrob annotation
 #'
 #' @param in_plot                             ggplot object without annotative metrics table 
+#' @param metrics_show                        bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)
 #' @param obs_RSPU                            num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
 #' @param obs_infil_inhr                      num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
 #' @param obs_draindown_hr                    num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)
@@ -826,13 +826,8 @@ marsBaroRasterPlot <- function(baro){
 #' @param sim_infil_inhr                      num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
 #' @param sim_draindown_hr                    num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)
 #' @param sim_overtopping                     bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
-#' @param metrics_show                        bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)
 #' 
 #' @return Output ggplot object adding metrics when necessary
-#' 
-#' @examples 
-#' level_plot %<>% metricsTable_show(metrics_show = metrics_show)
-#'
 
 metricsTable_show <- function(in_plot,
                               metrics_show = FALSE,

@@ -7,7 +7,6 @@
 marsDraindownAssessment(
   level_ft,
   eventdepth_in,
-  event_id_check,
   designdepth_in,
   storage_depth_ft,
   draindown_hr,
