@@ -164,11 +164,12 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
       #The zero goes 15 minutes (900 seconds) after the first boundary
       #Filled by index because R is weird about partially filled data frame rows
       fill <- boundary.low + lubridate::seconds(900)
-      zeroFills[zeroFillIndex, 2] <- fill                   #dtime_edt
-      zeroFills[zeroFillIndex, 4] <- 0                      #rainfall_in
-      zeroFills[zeroFillIndex, 3] <- rainsource   #gage_uid or radarcell_uid
+      #these were causing several functions to crash. Need a way to index so this doesn't happen again.
+      zeroFills[zeroFillIndex, 5] <- fill                   #dtime_edt
+      zeroFills[zeroFillIndex, 3] <- 0                      #rainfall_in
+      zeroFills[zeroFillIndex, 2] <- rainsource   #gage_uid or radarcell_uid
       #browser()
-      #print(paste("Gap-filling event ID. Before:", rain_temp$event[i], "After:", rain_temp$event[i+1]))
+      print(paste("Gap-filling event ID. Before:", rain_temp$event[i], "After:", rain_temp$event[i+1]))
       zeroFills[zeroFillIndex, 5] <- marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
       
       #If the boundary is longer than 30 minutes, we need a second zero
@@ -872,15 +873,15 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   end_date %<>% as.POSIXct(format = '%Y-%m-%d')
   
   if(debug){
-    ptm <- proc.time()
+    ptm <- print(paste("date_time conversion time:", (proc.time()-ptm)[3]))
   }
   
   #3 Add rain events
   if(rain_events == TRUE){
     for(i in 1:length(target_id)){
       results[["Rain Event Data step"]] <- marsFetchRainEventData(con, target_id[i], source, start_date[i], end_date[i])
-      start_date[i] <- min(results[["Rain Event Data step"]]$eventdatastart_edt)
-      end_date[i] <- max(results[["Rain Event Data step"]]$eventdataend_edt)
+      start_date[i] <- min(results[["Rain Event Data step"]]$eventdatastart_est)
+      end_date[i] <- max(results[["Rain Event Data step"]]$eventdataend_est)
       results[["Rain Event Data"]] <- dplyr::bind_rows(results[["Rain Event Data"]], results[["Rain Event Data step"]])
       results[["Rain Event Data step"]] <- NULL
     }
@@ -899,8 +900,8 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   if(rainfall == TRUE){
     for(i in 1:length(target_id)){
       results[["Rainfall Data step"]] <- marsFetchRainfallData(con, target_id[i], source, start_date[i], end_date[i], daylight_savings)
-      start_date[i] <- min(results[["Rainfall Data step"]]$dtime_est - lubridate::days(1))
-      end_date[i] <- max(results[["Rainfall Data step"]]$dtime_est + lubridate::days(1))
+      start_date[i] <- min(results[["Rainfall Data step"]]$dtime_est - lubridate::days(1), na.rm = TRUE)
+      end_date[i] <- max(results[["Rainfall Data step"]]$dtime_est + lubridate::days(1), na.rm = TRUE)
       results[["Rainfall Data"]] <- dplyr::bind_rows(results[["Rainfall Data"]], results[["Rainfall Data step"]])
       results[["Rainfall Data step"]] <- NULL
     }
