@@ -829,7 +829,7 @@ marsMetricsTable <- function(in_plot,
     #add table to plot
     out_plot <- in_plot +
       
-      ggplot2::annotation_custom (grob = tableGrob(metric_table,
+      ggplot2::annotation_custom (grob = gridExtra::tableGrob(metric_table,
                                                    rows = NULL,
                                                    theme = ggpp::ttheme_gtlight()),
                                   ymin = (storage_depth_ft*0.70),
