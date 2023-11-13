@@ -810,14 +810,13 @@ marsBaroRasterPlot <- function(baro){
 }
 
 
-# metricsTable_show ------------------------------------------------------------
+# marsMetricsTable ------------------------------------------------------------
 
 #' Add metrics to an existing water level or combined plot
 #'
 #' Return the gpglot object, with the metrics added to the object as a tableGrob annotation
 #'
 #' @param in_plot                             ggplot object without annotative metrics table 
-#' @param metrics_show                        bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)
 #' @param obs_RSPU                            num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
 #' @param obs_infil_inhr                      num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
 #' @param obs_draindown_hr                    num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)
@@ -829,8 +828,7 @@ marsBaroRasterPlot <- function(baro){
 #' 
 #' @return Output ggplot object adding metrics when necessary
 
-metricsTable_show <- function(in_plot,
-                              metrics_show = FALSE,
+marsMetricsTable <- function(in_plot,
                               obs_RSPU = obs_RSPU,
                               obs_infil_inhr = obs_infil_inhr,
                               obs_draindown_hr = obs_draindown_hr,
@@ -840,7 +838,6 @@ metricsTable_show <- function(in_plot,
                               sim_draindown_hr = sim_draindown_hr,
                               sim_overtopping = sim_overtopping){
   
-  if(metrics_show == TRUE){
     
     #set missing values to ""
     if( missing(obs_draindown_hr) ){obs_draindown_hr <- ""}
@@ -892,7 +889,7 @@ metricsTable_show <- function(in_plot,
     metric_table <- metric_table[c(1:4)[!(c(1:4) %in% remove)],]
     
     #add table to plot
-    level_plot <- level_plot +
+    out_plot <- in_plot +
       
       ggplot2::annotation_custom (grob = tableGrob(metric_table,
                                                    rows = NULL,
@@ -901,13 +898,9 @@ metricsTable_show <- function(in_plot,
                                   ymax = (storage_depth_ft*0.95),
                                   xmin = obs_datetime[round(length(obs_datetime)*0.5)],
                                   xmax = obs_datetime[round(length(obs_datetime))])
-    return(level_plot)
+    return(out_plot)
+
     
-  } else {
-    
-    return(in_plot)
-    
-  }
   
 }
 
