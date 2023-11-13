@@ -765,6 +765,9 @@ marsBaroRasterPlot <- function(baro){
 #' @param sim_overtopping                     bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
 #' 
 #' @return Output ggplot object adding metrics when necessary
+#'  
+#' @export
+#' 
 
 marsMetricsTable <- function(in_plot,
                               obs_RSPU = obs_RSPU,
@@ -855,6 +858,9 @@ marsMetricsTable <- function(in_plot,
 #' @param resolution                          text, one of 'low', 'med', or 'high'. Each consists of default options that can be overwritten with ggsave arguments.
 #' @param ...                                 overwrite assumed values of resolution. Accepts existing arguments to ggsave, see \code{ggsave} (optional)
 #' @return Output ggplot object adding metrics when necessary
+#'  
+#' @export
+#' 
 
 marsSavePlot <- function(in_plot = last_plot(),
                          plot_type,
