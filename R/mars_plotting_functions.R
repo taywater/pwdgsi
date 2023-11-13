@@ -911,3 +911,55 @@ metricsTable_show <- function(in_plot,
   
 }
 
+
+# marsSavePlot ------------------------------------------------------------
+
+#' Wrapper function for ggsave that ensures text appears correctly for saved images of pwdgsi plots 
+#'
+#' Return the gpglot object, with the metrics added to the object as a tableGrob annotation
+#'
+#' @param in_plot                             ggplot object without annotative metrics table 
+#' @param filename                            text, file location to save the document refer to \code{ggsave}
+#' @param plot_type                           text, one of 'combined', 'level', or 'rain' to determine the dimensions to use
+#' @param resolution                          text, one of 'low', 'med', or 'high'. Each consists of default options that can be overwritten with ggsave arguments.
+#' @param ...                                 overwrite assumed values of resolution. Accepts existing arguments to ggsave, see \code{ggsave} (optional)
+#' @return Output ggplot object adding metrics when necessary
+
+marsSavePlot <- function(in_plot = last_plot(),
+                         plot_type,
+                         filename,
+                         resolution = 'med',
+                         ...){
+ 
+  if(!(resolution %in% c('low','med','high'))){
+    stop("Must provided one of 'low', 'med', or 'high' to argument 'resolution'. Values can be overwrittn by providing ggsave arguments.")
+  }
+  
+  #resolution options
+  res_df <- data.frame(name = c('low','med','high'),
+                          dpi = c(75, 150, 250))
+  
+  res_x <- res_df$dpi[res_df$name == resolution]
+  
+  if(is.na(plot_type)){
+    stop("Must provided one of 'level', 'rain', or 'combined' to argument 'plot_type'.")
+  }
+   
+  if(!(plot_type %in% c('level','rain','combined'))){
+    stop("Must provided one of 'level', 'rain', or 'combined' to argument 'plot_type'.")
+  }
+  
+  #plot dimensions
+  plot_df <- data.frame(type = c('level','rain','combined'),
+                           width = c(8, 9.56, 10.67),
+                           height = c(4, 4,8))
+  
+  width_x <- plot_df$width[plot_df$type == plot_type]
+  height_x <- plot_df$height[plot_df$type == plot_type]
+  
+  ggplot2::ggsave(plot = in_plot,
+                  width = width_x,
+                  height = height_x,
+                  dpi = res_x,
+                  filename = filename)
+}

@@ -168,8 +168,8 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
       zeroFills[zeroFillIndex, 5] <- fill                   #dtime_edt
       zeroFills[zeroFillIndex, 3] <- 0                      #rainfall_in
       zeroFills[zeroFillIndex, 2] <- rainsource   #gage_uid or radarcell_uid
-      #browser()
-      print(paste("Gap-filling event ID. Before:", rain_temp$event[i], "After:", rain_temp$event[i+1]))
+      # browser()
+      # print(paste("Gap-filling event ID. Before:", rain_temp$event[i], "After:", rain_temp$event[i+1]))
       zeroFills[zeroFillIndex, 5] <- marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
       
       #If the boundary is longer than 30 minutes, we need a second zero
@@ -887,9 +887,6 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
     }
   }
   
-  if(debug){
-    print(paste("rain_event_lookup_time:", (proc.time()-ptm)[3]))
-  }
   
   if(debug){
     ptm <- proc.time()
@@ -924,9 +921,10 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
         dplyr::select(dtime_est, level_ft, ow_uid, rainparams$uidvar) #remove extra columns
       if(rain_events == TRUE){
         level_data_step <- results[["Level Data step"]] #coerce to data frame
-        results[["Rain Event Data"]]$eventdatastart_edt %<>% lubridate::with_tz("EST") #switch to EST and rename
-        results[["Rain Event Data"]]$eventdataend_edt %<>% lubridate::with_tz("EST")
-        results[["Rain Event Data"]] %<>% dplyr::rename(eventdatastart_est = eventdatastart_edt, eventdataend_est = eventdataend_edt)
+        #already switched in rainfall fx
+        # results[["Rain Event Data"]]$eventdatastart_edt %<>% lubridate::with_tz("EST") #switch to EST and rename
+        # results[["Rain Event Data"]]$eventdataend_edt %<>% lubridate::with_tz("EST")
+        # results[["Rain Event Data"]] %<>% dplyr::rename(eventdatastart_est = eventdatastart_edt, eventdataend_est = eventdataend_edt)
         
         results_event_data <- results[["Rain Event Data"]]
         
