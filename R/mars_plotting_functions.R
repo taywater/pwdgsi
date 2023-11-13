@@ -498,8 +498,7 @@ marsWaterLevelPlot <- function(event,
   
 # Add metrics
 if(metrics_show == TRUE){
-  level_plot %<>% marsMetricsTable(metrics_show = metrics_show,
-                                    obs_RSPU = obs_RSPU,
+  level_plot %<>% marsMetricsTable( obs_RSPU = obs_RSPU,
                                     obs_infil_inhr = obs_infil_inhr,
                                     obs_draindown_hr = obs_draindown_hr,
                                     obs_overtopping = obs_overtopping,
