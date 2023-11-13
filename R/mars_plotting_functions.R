@@ -458,7 +458,8 @@ marsWaterLevelPlot <- function(event,
     
     
     ggplot2::labs(
-      y = "Water Level (ft)"
+      y = "Water Level (ft)",
+      title = title_text
     ) +
     
     ggplot2::theme(
@@ -495,8 +496,9 @@ marsWaterLevelPlot <- function(event,
     
   }
   
-  
-  level_plot %<>% metricsTable_show(metrics_show = metrics_show,
+# Add metrics
+if(metrics_show == TRUE){
+  level_plot %<>% marsMetricsTable(metrics_show = metrics_show,
                                     obs_RSPU = obs_RSPU,
                                     obs_infil_inhr = obs_infil_inhr,
                                     obs_draindown_hr = obs_draindown_hr,
@@ -505,73 +507,7 @@ marsWaterLevelPlot <- function(event,
                                     sim_infil_inhr = sim_infil_inhr,
                                     sim_draindown_hr = sim_draindown_hr,
                                     sim_overtopping = sim_overtopping)
-  
-  if(metrics_show == TRUE){
-    
-    #set missing values to ""
-    if( missing(obs_draindown_hr) ){obs_draindown_hr <- ""}
-    if( missing(sim_draindown_hr) ){sim_draindown_hr <- ""}
-    if( missing(obs_infil_inhr) ){obs_infil_inhr <- ""}
-    if( missing(sim_infil_inhr) ){sim_infil_inhr <- ""}
-    if( missing(obs_RSPU) ){obs_RSPU <- ""}
-    if( missing(sim_RSPU) ){sim_RSPU <- ""}
-    if( missing(obs_overtopping) ){obs_overtopping <- ""}
-    if( missing(sim_overtopping) ){sim_overtopping <- ""}
-    
-    if( is.numeric(obs_infil_inhr) & obs_infil_inhr < 0 ){
-      obs_infil_inhr <- paste0("ERR: ", obs_infil_inhr)
-    }
-    if( is.numeric(sim_infil_inhr) & sim_infil_inhr < 0 ){
-      sim_infil_inhr <- paste0("ERR: ", sim_infil_inhr)
-    }
-    
-    if(is.numeric(obs_draindown_hr)){ obs_draindown_hr <- round(obs_draindown_hr,2)}
-    if(is.numeric(sim_draindown_hr)){ sim_draindown_hr <- round(sim_draindown_hr,2)}
-    if(is.numeric(obs_infil_inhr)){ obs_infil_inhr <- round(obs_infil_inhr,2)}
-    if(is.numeric(sim_infil_inhr)){ sim_infil_inhr <- round(sim_infil_inhr,2)}
-    if(is.numeric(obs_RSPU)){ obs_RSPU <- round(obs_RSPU,2)}
-    if(is.numeric(sim_RSPU)){ sim_RSPU <- round(sim_RSPU,2)}
-    
-    # browser()
-    #------ table version
-    metric_table <- as.data.frame(matrix(nrow=4))
-    colnames(metric_table) <- "Metrics"
-    metric_table$Metrics <- c("Drain down (hrs)",
-                              "Infiltration rate (in/hr)",
-                              "RSPU (%)",
-                              "Overtopping (T/F)")
-
-    
-    if(obs_infil_inhr < 0){obs_infil_inhr <- paste0("ERR: ",obs_infil_inhr)}
-    
-    obs_mets <- c(obs_draindown_hr,obs_infil_inhr, obs_RSPU, obs_overtopping)
-    sim_mets <- c(sim_draindown_hr,sim_infil_inhr, sim_RSPU, sim_overtopping)
-    
-    #add columns if obs/sim exists
-    if(sum(is.na(obs_mets)) < 4){metric_table$Observed <- obs_mets}
-    if(sum(is.na(sim_mets)) < 4){metric_table$Simulated <- sim_mets}
-    
-    #remove rows if both are empty
-    # browser()
-    remove <- c()
-    if(sum(metric_table[1,] == "") == 2){ remove <- c(remove,1)}
-    if(sum(metric_table[2,] == "") == 2){ remove <- c(remove,2)}
-    if(sum(metric_table[3,] == "") == 2){ remove <- c(remove,3)}
-    if(sum(metric_table[4,] == "") == 2){ remove <- c(remove,4)}
-    metric_table <- metric_table[c(1:4)[!(c(1:4) %in% remove)],]
-    
-    
-    level_plot <- level_plot +
-      
-      ggplot2::annotation_custom (grob = tableGrob(metric_table,
-                                                   rows = NULL,
-                                                   theme = ggpp::ttheme_gtlight()),
-                                  ymin = (storage_depth_ft*0.70),
-                                  ymax = (storage_depth_ft*0.95),
-                                  xmin = obs_datetime[round(length(obs_datetime)*0.5)],
-                                  xmax = obs_datetime[round(length(obs_datetime))])
-
-  }
+}
   
   return(level_plot)
   
@@ -732,6 +668,7 @@ marsCombinedPlot <- function(event,
       breaks = major_date_breaks,
       minor_breaks = minor_date_breaks)  +
     ggplot2::labs(title = title_text)
+  
     # ggplot2::geom_label(ggplot2::aes(x = max_date - (max_date - min_date)*0.1, 
     #                                  y = Inf, 
     #                                  label = metrics_caption),
@@ -742,16 +679,17 @@ marsCombinedPlot <- function(event,
     # ggplot2::annotate("richtext", y = Inf, x = max_date - (max_date - min_date)*0.01, vjust=0, hjust = 1, size = 4.7, label = metrics_caption, fill = "white")
     # ggplot2::annotate("text", x = max_date - lubridate::minutes(60), y = max(rainfall_in), vjust=0, hjust = 1, label = metrics_caption)
   
+  if(metrics_show == TRUE){
+    level_plot %<>% marsMetricsTable(obs_RSPU = obs_RSPU,
+                                     obs_infil_inhr = obs_infil_inhr,
+                                     obs_draindown_hr = obs_draindown_hr,
+                                     obs_overtopping = obs_overtopping,
+                                     sim_RSPU = sim_RSPU,
+                                     sim_infil_inhr = sim_infil_inhr,
+                                     sim_draindown_hr = sim_draindown_hr,
+                                     sim_overtopping = sim_overtopping) 
+  }
 
-  level_plot %<>% metricsTable_show(metrics_show = metrics_show,
-                                    obs_RSPU = obs_RSPU,
-                                    obs_infil_inhr = obs_infil_inhr,
-                                    obs_draindown_hr = obs_draindown_hr,
-                                    obs_overtopping = obs_overtopping,
-                                    sim_RSPU = sim_RSPU,
-                                    sim_infil_inhr = sim_infil_inhr,
-                                    sim_draindown_hr = sim_draindown_hr,
-                                    sim_overtopping = sim_overtopping) 
 
   
   #Calculate max width and set both to that value
