@@ -6,14 +6,14 @@
 \usage{
 marsMetricsTable(
   in_plot,
-  obs_RSPU = obs_RSPU,
-  obs_infil_inhr = obs_infil_inhr,
-  obs_draindown_hr = obs_draindown_hr,
-  obs_overtopping = obs_overtopping,
-  sim_RSPU = sim_RSPU,
-  sim_infil_inhr = sim_infil_inhr,
-  sim_draindown_hr = sim_draindown_hr,
-  sim_overtopping = sim_overtopping
+  obs_RSPU,
+  obs_infil_inhr,
+  obs_draindown_hr,
+  obs_overtopping,
+  sim_RSPU,
+  sim_infil_inhr,
+  sim_draindown_hr,
+  sim_overtopping
 )
 }
 \arguments{
