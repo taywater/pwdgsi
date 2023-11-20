@@ -762,6 +762,7 @@ marsEventCombinedPlot <- function(con,
                                   sump_correct = TRUE,
                                   orifice_show = FALSE,
                                   orifice_height_ft = NULL,
+                                  storage_depth_ft,
                                   metrics_show = FALSE,
                                   obs_RSPU,
                                   sim_RSPU,
@@ -806,7 +807,7 @@ marsEventCombinedPlot <- function(con,
      #check for one day on either side of the event date
     event_date %<>% as.POSIXct(format = '%Y-%m-%d')
     start_date <- event_date - 86400
-    end_date <- event_date   + 86400*2 # times two to include the entirety of the start date and the following day
+    end_date <- event_date   + 86400
     
     # browser()
      # Grab the data
@@ -832,50 +833,72 @@ marsEventCombinedPlot <- function(con,
       event_data <- event_data[abs(event_data$eventdatastart_est - event_date) == min_dif,]
     }
     
-    # get event column name (dependent on radar/gage)
-    event_col <- colnames(mon_data$`Level Data`)[grep('event',colnames(mon_data$`Level Data`))]
-    
-    # define individual datasets
-    # filter out rainfall data not associated with an event
-    rainfall_data <- mon_data$`Rainfall Data`[!is.na(mon_data$`Rainfall Data`[,event_col]),]
-    #filter to specific event
-    rainfall_data <- rainfall_data[rainfall_data[,event_col] == event_data[,event_col],]
-    
-    level_data <- mon_data$`Level Data`[!is.na(mon_data$`Level Data`[,event_col]),]
-    #filter to specific event
-    level_data <- level_data[level_data[,event_col] == event_data[,event_col],]
-    
-    
-    #match inputs to marsCombinedPlot
-    rainfall_in <- rainfall_data$rainfall_in
-    rainfall_datetime <- rainfall_data$dtime_est
-    obs_level_ft <- level_data$level_ft
-    obs_datetime <- level_data$dtime_est
+
     
   } else {
     
-    event_data <- pwdgsi::marsFetchRainEventData()
+    # browser()
+    # write event query based on source
+    if(source %in% c('gage','gauge')){
+      event_query <- paste0('SELECT * FROM data.tbl_gage_event where gage_event_uid = ',event_uid)
+    }
     
-    pwdgsi::marsFetchMonitoringData(con = con,
-                                    target_id = smp_id,
-                                    ow_suffix = ow_suffix,
-                                    start_date = start_date,
-                                    source = source,
-                                    end_date = end_date,
-                                    sump_correct = sump_correct)
+    if(source == 'radar'){
+      event_query <- paste0('SELECT * FROM data.tbl_radar_event where radar_event_uid = ',event_uid)
+    }  
+   
+    event_data <- dbGetQuery(con, event_query)
+    
+    start_date <- event_data$eventdatastart_edt
+    end_date <- event_data$eventdataend_edt
+    
+    # browser()
+    mon_data <- pwdgsi::marsFetchMonitoringData(con = con,
+                                                target_id = smp_id,
+                                                ow_suffix = ow_suffix,
+                                                start_date = start_date,
+                                                source = source,
+                                                end_date = end_date,
+                                                sump_correct = sump_correct)
+
+
     
   }
   
   
   
-  # browser()
+  # get event column name (dependent on radar/gage)
+  event_col <- colnames(mon_data$`Level Data`)[grep('event',colnames(mon_data$`Level Data`))]
+  
+  # define individual datasets
+  # filter out rainfall data not associated with an event
+  rainfall_data <- mon_data$`Rainfall Data`[!is.na(mon_data$`Rainfall Data`[,event_col]),]
+  #filter to specific event
+  rainfall_data <- rainfall_data[rainfall_data[,event_col] == event_data[,event_col],]
+  
+  level_data <- mon_data$`Level Data`[!is.na(mon_data$`Level Data`[,event_col]),]
+  #filter to specific event
+  level_data <- level_data[level_data[,event_col] == event_data[,event_col],]
+  
+  
+  #match inputs to marsCombinedPlot
+  rainfall_in <- rainfall_data$rainfall_in
+  rainfall_datetime <- rainfall_data$dtime_est
+  obs_level_ft <- level_data$level_ft
+  obs_datetime <- level_data$dtime_est
+  
+  
   #Define values from snapshot
   snapshot <- pwdgsi::marsFetchSMPSnapshot(con = con,
                                smp_id = smp_id,
                                ow_suffix = ow_suffix,
                                request_date = event_date)
+  
+  #set NA's to 0's
+  if( is.na(snapshot$assumption_orificeheight_ft) ){snapshot$assumption_orificeheight_ft <- 0}
 
   # set max storage and orifice defaults when not provided
+  # browser()
   if( missing(orifice_show) ){
     orifice_show <- if(snapshot$assumption_orificeheight_ft == 0){0}else{1}
   }
@@ -890,7 +913,7 @@ marsEventCombinedPlot <- function(con,
   
   
   # Combine strings for structure name
-  structure_name <- paste0("SMP ID: ",smp_id," | Monitoring Location: ",ow_suffix)
+  structure_name <- paste0(smp_id," | Monitoring Location: ",ow_suffix)
   
   #Add a last date so the hyetograph looks better
   rainfall_in <- append(rainfall_in, 0)
