@@ -745,6 +745,7 @@ marsCombinedPlot <- function(event,
 #' @param smp_id                              chr, SMP ID
 #' @param ow_suffix                           chr, OW Suffix
 #' @param sump_correct                        boolean, passed to fetch monitoring date to trim data
+#' @param ...                                 additional arguments for showing metrics and overriding orifice/storage elevations. See \code{\link{marsCombinedPlot}}
 #'
 #' @return Output will be a gridExtra object of the two plots
 #'
@@ -758,7 +759,19 @@ marsEventCombinedPlot <- function(con,
                                   event_uid,
                                   smp_id, 
                                   ow_suffix,
-                                  sump_correct = TRUE
+                                  sump_correct = TRUE,
+                                  orifice_show = FALSE,
+                                  orifice_height_ft = NULL,
+                                  metrics_show = FALSE,
+                                  obs_RSPU,
+                                  sim_RSPU,
+                                  obs_infil_inhr,
+                                  sim_infil_inhr,
+                                  obs_draindown_hr,
+                                  sim_draindown_hr,
+                                  obs_overtopping,
+                                  sim_overtopping
+                                  
 ){
   
   ## Check DB connection
@@ -855,25 +868,33 @@ marsEventCombinedPlot <- function(con,
   
   
   
-  browser()
+  # browser()
   #Define values from snapshot
   snapshot <- pwdgsi::marsFetchSMPSnapshot(con = con,
                                smp_id = smp_id,
                                ow_suffix = ow_suffix,
                                request_date = event_date)
 
-  # set max storage and orifice defaults
-  orifice_show <- if(snapshot$assumption_orificeheight_ft == 0){0}else{1}
-  orifice_height_ft <- snapshot$assumption_orificeheight_ft
-  storage_depth_ft <- snapshot$storage_depth_ft
+  # set max storage and orifice defaults when not provided
+  if( missing(orifice_show) ){
+    orifice_show <- if(snapshot$assumption_orificeheight_ft == 0){0}else{1}
+  }
+  
+  if( missing(orifice_height_ft) ){
+    orifice_height_ft <- snapshot$assumption_orificeheight_ft
+  }
+  
+  if( missing(storage_depth_ft) ){
+    storage_depth_ft <- snapshot$storage_depth_ft
+  }
+  
+  
+  # Combine strings for structure name
+  structure_name <- paste0("SMP ID: ",smp_id," | Monitoring Location: ",ow_suffix)
   
   #Add a last date so the hyetograph looks better
   rainfall_in <- append(rainfall_in, 0)
-  if(!is.na(sim_level_ft[1])){
-    rainfall_datetime <- append(rainfall_datetime, max(obs_datetime, sim_datetime)) %>% lubridate::with_tz("EST")
-  }else{
-    rainfall_datetime <- append(rainfall_datetime, max(obs_datetime)) %>% lubridate::with_tz("EST")
-  }
+  rainfall_datetime <- append(rainfall_datetime, max(obs_datetime)) %>% lubridate::with_tz("EST")
   
   #1 Run functions for individual plots
   level_plot <- pwdgsi::marsWaterLevelPlot(event = event, 
@@ -897,13 +918,8 @@ marsEventCombinedPlot <- function(con,
   
   #Calculate date plotting limits(x-axis) 
   #Calculate minimum and maximum data values
-  if(!is.na(sim_level_ft[1])){
-    min_date <- min(obs_datetime, sim_datetime, na.rm = TRUE)
-    max_date <- max(obs_datetime, sim_datetime, na.rm = TRUE)
-  }else{
     min_date <- min(obs_datetime, na.rm = TRUE)
     max_date <- max(obs_datetime, na.rm = TRUE) #+ hours(6)
-  }
   
   #Calculate ranges in values to set axis breaks by category
   event_duration <- max_date - min_date
@@ -964,6 +980,8 @@ marsEventCombinedPlot <- function(con,
   # ggplot2::annotate("richtext", y = Inf, x = max_date - (max_date - min_date)*0.01, vjust=0, hjust = 1, size = 4.7, label = metrics_caption, fill = "white")
   # ggplot2::annotate("text", x = max_date - lubridate::minutes(60), y = max(rainfall_in), vjust=0, hjust = 1, label = metrics_caption)
   
+  
+  if( missing(metrics_show) ){metrics_show <- FALSE}
   if(metrics_show == TRUE){
     
     #set missing values to ""
