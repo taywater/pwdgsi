@@ -793,7 +793,7 @@ marsEventCombinedPlot <- function(con,
      #check for one day on either side of the event date
     event_date %<>% as.POSIXct(format = '%Y-%m-%d')
     start_date <- event_date - 86400
-    end_date <- event_date   + 86400
+    end_date <- event_date   + 86400*2 # times two to include the entirety of the start date and the following day
     
     # browser()
      # Grab the data
@@ -811,16 +811,45 @@ marsEventCombinedPlot <- function(con,
     if(length(event_data) == 0){
       stop(paste0("There are no events on ",event_date))}
     
+    browser()
+    
     # pick closest event if multiple events
     if(nrow(event_data) > 1){
-      event_x <- event_data$d
+      min_dif <- min(abs(event_data$eventdatastart_est - event_date))
+      event_data <- event_data[abs(event_data$eventdatastart_est - event_date) == min_dif,]
     }
     
-    #define individual datasets
+    # get event column name (dependent on radar/gage)
+    event_col <- colnames(mon_data$`Level Data`)[grep('event',colnames(mon_data$`Level Data`))]
+    
+    # define individual datasets
+    # filter out rainfall data not associated with an event
+    rainfall_data <- mon_data$`Rainfall Data`[!is.na(mon_data$`Rainfall Data`[,event_col]),]
+    #filter to specific event
+    rainfall_data <- rainfall_data[rainfall_data[,event_col] == event_data[,event_col],]
+    
+    level_data <- mon_data$`Level Data`[!is.na(mon_data$`Level Data`[,event_col]),]
+    #filter to specific event
+    level_data <- level_data[level_data[,event_col] == event_data[,event_col],]
+    
+    
+    #match inputs to marsCombinedPlot
+    rainfall_in <- rainfall_data$rainfall_in
+    rainfall_datetime <- rainfall_data$dtime_est
+    obs_level_ft <- level_data$level_ft
+    obs_datetime <- level_data$dtime_est
     
   } else {
     
-    print(paste0(nrow(event_data)," events found"))
+    event_data <- pwdgsi::marsFetchRainEventData()
+    
+    pwdgsi::marsFetchMonitoringData(con = con,
+                                    target_id = smp_id,
+                                    ow_suffix = ow_suffix,
+                                    start_date = start_date,
+                                    source = source,
+                                    end_date = end_date,
+                                    sump_correct = sump_correct)
     
   }
   
