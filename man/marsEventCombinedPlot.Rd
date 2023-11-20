@@ -11,7 +11,18 @@ marsEventCombinedPlot(
   event_uid,
   smp_id,
   ow_suffix,
-  sump_correct = TRUE
+  sump_correct = TRUE,
+  orifice_show = FALSE,
+  orifice_height_ft = NULL,
+  metrics_show = FALSE,
+  obs_RSPU,
+  sim_RSPU,
+  obs_infil_inhr,
+  sim_infil_inhr,
+  obs_draindown_hr,
+  sim_draindown_hr,
+  obs_overtopping,
+  sim_overtopping
 )
 }
 \arguments{
@@ -28,6 +39,8 @@ marsEventCombinedPlot(
 \item{ow_suffix}{chr, OW Suffix}
 
 \item{sump_correct}{boolean, passed to fetch monitoring date to trim data}
+
+\item{...}{additional arguments for showing metrics and overriding orifice/storage elevations. See \code{\link{marsCombinedPlot}}}
 }
 \value{
 Output will be a gridExtra object of the two plots
