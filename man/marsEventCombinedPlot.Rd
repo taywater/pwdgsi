@@ -7,7 +7,7 @@
 marsEventCombinedPlot(
   con,
   event_date,
-  rain_source,
+  source = "radar",
   event_uid,
   smp_id,
   ow_suffix,
@@ -19,7 +19,7 @@ marsEventCombinedPlot(
 
 \item{event_date}{chr or POSIXCT, day during which event occurs}
 
-\item{rain_source}{chr, one of 'gage'/'gauge' or 'radar'}
+\item{source}{chr, rainfall source, one of 'gage'/'gauge' or 'radar'. Defaults to 'radar'}
 
 \item{event_uid}{int, rain event uid. Alternate to override event_date and rain_source (optional)}
 

@@ -811,7 +811,7 @@ marsEventCombinedPlot <- function(con,
     if(length(event_data) == 0){
       stop(paste0("There are no events on ",event_date))}
     
-    browser()
+    
     
     # pick closest event if multiple events
     if(nrow(event_data) > 1){
@@ -855,7 +855,17 @@ marsEventCombinedPlot <- function(con,
   
   
   
+  browser()
+  #Define values from snapshot
+  snapshot <- pwdgsi::marsFetchSMPSnapshot(con = con,
+                               smp_id = smp_id,
+                               ow_suffix = ow_suffix,
+                               request_date = event_date)
 
+  # set max storage and orifice defaults
+  orifice_show <- if(snapshot$assumption_orificeheight_ft == 0){0}else{1}
+  orifice_height_ft <- snapshot$assumption_orificeheight_ft
+  storage_depth_ft <- snapshot$storage_depth_ft
   
   #Add a last date so the hyetograph looks better
   rainfall_in <- append(rainfall_in, 0)
@@ -870,8 +880,6 @@ marsEventCombinedPlot <- function(con,
                                            structure_name = structure_name, 
                                            obs_datetime = obs_datetime,
                                            obs_level_ft = obs_level_ft,
-                                           sim_datetime = sim_datetime,
-                                           sim_level_ft = sim_level_ft,
                                            storage_depth_ft = storage_depth_ft,
                                            orifice_show = orifice_show,
                                            orifice_height_ft = orifice_height_ft)
