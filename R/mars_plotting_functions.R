@@ -847,12 +847,14 @@ marsEventCombinedPlot <- function(con,
       event_query <- paste0('SELECT * FROM data.tbl_radar_event where radar_event_uid = ',event_uid)
     }  
    
+    # browser()
     event_data <- dbGetQuery(con, event_query)
     
-    start_date <- event_data$eventdatastart_edt
-    end_date <- event_data$eventdataend_edt
+    start_date <- event_data$eventdatastart_edt %>% as.Date()
+    end_date <- event_data$eventdataend_edt %>% as.Date()
     
     # browser()
+    # this is crashing without good reason, reboot
     mon_data <- pwdgsi::marsFetchMonitoringData(con = con,
                                                 target_id = smp_id,
                                                 ow_suffix = ow_suffix,
