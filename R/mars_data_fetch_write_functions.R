@@ -102,10 +102,11 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
   
   #Collect gage data
   #First, get all the relevant data from the closest gage
-  rain_query <- paste(paste0("SELECT * FROM ", rainparams$raintable, " "),
+  rain_query <- paste(paste0("SELECT *, dtime_edt::varchar as dtime FROM ", rainparams$raintable, " "),
                       paste0("WHERE ", rainparams$uidvar, " = CAST('", rainsource, "' as int)"),
                       "AND dtime_edt >= Date('", start_date, "')",
                       "AND dtime_edt <= Date('", end_date + lubridate::days(1), "');")
+  
   #print(rain_query)
   rain_temp <- odbc::dbGetQuery(con, rain_query)
   
@@ -119,7 +120,10 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
   
   rain_temp$rainfall_in %<>% as.numeric
   # rain_temp$dtime_edt %<>% lubridate::ymd_hms(tz = "America/New_York")
-  rain_temp %<>% dplyr::mutate(dtime_est = lubridate::ymd_hms(dtime_edt, tz = "EST")) %>% dplyr::select(-dtime_edt)
+  # we need to reformat dates at midnight because ymd_hms does not know how to handle them
+  # this is actually a base R issue, but it is still dumb
+  # https://github.com/tidyverse/lubridate/issues/1124
+  rain_temp %<>% dplyr::mutate(dtime_est = lubridate::ymd_hms(dtime, tz = "EST")) %>% dplyr::select(-dtime_edt, -dtime)
   
   #Apparently, attempting to set the time zone on a datetime that falls squarely on the spring forward datetime
   #Such as 2005-04-03 02:00:00
