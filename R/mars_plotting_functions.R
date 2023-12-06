@@ -848,9 +848,9 @@ marsEventCombinedPlot <- function(con,
       event_query <- paste0('SELECT * FROM data.tbl_radar_event where radar_event_uid = ',event_uid)
     }  
    
-    browser()
+    # browser()
     event_data <- dbGetQuery(con, event_query)
-    
+    event_date <- event_data$eventdatastart_edt %>% as.Date()
     start_date <- event_data$eventdatastart_edt %>% as.Date()
     end_date <- event_data$eventdataend_edt %>% as.Date()
     
