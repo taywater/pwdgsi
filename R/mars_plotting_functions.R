@@ -288,6 +288,13 @@ marsWaterLevelPlot <- function(event,
                                storage_depth_ft, 
                                obs_datetime, 
                                obs_level_ft,
+                               obs_datetime2 = NA,
+                               obs_level_ft2 = NA,
+                               obs_datetime3 = NA,
+                               obs_level_ft3 = NA,
+                               obs_datetime4 = NA,
+                               obs_level_ft4 = NA,
+                               level_names = NA,
                                sim_datetime = NA,
                                sim_level_ft = NA,
                                orifice_show = FALSE,
@@ -350,6 +357,14 @@ marsWaterLevelPlot <- function(event,
     orifice_plot <- 0 #line will be covered by bottom of structure if option is not selected
   }
   
+  #1.6 set default names for levels if none are provided
+  if(is.na(level_names)){
+    level_names <- c("Obs. Level 1",
+                     "Obs. Level 2",
+                     "Obs. Level 3",
+                     "Obs. Level 4")
+  }
+  
   #2. Calculate plotting parameters
   
   #2.1 Calculate date plotting limits(x-axis) 
@@ -392,10 +407,24 @@ marsWaterLevelPlot <- function(event,
                        scales::date_format("%Y-%m-%d %H:%M", tz = "EST")(min_date),
                        sep = "")
   
+  
+  # Build dataframes
   obs_df <- data.frame(obs_datetime, obs_level_ft)
   
   if(!is.na(sim_level_ft[1])){
     sim_df <- data.frame(sim_datetime, sim_level_ft)
+  }
+  
+  if(!is.na(obs_level_ft2[1])){
+    obs2_df <- data.frame(obs_datetime2, obs_level_ft2)
+  }
+  
+  if(!is.na(obs_level_ft3[1])){
+    obs3_df <- data.frame(obs_datetime3, obs_level_ft3)
+  }
+  
+  if(!is.na(obs_level_ft4[1])){
+    obs4_df <- data.frame(obs_datetime4, obs_level_ft4)
   }
   
   #3. Generate plot
@@ -436,7 +465,7 @@ marsWaterLevelPlot <- function(event,
     ggplot2::geom_line(data = obs_df,
                        ggplot2::aes(x = obs_datetime,
                                     y = obs_level_ft,
-                                    color = "Observed Water Level  "),
+                                    color = paste(level_names[1])),
                        size = 2
     ) +
     
@@ -455,7 +484,8 @@ marsWaterLevelPlot <- function(event,
       breaks = seq(0, storage_depth_ft+1, by = if(storage_depth_ft > 2) round(storage_depth_ft/4, 0) else ceiling(storage_depth_ft/4)),
       minor_breaks = seq(-0.5,2*storage_depth_ft, by = 0.1)
     ) +
-    
+
+    ggplot2::scale_color_manual(values = c("#7822E0","#E0DE43","#E03838","#E12CE0","#16E050")) +
     
     ggplot2::labs(
       y = "Water Level (ft)",
@@ -482,6 +512,37 @@ marsWaterLevelPlot <- function(event,
                          ggplot2::aes(x = sim_datetime,
                                       y = sim_level_ft,
                                       color = "Simulated Water Level"),
+                         size = 2
+      )
+  }
+  
+  if(!is.na(obs_level_ft2[1])){
+    level_plot <- level_plot +     
+      #Simulated water level
+      ggplot2::geom_line(data = obs2_df,
+                         ggplot2::aes(x = obs_datetime2,
+                                      y = obs_level_ft2,
+                                      color = paste(level_names[2])),
+                         size = 2
+      )
+  }
+  if(!is.na(obs_level_ft3[1])){
+    level_plot <- level_plot +     
+      #Simulated water level
+      ggplot2::geom_line(data = obs3_df,
+                         ggplot2::aes(x = obs_datetime3,
+                                      y = obs_level_ft3,
+                                      color = paste(level_names[3])),
+                         size = 2
+      )
+  }
+  if(!is.na(obs_level_ft4[1])){
+    level_plot <- level_plot +     
+      #Simulated water level
+      ggplot2::geom_line(data = obs4_df,
+                         ggplot2::aes(x = obs_datetime4,
+                                      y = obs_level_ft4,
+                                      color = paste(level_names[4])),
                          size = 2
       )
   }
