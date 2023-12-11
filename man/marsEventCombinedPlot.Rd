@@ -14,6 +14,7 @@ marsEventCombinedPlot(
   sump_correct = TRUE,
   orifice_show = FALSE,
   orifice_height_ft = NULL,
+  storage_depth_ft,
   metrics_show = FALSE,
   obs_RSPU,
   sim_RSPU,

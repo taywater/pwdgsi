@@ -52,21 +52,7 @@ marsCombinedPlot(
 
 \item{metrics_show}{bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)}
 
-\item{obs_RSPU}{num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)}
-
-\item{sim_RSPU}{num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)}
-
-\item{obs_infil_inhr}{num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
-
-\item{sim_infil_inhr}{num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
-
-\item{obs_draindown_hr}{num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)}
-
-\item{sim_draindown_hr}{num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)}
-
-\item{obs_overtopping}{bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)}
-
-\item{sim_overtopping}{bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)}
+\item{...}{additional arguments for showing metrics (metrics_show = TRUE) and providing multiple water level time series. See \code{\link{marsMetricsTable}} and \code{\link{marsWaterLevelPlot}}}
 }
 \value{
 Output will be a gridExtra object of the two plots

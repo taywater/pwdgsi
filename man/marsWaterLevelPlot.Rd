@@ -10,10 +10,17 @@ marsWaterLevelPlot(
   storage_depth_ft,
   obs_datetime,
   obs_level_ft,
+  level_names = NA,
   sim_datetime = NA,
   sim_level_ft = NA,
   orifice_show = FALSE,
   orifice_height_ft = NULL,
+  datetime_2 = NA,
+  level_ft_2 = NA,
+  datetime_3 = NA,
+  level_ft_3 = NA,
+  datetime_4 = NA,
+  level_ft_4 = NA,
   metrics_show = FALSE,
   obs_RSPU,
   sim_RSPU,
@@ -44,23 +51,21 @@ marsWaterLevelPlot(
 
 \item{orifice_height_ft}{Orifice height, in feet (optional)}
 
+\item{datetime_2}{Vector of POSIXct datetimes for observed dataset used for comparison}
+
+\item{level_ft_2}{Vector of water level data (ft) used for comparison}
+
+\item{datetime_3}{Vector of POSIXct datetimes for observed dataset used for comparison}
+
+\item{level_ft_3}{Vector of water level data (ft) used for comparison}
+
+\item{datetime_4}{Vector of POSIXct datetimes for observed dataset used for comparison}
+
+\item{level_ft_4}{Vector of water level data (ft) used for comparison}
+
 \item{metrics_show}{Bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)}
 
-\item{obs_RSPU}{Num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)}
-
-\item{sim_RSPU}{Num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)}
-
-\item{obs_infil_inhr}{Num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
-
-\item{sim_infil_inhr}{Num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)}
-
-\item{obs_draindown_hr}{Num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)}
-
-\item{sim_draindown_hr}{Num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)}
-
-\item{obs_overtopping}{Bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)}
-
-\item{sim_overtopping}{Bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)}
+\item{...}{additional arguments for showing metrics if metrics_show is set to TRUE. See \code{\link{marsMetricsTable}}}
 }
 \value{
 Output is a ggplot2 object of the water level plot.
