@@ -832,8 +832,12 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
 
 marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage", "radar"), start_date, end_date,
                                     sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE, daylight_savings = FALSE,
-                                    debug = FALSE){
-#browser()
+                                    debug = FALSE, browser = FALSE){
+
+  if(browser == TRUE){
+    browser()
+  }
+  
   #1 Argument validation
   #1.1 Check database connection
   if(!odbc::dbIsValid(con)){
@@ -918,16 +922,23 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   
   #5 Add level data
   if(level == TRUE){
+    
+    # Taylor update: 5/8/23
+    #If rain events are being included, we need to switch the rain event dates to EST instead of EDT
+    #But because this should only happen once, since the variable is being renamed, do it here instead of in the loop
+    # if(rain_events == TRUE){
+    #   results[["Rain Event Data"]]$eventdatastart_edt %<>% lubridate::with_tz("EST") #switch to EST and rename
+    #   results[["Rain Event Data"]]$eventdataend_edt %<>% lubridate::with_tz("EST")
+    #   results[["Rain Event Data"]] %<>% dplyr::rename(eventdatastart_est = eventdatastart_edt, eventdataend_est = eventdataend_edt)
+    # }
+    #Commented out - timezone is now switched in rainfall fx- BC 
+    
     for(i in 1:length(target_id)){
       results[["Level Data step"]] <- marsFetchLevelData(con, target_id[i], ow_suffix[i], start_date[i], end_date[i], sump_correct) %>% 
         dplyr::left_join(ow_uid_gage, by = "ow_uid") %>%  #join rain gage uid
         dplyr::select(dtime_est, level_ft, ow_uid, rainparams$uidvar) #remove extra columns
       if(rain_events == TRUE){
         level_data_step <- results[["Level Data step"]] #coerce to data frame
-        #already switched in rainfall fx
-        # results[["Rain Event Data"]]$eventdatastart_edt %<>% lubridate::with_tz("EST") #switch to EST and rename
-        # results[["Rain Event Data"]]$eventdataend_edt %<>% lubridate::with_tz("EST")
-        # results[["Rain Event Data"]] %<>% dplyr::rename(eventdatastart_est = eventdatastart_edt, eventdataend_est = eventdataend_edt)
         
         results_event_data <- results[["Rain Event Data"]]
         
