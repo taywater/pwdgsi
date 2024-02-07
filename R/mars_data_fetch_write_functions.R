@@ -215,7 +215,6 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
   #   finalseries <- dplyr::select(finalseries, dtime_est, rainfall_in, rainparams$uidvar, rainparams$eventuidvar)
   # }
   
-  
   return(finalseries)
 }
 

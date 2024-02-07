@@ -111,21 +111,25 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, event, reverse_y = FALSE){
     }}
   
   #2.3 Calculate break intervals for x-axis
-  if(units(event_duration) == "days"){
+  
+  if(units(event_duration) == "days" & event_duration < 4){
     #if event duration is greater than 1 day, set x-axis major breaks to 12-hour intervals
     x <- "12 hours"
   }else{
-    if(event_duration > 12){
-      #if event duration less 1 day and greater than 12 hours, set x-axis major breaks to 6-hour intervals
-      x <- "6 hours"
+    if(units(event_duration) == "days" & event_duration >= 4){
+      x <- paste0(floor(event_duration/4)," days")
     }else{
-      if(event_duration > 8){
-        #if event duration less than 12 hours and greater than 8 hours, set x-axis major breaks to 2-hour intervals
-        x <- "2 hours"
+      if(event_duration > 12){
+        #if event duration less 1 day and greater than 12 hours, set x-axis major breaks to 6-hour intervals
+        x <- "6 hours"
       }else{
-        #for events shorter than 8 hours, set x-axis major breaks to 1-hour intervals
-        x <- "hour"
-      }}}
+        if(event_duration > 8){
+          #if event duration less than 12 hours and greater than 8 hours, set x-axis major breaks to 2-hour intervals
+          x <- "2 hours"
+        }else{
+          #for events shorter than 8 hours, set x-axis major breaks to 1-hour intervals
+          x <- "hour"
+        }}}}
   
   #2.4 Calculations for dashed vertical line at day boundaries
   day_strip <- lubridate::date(min_date)
@@ -178,7 +182,7 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, event, reverse_y = FALSE){
     
     
     #Day boundaries
-    ggplot2::geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", size = 1.2) + #date boundaries
+    ggplot2::geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", linewidth = 1.2) + #date boundaries
     
     # ggplot2::annotate("rect", xmin = day_marker-0.03*event_duration,
     #                   xmax = day_marker - 0.01*event_duration,
@@ -217,8 +221,8 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, event, reverse_y = FALSE){
       axis.text.y = ggplot2::element_text(size = 14, color = "black"), # set font size and color of y axis text
       panel.background =  ggplot2::element_rect(fill = "white", colour = NA), # set white background
       panel.border =      ggplot2::element_rect(fill = NA, colour="black"), # set black border
-      panel.grid.major =  ggplot2::element_line(colour = "grey70", size = 0.2), # set major grid lines
-      panel.grid.minor =  ggplot2::element_line(colour = "grey90", size = 0.5), # set minor grid lines
+      panel.grid.major =  ggplot2::element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
+      panel.grid.minor =  ggplot2::element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines
       legend.position = "bottom",
       legend.text = ggplot2::element_text(size = 10),
       legend.title=ggplot2::element_blank()
@@ -384,13 +388,15 @@ marsWaterLevelPlot <- function(event,
   #set date marker offset by duration
   if(units(event_duration) == "days"){
     marker_scale <- 0.02
+    day_lengths <- event_duration + 2
   }else{
     marker_scale <- 0.015
+    day_lengths <- 14
   }
   
   #2.2 Calculations for dashed vertical line at day boundaries
   day_strip <- lubridate::date(min_date)
-  day_marker <- lubridate::force_tz(seq.POSIXt(as.POSIXlt(day_strip, tz = "EST"), by = "day", length.out = 14), tz = "EST")
+  day_marker <- lubridate::force_tz(seq.POSIXt(as.POSIXlt(day_strip, tz = "EST"), by = "day", length.out = day_lengths), tz = "EST")
   
   #2.4 Calculate axis breaks based on plotting limits
   #Select major x-axis breaks based on event duration (all extend observed record by 12 hours)
@@ -432,7 +438,7 @@ marsWaterLevelPlot <- function(event,
     ggplot2::ggplot(data = obs_df) +
     
     #Day boundaries
-    ggplot2::geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", size = 1.2) + #date boundaries
+    ggplot2::geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", linewidth = 1.2) + #date boundaries
     
     ggplot2::annotate("text", x = day_marker-marker_scale*event_duration, 
                       y = 0.8*storage_depth_ft, 
@@ -449,9 +455,9 @@ marsWaterLevelPlot <- function(event,
                       size = ggplot2::rel(5))+
     
     #Structure top and bottom
-    ggplot2::geom_hline(yintercept = 0, color = "black", size = 1.2)+ #bottom
+    ggplot2::geom_hline(yintercept = 0, color = "black", linewidth = 1.2)+ #bottom
     
-    ggplot2::geom_hline(yintercept = storage_depth_ft, color = "orange", size = 1.2)+ #top
+    ggplot2::geom_hline(yintercept = storage_depth_ft, color = "orange", linewidth = 1.2) + #top
     
     ggplot2::geom_label(ggplot2::aes(x = min_date + event_duration/4, 
                                      y = storage_depth_ft*1.04, 
@@ -465,7 +471,7 @@ marsWaterLevelPlot <- function(event,
                        ggplot2::aes(x = obs_datetime,
                                     y = obs_level_ft,
                                     color = paste(level_names[1])),
-                       size = 2
+                       linewidth = 2
     ) +
     
     #Formatting
@@ -498,8 +504,8 @@ marsWaterLevelPlot <- function(event,
       axis.text.y = ggplot2::element_text(size = ggplot2::rel(1.2), color = "black"), # set font size and color of y axis text
       panel.background =  ggplot2::element_rect(fill = "white", colour = NA), # set white background
       panel.border =      ggplot2::element_rect(fill = NA, colour="black"), # set black border
-      panel.grid.major =  ggplot2::element_line(colour = "grey70", size = 0.2), # set major grid lines
-      panel.grid.minor =  ggplot2::element_line(colour = "grey90", size = 0.5), # set minor grid lines
+      panel.grid.major =  ggplot2::element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
+      panel.grid.minor =  ggplot2::element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines
       legend.position = "bottom", #format legend (to be compiled with rainfall plot in grid.arrange())
       legend.text = ggplot2::element_text(size = ggplot2::rel(.9)),
       legend.title=ggplot2::element_blank())
@@ -511,7 +517,7 @@ marsWaterLevelPlot <- function(event,
                          ggplot2::aes(x = sim_datetime,
                                       y = sim_level_ft,
                                       color = "Simulated Water Level"),
-                         size = 2
+                         linewidth = 2
       )
   }
   
@@ -522,7 +528,7 @@ marsWaterLevelPlot <- function(event,
                          ggplot2::aes(x = datetime_2,
                                       y = level_ft_2,
                                       color = paste(level_names[2])),
-                         size = 2
+                         linewidth = 2
       )
   }
   if(!is.na(level_ft_3[1])){
@@ -532,7 +538,7 @@ marsWaterLevelPlot <- function(event,
                          ggplot2::aes(x = datetime_3,
                                       y = level_ft_3,
                                       color = paste(level_names[3])),
-                         size = 2
+                         linewidth = 2
       )
   }
   if(!is.na(level_ft_4[1])){
@@ -542,14 +548,14 @@ marsWaterLevelPlot <- function(event,
                          ggplot2::aes(x = datetime_4,
                                       y = level_ft_4,
                                       color = paste(level_names[4])),
-                         size = 2
+                         linewidth = 2
       )
   }
   
   if(orifice_show == TRUE){
     level_plot <- level_plot + 
       
-      ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, size = 1.2) +
+      ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, linewidth = 1.2) +
       ggplot2::geom_label(label = orifice_lab,
                           y = orifice_height_ft*1.1,
                           x = obs_datetime[round(0.75*length(obs_datetime))])
@@ -873,6 +879,14 @@ marsEventCombinedPlot <- function(con,
     
     event_data <- mon_data$`Rain Event Data`
     
+    if(source %in% c('gage','gauge')){
+      event_uid <- event_data$gage_event_uid 
+    }
+    
+    if(source == 'radar'){
+      event_uid <- event_data$radar_event_uid
+    }
+    
     # Stop if no events have been found
     if(length(event_data) == 0){
       stop(paste0("There are no events on ",event_date))}
@@ -974,7 +988,7 @@ marsEventCombinedPlot <- function(con,
   rainfall_datetime <- append(rainfall_datetime, max(obs_datetime)) %>% lubridate::with_tz("EST")
   
   #1 Run functions for individual plots
-  level_plot <- pwdgsi::marsWaterLevelPlot(event = event, 
+  level_plot <- pwdgsi::marsWaterLevelPlot(event = event_data$event_uid[1], 
                                            structure_name = structure_name, 
                                            obs_datetime = obs_datetime,
                                            obs_level_ft = obs_level_ft,
@@ -982,7 +996,7 @@ marsEventCombinedPlot <- function(con,
                                            orifice_show = orifice_show,
                                            orifice_height_ft = orifice_height_ft)
   
-  rainfall_plot <- pwdgsi::marsRainfallPlot(event = event, 
+  rainfall_plot <- pwdgsi::marsRainfallPlot(event = event_data$event_uid[1], 
                                             dtime_est = rainfall_datetime, 
                                             rainfall_in = rainfall_in,
                                             reverse_y = TRUE)
@@ -1020,8 +1034,8 @@ marsEventCombinedPlot <- function(con,
   minor_date_breaks <- lubridate::force_tz(seq.POSIXt(day_marker[1] - lubridate::hours(12), max_date + lubridate::hours(6), by = "hour"), tz = "EST") 
   
   #Title
-  title_text <- paste0("Water Level\nSMP ID: ", structure_name,
-                       " | Event: ", event[1],
+  title_text <- paste0("Water Level and Rainfall\nSMP ID: ", structure_name,
+                       " | Event: ", event_uid,
                        " | Start Date and Time: ", 
                        scales::date_format("%Y-%m-%d %H:%M", tz = "EST")(min_date),
                        sep = "")

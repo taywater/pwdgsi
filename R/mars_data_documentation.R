@@ -201,3 +201,37 @@
 #' 
 "simulated_data"
 
+
+#' sys1265_data
+#' 
+#' An example list of observed data for system 1265-7. Used for testing function performance.
+#' 
+#' @docType list
+#' 
+#' @usage testing
+
+#' 
+"sys1265_data"
+
+#' sys1265_mets
+#' 
+#' An example list of metrics for system 1265-7. Used for testing function performance.
+#' 
+#' @docType list
+#' 
+#' @usage testing
+
+#' 
+"sys1265_mets"
+
+#' sys1265_snap
+#' 
+#' An example snapshot for system 1265-7. Used for testing function performance.
+#' 
+#' @docType list
+#' 
+#' @usage testing
+
+#' 
+"sys1265_snap"
+

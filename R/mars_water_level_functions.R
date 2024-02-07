@@ -681,6 +681,7 @@ NULL
 #' 
 #' @param waterlevel_ft Water Level (ft)
 #' @param storage_depth_ft Total storage Depth (ft)
+#' @param weir_depth_ft Elevation of overflow for storage structures
 #' 
 #' @return \describe{
 #'      \item{\code{marsOvertoppingCheck_bool}}{Output is true or false based on overtopping evaluation}
@@ -711,7 +712,7 @@ NULL
 
 
 
-marsOvertoppingCheck_bool <- function(waterlevel_ft, storage_depth_ft){
+marsOvertoppingCheck_bool <- function(waterlevel_ft, storage_depth_ft, weir_depth){
   
   #1. Pull max water level
   max_water_level <- max(waterlevel_ft, na.rm = TRUE)
