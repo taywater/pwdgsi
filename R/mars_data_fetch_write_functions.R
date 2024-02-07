@@ -931,7 +931,7 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
     #   results[["Rain Event Data"]]$eventdataend_edt %<>% lubridate::with_tz("EST")
     #   results[["Rain Event Data"]] %<>% dplyr::rename(eventdatastart_est = eventdatastart_edt, eventdataend_est = eventdataend_edt)
     # }
-    #Commented out - timezone is now switched in rainfall fx- BC 
+    #Commented out - timezone is now switched in rainfall fx, handling pull requesst conflict - BC
     
     for(i in 1:length(target_id)){
       results[["Level Data step"]] <- marsFetchLevelData(con, target_id[i], ow_suffix[i], start_date[i], end_date[i], sump_correct) %>% 
