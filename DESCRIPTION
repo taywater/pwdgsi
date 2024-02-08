@@ -13,26 +13,36 @@ Description: R functions and sample datasets related to the analysis
     other forms of data related to GSI are provided here. Developed by
     the Monitoring, Analysis, and Research Support (MARS) group within
     the Philadelphia Water Department's Office of Watersheds.
-License: Don't be a jerk
+License: MIT License
 Encoding: UTF-8
 LazyData: true
 Imports:
-  grid,
-  gridExtra,
-  knitr,
-  kableExtra,
-  lubridate,
-  magrittr, 
-  mapview,
-  odbc,
-  padr,
-  rlang,
-  rmarkdown,
-  scales,
-  sp,
-  tidyverse,
-  ggtext,
-  zoo
-RoxygenNote: 7.1.2
+    grid,
+    gridExtra,
+    knitr,
+    kableExtra,
+    lubridate,
+    magrittr,
+    mapview,
+    odbc,
+    padr,
+    rlang,
+    rmarkdown,
+    scales,
+    sp,
+    tidyverse,
+    ggtext,
+    zoo,
+    dplyr,
+    tidyr,
+    DBI,
+    RColorBrewer,
+    ggplot2,
+    ggpp,
+    stringr,
+    tibble
+RoxygenNote: 7.2.3
 VignetteBuilder: knitr
 Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

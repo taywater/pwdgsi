@@ -22,12 +22,12 @@
 #' @export
 #' 
 #' @examples
-#' gage_temp <- mutate(marsSampleRain, 
-#'   event_id = marsDetectEvents(dtime_edt = marsSampleRain$dtime_edt, 
+#' gage_temp <- dplyr::mutate(marsSampleRain, 
+#'   event_id = marsDetectEvents(dtime_est = marsSampleRain$dtime_est, 
 #'   rainfall_in = marsSampleRain$rainfall_in, 
-#'   iet_hr = 6, mindepth_in = 0.10)) %>% filter(event_id == 2)
+#'   iet_hr = 6, mindepth_in = 0.10)) %>% dplyr::filter(event_id == 2)
 #'   
-#' marsRainfallPlot(dtime_edt = gage_temp$dtime_edt, 
+#' marsRainfallPlot(dtime_est = gage_temp$dtime_est, 
 #'   rainfall_in = gage_temp$rainfall_in, event = 2)   
 
 
@@ -111,21 +111,25 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, event, reverse_y = FALSE){
     }}
   
   #2.3 Calculate break intervals for x-axis
-  if(units(event_duration) == "days"){
+  
+  if(units(event_duration) == "days" & event_duration < 4){
     #if event duration is greater than 1 day, set x-axis major breaks to 12-hour intervals
     x <- "12 hours"
   }else{
-    if(event_duration > 12){
-      #if event duration less 1 day and greater than 12 hours, set x-axis major breaks to 6-hour intervals
-      x <- "6 hours"
+    if(units(event_duration) == "days" & event_duration >= 4){
+      x <- paste0(floor(event_duration/4)," days")
     }else{
-      if(event_duration > 8){
-        #if event duration less than 12 hours and greater than 8 hours, set x-axis major breaks to 2-hour intervals
-        x <- "2 hours"
+      if(event_duration > 12){
+        #if event duration less 1 day and greater than 12 hours, set x-axis major breaks to 6-hour intervals
+        x <- "6 hours"
       }else{
-        #for events shorter than 8 hours, set x-axis major breaks to 1-hour intervals
-        x <- "hour"
-      }}}
+        if(event_duration > 8){
+          #if event duration less than 12 hours and greater than 8 hours, set x-axis major breaks to 2-hour intervals
+          x <- "2 hours"
+        }else{
+          #for events shorter than 8 hours, set x-axis major breaks to 1-hour intervals
+          x <- "hour"
+        }}}}
   
   #2.4 Calculations for dashed vertical line at day boundaries
   day_strip <- lubridate::date(min_date)
@@ -178,7 +182,7 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, event, reverse_y = FALSE){
     
     
     #Day boundaries
-    ggplot2::geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", size = 1.2) + #date boundaries
+    ggplot2::geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", linewidth = 1.2) + #date boundaries
     
     # ggplot2::annotate("rect", xmin = day_marker-0.03*event_duration,
     #                   xmax = day_marker - 0.01*event_duration,
@@ -217,8 +221,8 @@ marsRainfallPlot <- function(dtime_est, rainfall_in, event, reverse_y = FALSE){
       axis.text.y = ggplot2::element_text(size = 14, color = "black"), # set font size and color of y axis text
       panel.background =  ggplot2::element_rect(fill = "white", colour = NA), # set white background
       panel.border =      ggplot2::element_rect(fill = NA, colour="black"), # set black border
-      panel.grid.major =  ggplot2::element_line(colour = "grey70", size = 0.2), # set major grid lines
-      panel.grid.minor =  ggplot2::element_line(colour = "grey90", size = 0.5), # set minor grid lines
+      panel.grid.major =  ggplot2::element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
+      panel.grid.minor =  ggplot2::element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines
       legend.position = "bottom",
       legend.text = ggplot2::element_text(size = 10),
       legend.title=ggplot2::element_blank()
@@ -264,18 +268,17 @@ get_legend<-function(myggplot){
 #' @param  obs_level_ft                       Vector of water level data (ft), corresponding to \code{obs_datetime}
 #' @param  sim_datetime                       Vector of POSIXct datetimes for simulated dataset (optional)
 #' @param  sim_level_ft                       Vector of water level data (ft), corresponding to \code{sim_datetime} (optional)
+#' @param  datetime_2                         Vector of POSIXct datetimes for observed dataset used for comparison
+#' @param  level_ft_2                         Vector of water level data (ft) used for comparison
+#' @param  datetime_3                         Vector of POSIXct datetimes for observed dataset used for comparison
+#' @param  level_ft_3                         Vector of water level data (ft) used for comparison
+#' @param  datetime_4                         Vector of POSIXct datetimes for observed dataset used for comparison
+#' @param  level_ft_4                         Vector of water level data (ft) used for comparison
 #' @param  storage_depth_ft                   Maximum storage depth of system (ft)
 #' @param  orifice_show                       TRUE if user wants to include the orifice height as dashed line on plot (optional)
 #' @param  orifice_height_ft                  Orifice height, in feet (optional)
 #' @param  metrics_show                       Bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)
-#' @param  obs_RSPU                           Num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
-#' @param  obs_infil_inhr                     Num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
-#' @param  obs_draindown_hr                   Num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)
-#' @param  obs_overtopping                    Bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
-#' @param  sim_RSPU                           Num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
-#' @param  sim_infil_inhr                     Num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
-#' @param  sim_draindown_hr                   Num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)
-#' @param  sim_overtopping                    Bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+#' @param ...                                 additional arguments for showing metrics if metrics_show is set to TRUE. See \code{\link{marsMetricsTable}}
 #' 
 #' 
 #' @return Output is a ggplot2 object of the water level plot.
@@ -288,11 +291,17 @@ marsWaterLevelPlot <- function(event,
                                storage_depth_ft, 
                                obs_datetime, 
                                obs_level_ft,
+                               level_names = NA,
                                sim_datetime = NA,
                                sim_level_ft = NA,
                                orifice_show = FALSE,
-                               orifice_height_ft = NULL, 
-                               snapshot = NA,
+                               orifice_height_ft = NULL,
+                               datetime_2 = NA,
+                               level_ft_2 = NA,
+                               datetime_3 = NA,
+                               level_ft_3 = NA,
+                               datetime_4 = NA,
+                               level_ft_4 = NA,
                                metrics_show = FALSE,
                                obs_RSPU,
                                sim_RSPU,
@@ -331,7 +340,7 @@ marsWaterLevelPlot <- function(event,
   prepseries <- obs_datetime %>%
     data.frame() %>% 
     dplyr::mutate(lag_time = dplyr::lag(obs_datetime, 1)) %>%
-    dplyr::mutate(gap_hr = difftime(obs_datetime, lag_time, unit = "hours")) %>%
+    dplyr::mutate(gap_hr = difftime(obs_datetime, lag_time, units = "hours")) %>%
     dplyr::filter(gap_hr > 6)
   
   if(nrow(prepseries) > 0){
@@ -349,6 +358,14 @@ marsWaterLevelPlot <- function(event,
     orifice_lab <- paste0("orifice elevation: ",round(orifice_height_ft, 2))
   }else{
     orifice_plot <- 0 #line will be covered by bottom of structure if option is not selected
+  }
+  
+  #1.6 set default names for levels if none are provided
+  if(is.na(level_names)){
+    level_names <- c("Obs. Level 1",
+                     "Obs. Level 2",
+                     "Obs. Level 3",
+                     "Obs. Level 4")
   }
   
   #2. Calculate plotting parameters
@@ -371,13 +388,15 @@ marsWaterLevelPlot <- function(event,
   #set date marker offset by duration
   if(units(event_duration) == "days"){
     marker_scale <- 0.02
+    day_lengths <- event_duration + 2
   }else{
     marker_scale <- 0.015
+    day_lengths <- 14
   }
   
   #2.2 Calculations for dashed vertical line at day boundaries
   day_strip <- lubridate::date(min_date)
-  day_marker <- lubridate::force_tz(seq.POSIXt(as.POSIXlt(day_strip, tz = "EST"), by = "day", length.out = 14), tz = "EST")
+  day_marker <- lubridate::force_tz(seq.POSIXt(as.POSIXlt(day_strip, tz = "EST"), by = "day", length.out = day_lengths), tz = "EST")
   
   #2.4 Calculate axis breaks based on plotting limits
   #Select major x-axis breaks based on event duration (all extend observed record by 12 hours)
@@ -393,10 +412,24 @@ marsWaterLevelPlot <- function(event,
                        scales::date_format("%Y-%m-%d %H:%M", tz = "EST")(min_date),
                        sep = "")
   
+  
+  # Build dataframes
   obs_df <- data.frame(obs_datetime, obs_level_ft)
   
   if(!is.na(sim_level_ft[1])){
     sim_df <- data.frame(sim_datetime, sim_level_ft)
+  }
+  
+  if(!is.na(level_ft_2[1])){
+    obs2_df <- data.frame(datetime_2, level_ft_2)
+  }
+  
+  if(!is.na(level_ft_3[1])){
+    obs3_df <- data.frame(datetime_3, level_ft_3)
+  }
+  
+  if(!is.na(level_ft_4[1])){
+    obs4_df <- data.frame(datetime_4, level_ft_4)
   }
   
   #3. Generate plot
@@ -405,7 +438,7 @@ marsWaterLevelPlot <- function(event,
     ggplot2::ggplot(data = obs_df) +
     
     #Day boundaries
-    ggplot2::geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", size = 1.2) + #date boundaries
+    ggplot2::geom_vline(xintercept = day_marker, color = "black", linetype = "dashed", linewidth = 1.2) + #date boundaries
     
     ggplot2::annotate("text", x = day_marker-marker_scale*event_duration, 
                       y = 0.8*storage_depth_ft, 
@@ -422,9 +455,9 @@ marsWaterLevelPlot <- function(event,
                       size = ggplot2::rel(5))+
     
     #Structure top and bottom
-    ggplot2::geom_hline(yintercept = 0, color = "black", size = 1.2)+ #bottom
+    ggplot2::geom_hline(yintercept = 0, color = "black", linewidth = 1.2)+ #bottom
     
-    ggplot2::geom_hline(yintercept = storage_depth_ft, color = "orange", size = 1.2)+ #top
+    ggplot2::geom_hline(yintercept = storage_depth_ft, color = "orange", linewidth = 1.2) + #top
     
     ggplot2::geom_label(ggplot2::aes(x = min_date + event_duration/4, 
                                      y = storage_depth_ft*1.04, 
@@ -437,8 +470,8 @@ marsWaterLevelPlot <- function(event,
     ggplot2::geom_line(data = obs_df,
                        ggplot2::aes(x = obs_datetime,
                                     y = obs_level_ft,
-                                    color = "Observed Water Level  "),
-                       size = 2
+                                    color = paste(level_names[1])),
+                       linewidth = 2
     ) +
     
     #Formatting
@@ -456,10 +489,12 @@ marsWaterLevelPlot <- function(event,
       breaks = seq(0, storage_depth_ft+1, by = if(storage_depth_ft > 2) round(storage_depth_ft/4, 0) else ceiling(storage_depth_ft/4)),
       minor_breaks = seq(-0.5,2*storage_depth_ft, by = 0.1)
     ) +
-    
+
+    ggplot2::scale_color_manual(values = c("#7822E0","#E0DE43","#E03838","#E12CE0","#16E050")) +
     
     ggplot2::labs(
-      y = "Water Level (ft)"
+      y = "Water Level (ft)",
+      title = title_text
     ) +
     
     ggplot2::theme(
@@ -469,8 +504,8 @@ marsWaterLevelPlot <- function(event,
       axis.text.y = ggplot2::element_text(size = ggplot2::rel(1.2), color = "black"), # set font size and color of y axis text
       panel.background =  ggplot2::element_rect(fill = "white", colour = NA), # set white background
       panel.border =      ggplot2::element_rect(fill = NA, colour="black"), # set black border
-      panel.grid.major =  ggplot2::element_line(colour = "grey70", size = 0.2), # set major grid lines
-      panel.grid.minor =  ggplot2::element_line(colour = "grey90", size = 0.5), # set minor grid lines
+      panel.grid.major =  ggplot2::element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
+      panel.grid.minor =  ggplot2::element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines
       legend.position = "bottom", #format legend (to be compiled with rainfall plot in grid.arrange())
       legend.text = ggplot2::element_text(size = ggplot2::rel(.9)),
       legend.title=ggplot2::element_blank())
@@ -482,86 +517,73 @@ marsWaterLevelPlot <- function(event,
                          ggplot2::aes(x = sim_datetime,
                                       y = sim_level_ft,
                                       color = "Simulated Water Level"),
-                         size = 2
+                         linewidth = 2
+      )
+  }
+  
+  if(!is.na(level_ft_2[1])){
+    level_plot <- level_plot +     
+      #Simulated water level
+      ggplot2::geom_line(data = obs2_df,
+                         ggplot2::aes(x = datetime_2,
+                                      y = level_ft_2,
+                                      color = paste(level_names[2])),
+                         linewidth = 2
+      )
+  }
+  if(!is.na(level_ft_3[1])){
+    level_plot <- level_plot +     
+      #Simulated water level
+      ggplot2::geom_line(data = obs3_df,
+                         ggplot2::aes(x = datetime_3,
+                                      y = level_ft_3,
+                                      color = paste(level_names[3])),
+                         linewidth = 2
+      )
+  }
+  if(!is.na(level_ft_4[1])){
+    level_plot <- level_plot +     
+      #Simulated water level
+      ggplot2::geom_line(data = obs4_df,
+                         ggplot2::aes(x = datetime_4,
+                                      y = level_ft_4,
+                                      color = paste(level_names[4])),
+                         linewidth = 2
       )
   }
   
   if(orifice_show == TRUE){
     level_plot <- level_plot + 
       
-      ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, size = 1.2) +
+      ggplot2::geom_hline(yintercept = orifice_plot, color = "grey", linetype = 2, linewidth = 1.2) +
       ggplot2::geom_label(label = orifice_lab,
                           y = orifice_height_ft*1.1,
                           x = obs_datetime[round(0.75*length(obs_datetime))])
     
   }
   
-  if(metrics_show == TRUE){
-    
-    #set missing values to ""
-    if( missing(obs_draindown_hr) ){obs_draindown_hr <- ""}
-    if( missing(sim_draindown_hr) ){sim_draindown_hr <- ""}
-    if( missing(obs_infil_inhr) ){obs_infil_inhr <- ""}
-    if( missing(sim_infil_inhr) ){sim_infil_inhr <- ""}
-    if( missing(obs_RSPU) ){obs_RSPU <- ""}
-    if( missing(sim_RSPU) ){sim_RSPU <- ""}
-    if( missing(obs_overtopping) ){obs_overtopping <- ""}
-    if( missing(sim_overtopping) ){sim_overtopping <- ""}
-    
-    if( is.numeric(obs_infil_inhr) & obs_infil_inhr < 0 ){
-      obs_infil_inhr <- paste0("ERR: ", obs_infil_inhr)
-    }
-    if( is.numeric(sim_infil_inhr) & sim_infil_inhr < 0 ){
-      sim_infil_inhr <- paste0("ERR: ", sim_infil_inhr)
-    }
-    
-    if(is.numeric(obs_draindown_hr)){ obs_draindown_hr <- round(obs_draindown_hr,2)}
-    if(is.numeric(sim_draindown_hr)){ sim_draindown_hr <- round(sim_draindown_hr,2)}
-    if(is.numeric(obs_infil_inhr)){ obs_infil_inhr <- round(obs_infil_inhr,2)}
-    if(is.numeric(sim_infil_inhr)){ sim_infil_inhr <- round(sim_infil_inhr,2)}
-    if(is.numeric(obs_RSPU)){ obs_RSPU <- round(obs_RSPU,2)}
-    if(is.numeric(sim_RSPU)){ sim_RSPU <- round(sim_RSPU,2)}
-    
-    # browser()
-    #------ table version
-    metric_table <- as.data.frame(matrix(nrow=4))
-    colnames(metric_table) <- "Metrics"
-    metric_table$Metrics <- c("Drain down (hrs)",
-                              "Infiltration rate (in/hr)",
-                              "RSPU (%)",
-                              "Overtopping (T/F)")
-
-    
-    if(obs_infil_inhr < 0){obs_infil_inhr <- paste0("ERR: ",obs_infil_inhr)}
-    
-    obs_mets <- c(obs_draindown_hr,obs_infil_inhr, obs_RSPU, obs_overtopping)
-    sim_mets <- c(sim_draindown_hr,sim_infil_inhr, sim_RSPU, sim_overtopping)
-    
-    #add columns if obs/sim exists
-    if(sum(is.na(obs_mets)) < 4){metric_table$Observed <- obs_mets}
-    if(sum(is.na(sim_mets)) < 4){metric_table$Simulated <- sim_mets}
-    
-    #remove rows if both are empty
-    # browser()
-    remove <- c()
-    if(sum(metric_table[1,] == "") == 2){ remove <- c(remove,1)}
-    if(sum(metric_table[2,] == "") == 2){ remove <- c(remove,2)}
-    if(sum(metric_table[3,] == "") == 2){ remove <- c(remove,3)}
-    if(sum(metric_table[4,] == "") == 2){ remove <- c(remove,4)}
-    metric_table <- metric_table[c(1:4)[!(c(1:4) %in% remove)],]
-    
-    
-    level_plot <- level_plot +
-      
-      ggplot2::annotation_custom (grob = tableGrob(metric_table,
-                                                   rows = NULL,
-                                                   theme = ggpp::ttheme_gtlight()),
-                                  ymin = (storage_depth_ft*0.70),
-                                  ymax = (storage_depth_ft*0.95),
-                                  xmin = obs_datetime[round(length(obs_datetime)*0.5)],
-                                  xmax = obs_datetime[round(length(obs_datetime))])
-
-  }
+# Add metrics
+if(metrics_show == TRUE){
+  
+  #set missing values to ""
+  if( missing(obs_draindown_hr) ){obs_draindown_hr <- ""}
+  if( missing(sim_draindown_hr) ){sim_draindown_hr <- ""}
+  if( missing(obs_infil_inhr) ){obs_infil_inhr <- ""}
+  if( missing(sim_infil_inhr) ){sim_infil_inhr <- ""}
+  if( missing(obs_RSPU) ){obs_RSPU <- ""}
+  if( missing(sim_RSPU) ){sim_RSPU <- ""}
+  if( missing(obs_overtopping) ){obs_overtopping <- ""}
+  if( missing(sim_overtopping) ){sim_overtopping <- ""}
+  
+  level_plot %<>% marsMetricsTable( obs_RSPU = obs_RSPU,
+                                    obs_infil_inhr = obs_infil_inhr,
+                                    obs_draindown_hr = obs_draindown_hr,
+                                    obs_overtopping = obs_overtopping,
+                                    sim_RSPU = sim_RSPU,
+                                    sim_infil_inhr = sim_infil_inhr,
+                                    sim_draindown_hr = sim_draindown_hr,
+                                    sim_overtopping = sim_overtopping)
+}
   
   return(level_plot)
   
@@ -585,15 +607,7 @@ marsWaterLevelPlot <- function(event,
 #' @param rainfall_datetime                   vector, POSIXct datetimes corresponding to \code{rainfall_in}
 #' @param rainfall_in                         vector, num, rainfall in inches corresponding to \code{rainfall_datetime}
 #' @param metrics_show                        bool, Default FALSE. TRUE if user wants to include a table of metrics on the plot (optional)
-#' @param obs_RSPU                            num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
-#' @param obs_infil_inhr                      num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
-#' @param obs_draindown_hr                    num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)
-#' @param obs_overtopping                     bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
-#' @param sim_RSPU                            num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
-#' @param sim_infil_inhr                      num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
-#' @param sim_draindown_hr                    num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)
-#' @param sim_overtopping                     bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
-
+#' @param ...                                 additional arguments for showing metrics (metrics_show = TRUE) and providing multiple water level time series. See \code{\link{marsMetricsTable}} and \code{\link{marsWaterLevelPlot}}
 #'
 #' @return Output will be a gridExtra object of the two plots
 #'
@@ -661,8 +675,8 @@ marsCombinedPlot <- function(event,
   #2 Combine Plots
   
   #Save out legends
-  level_legend <- pwdgsi:::get_legend(level_plot)
-  rainfall_legend <- pwdgsi:::get_legend(rainfall_plot)
+  level_legend <- get_legend(level_plot)
+  rainfall_legend <- get_legend(rainfall_plot)
   
   #Calculate date plotting limits(x-axis) 
   #Calculate minimum and maximum data values
@@ -722,6 +736,7 @@ marsCombinedPlot <- function(event,
       breaks = major_date_breaks,
       minor_breaks = minor_date_breaks)  +
     ggplot2::labs(title = title_text)
+  
     # ggplot2::geom_label(ggplot2::aes(x = max_date - (max_date - min_date)*0.1, 
     #                                  y = Inf, 
     #                                  label = metrics_caption),
@@ -744,59 +759,343 @@ marsCombinedPlot <- function(event,
     if( missing(obs_overtopping) ){obs_overtopping <- ""}
     if( missing(sim_overtopping) ){sim_overtopping <- ""}
     
-    if( is.numeric(obs_infil_inhr) & obs_infil_inhr < 0 ){
-      obs_infil_inhr <- paste0("ERR: ", obs_infil_inhr)
-    }
-    if( is.numeric(sim_infil_inhr) & sim_infil_inhr < 0 ){
-      sim_infil_inhr <- paste0("ERR: ", sim_infil_inhr)
-    }
-    
-    if(is.numeric(obs_draindown_hr)){ obs_draindown_hr <- round(obs_draindown_hr,2)}
-    if(is.numeric(sim_draindown_hr)){ sim_draindown_hr <- round(sim_draindown_hr,2)}
-    if(is.numeric(obs_infil_inhr)){ obs_infil_inhr <- round(obs_infil_inhr,2)}
-    if(is.numeric(sim_infil_inhr)){ sim_infil_inhr <- round(sim_infil_inhr,2)}
-    if(is.numeric(obs_RSPU)){ obs_RSPU <- round(obs_RSPU,2)}
-    if(is.numeric(sim_RSPU)){ sim_RSPU <- round(sim_RSPU,2)}
-    
-    # browser()
-    #------ table version
-    metric_table <- as.data.frame(matrix(nrow=4))
-    colnames(metric_table) <- "Metrics"
-    metric_table$Metrics <- c("Drain down (hrs)",
-                              "Infiltration rate (in/hr)",
-                              "RSPU (%)",
-                              "Overtopping (T/F)")
-    
-    obs_mets <- c(obs_draindown_hr,obs_infil_inhr, obs_RSPU, obs_overtopping)
-    sim_mets <- c(sim_draindown_hr,sim_infil_inhr, sim_RSPU, sim_overtopping)
-    
-    #add columns if obs/sim exists
-    if(sum(is.na(obs_mets)) < 4){metric_table$Observed <- obs_mets}
-    if(sum(is.na(sim_mets)) < 4){metric_table$Simulated <- sim_mets}
-    
-    #remove rows if both are empty
-    remove <- c()
-    if(sum(metric_table[1,] == "") == 2){ remove <- c(remove,1)}
-    if(sum(metric_table[2,] == "") == 2){ remove <- c(remove,2)}
-    if(sum(metric_table[3,] == "") == 2){ remove <- c(remove,3)}
-    if(sum(metric_table[4,] == "") == 2){ remove <- c(remove,4)}
-    
-    metric_table <- metric_table[c(1:4)[!(c(1:4) %in% remove)],]
-    
-    #add table to plot
-    level_plot <- level_plot +
-      
-      ggplot2::annotation_custom (grob = tableGrob(metric_table,
-                                                   rows = NULL,
-                                                   theme = ggpp::ttheme_gtlight()),
-                                  ymin = (storage_depth_ft*0.70),
-                                  ymax = (storage_depth_ft*0.95),
-                                  xmin = obs_datetime[round(length(obs_datetime)*0.5)],
-                                  xmax = obs_datetime[round(length(obs_datetime))])
+    level_plot %<>% marsMetricsTable(obs_RSPU = obs_RSPU,
+                                     obs_infil_inhr = obs_infil_inhr,
+                                     obs_draindown_hr = obs_draindown_hr,
+                                     obs_overtopping = obs_overtopping,
+                                     sim_RSPU = sim_RSPU,
+                                     sim_infil_inhr = sim_infil_inhr,
+                                     sim_draindown_hr = sim_draindown_hr,
+                                     sim_overtopping = sim_overtopping) 
+  }
+
+
+  
+  #Calculate max width and set both to that value
+  #Grob
+  level_grob <- ggplot2::ggplotGrob(level_plot)
+  rainfall_grob <- ggplot2::ggplotGrob(rainfall_plot)
+  
+  #Set max width
+  maxWidth = grid::unit.pmax(level_grob$widths[2:9], rainfall_grob$widths[2:9])
+  level_grob$widths[2:9] <- maxWidth
+  rainfall_grob$widths[2:9] <- maxWidth
+  
+  #Arrange the plots and export
+  combined_plot <- gridExtra::grid.arrange(rainfall_grob, level_grob, #plots
+                                           rainfall_legend, level_legend, #legends
+                                           ncol = 1,
+                                           heights = c(1.1, 2, 0.15, 0.15),
+                                           newpage = TRUE)
+  
+  return(combined_plot)
+}
+
+# marsEventCombinedPlot --------------------------------------------------------
+#' Plot hyetograph and observed water level for a single plot the same chart with minimal inputs
+#'
+#' Return hyetograph and observed water level plot for the same rain event on the same chart
+#'
+#' @param con                                 An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
+#' @param event_date                          chr or POSIXCT, day during which event occurs
+#' @param source                              chr, rainfall source, one of 'gage'/'gauge' or 'radar'. Defaults to 'radar'
+#' @param event_uid                           int, rain event uid. Alternate to override event_date and rain_source (optional)
+#' @param smp_id                              chr, SMP ID
+#' @param ow_suffix                           chr, OW Suffix
+#' @param sump_correct                        boolean, passed to fetch monitoring date to trim data
+#' @param ...                                 additional arguments for showing metrics and overriding orifice/storage elevations. See \code{\link{marsCombinedPlot}}
+#'
+#' @return Output will be a gridExtra object of the two plots
+#'
+#' @seealso \code{\link{marsRainfallPlot}}, \code{\link{marsWaterLevelPlot}}, \code{\link{marsCombinedPlot}}
+#'
+#' @export
+
+marsEventCombinedPlot <- function(con,
+                                  event_date,
+                                  source = 'radar',
+                                  event_uid,
+                                  smp_id, 
+                                  ow_suffix,
+                                  sump_correct = TRUE,
+                                  orifice_show = FALSE,
+                                  orifice_height_ft = NULL,
+                                  storage_depth_ft,
+                                  metrics_show = FALSE,
+                                  obs_RSPU,
+                                  sim_RSPU,
+                                  obs_infil_inhr,
+                                  sim_infil_inhr,
+                                  obs_draindown_hr,
+                                  sim_draindown_hr,
+                                  obs_overtopping,
+                                  sim_overtopping
+                                  
+){
+  
+  ## Check DB connection
+  if(!odbc::dbIsValid(con)){
+    stop("Argument 'con' is not an open ODBC channel")
+  }
+
+  # Was a string supplied to source?
+  if( isTRUE(all.equal(source, c("gage","radar"))) ){
+    stop("No argument supplied for 'source'. Provide a string of either 'gage' or 'radar'")
   }
   
+  
+  ## Grabbing data from the given inputs
+  
+  #get ow_uid
+  ow_query <- paste0("SELECT ow_uid FROM fieldwork.tbl_ow
+                     WHERE smp_id LIKE '",smp_id,
+                     "' AND ow_suffix LIKE '",ow_suffix, "'")
+  
+  ow_uid <- DBI::dbGetQuery(con, ow_query) |> dplyr::pull()
+  
+  # check if ow exists
+  if(length(ow_uid) == 0){
+    stop("OW does not exist within the fiedlwork database.")
+  }
+  
+  
+  if(missing(event_uid)){
+   
+    
+     #check for one day on either side of the event date
+    event_date %<>% as.POSIXct(format = '%Y-%m-%d')
+    start_date <- event_date - 86400
+    end_date <- event_date   + 86400
+    
+    # browser()
+     # Grab the data
+    mon_data <- pwdgsi::marsFetchMonitoringData(con = con,
+                               target_id = smp_id,
+                               ow_suffix = ow_suffix,
+                               start_date = start_date,
+                               source = source,
+                               end_date = end_date,
+                               sump_correct = sump_correct)
+    
+    event_data <- mon_data$`Rain Event Data`
+    
+    if(source %in% c('gage','gauge')){
+      event_uid <- event_data$gage_event_uid 
+    }
+    
+    if(source == 'radar'){
+      event_uid <- event_data$radar_event_uid
+    }
+    
+    # Stop if no events have been found
+    if(length(event_data) == 0){
+      stop(paste0("There are no events on ",event_date))}
+    
+    
+    
+    # pick closest event if multiple events
+    if(nrow(event_data) > 1){
+      min_dif <- min(abs(event_data$eventdatastart_est - event_date))
+      event_data <- event_data[abs(event_data$eventdatastart_est - event_date) == min_dif,]
+    }
+    
+
+    
+  } else {
+    
+    # browser()
+    # write event query based on source
+    if(source %in% c('gage','gauge')){
+      event_query <- paste0('SELECT * FROM data.tbl_gage_event where gage_event_uid = ',event_uid)
+    }
+    
+    if(source == 'radar'){
+      event_query <- paste0('SELECT * FROM data.tbl_radar_event where radar_event_uid = ',event_uid)
+    }  
+   
+    # browser()
+    event_data <- dbGetQuery(con, event_query)
+    event_date <- event_data$eventdatastart_edt %>% as.Date()
+    start_date <- event_data$eventdatastart_edt %>% as.Date()
+    end_date <- event_data$eventdataend_edt %>% as.Date()
+    
+    # browser()
+    # this is crashing without good reason, reboot
+    mon_data <- pwdgsi::marsFetchMonitoringData(con = con,
+                                                target_id = smp_id,
+                                                ow_suffix = ow_suffix,
+                                                start_date = start_date,
+                                                source = source,
+                                                end_date = end_date,
+                                                sump_correct = sump_correct)
 
 
+    
+  }
+  
+  
+  
+  # get event column name (dependent on radar/gage)
+  event_col <- colnames(mon_data$`Level Data`)[grep('event',colnames(mon_data$`Level Data`))]
+  
+  # define individual datasets
+  # filter out rainfall data not associated with an event
+  rainfall_data <- mon_data$`Rainfall Data`[!is.na(mon_data$`Rainfall Data`[,event_col]),]
+  #filter to specific event
+  rainfall_data <- rainfall_data[rainfall_data[,event_col] == event_data[,event_col],]
+  
+  level_data <- mon_data$`Level Data`[!is.na(mon_data$`Level Data`[,event_col]),]
+  #filter to specific event
+  level_data <- level_data[level_data[,event_col] == event_data[,event_col],]
+  
+  
+  #match inputs to marsCombinedPlot
+  rainfall_in <- rainfall_data$rainfall_in
+  rainfall_datetime <- rainfall_data$dtime_est
+  obs_level_ft <- level_data$level_ft
+  obs_datetime <- level_data$dtime_est
+  
+  
+  #Define values from snapshot
+  snapshot <- pwdgsi::marsFetchSMPSnapshot(con = con,
+                               smp_id = smp_id,
+                               ow_suffix = ow_suffix,
+                               request_date = event_date)
+  
+  #set NA's to 0's
+  if( is.na(snapshot$assumption_orificeheight_ft) ){snapshot$assumption_orificeheight_ft <- 0}
+
+  # set max storage and orifice defaults when not provided
+  # browser()
+  if( missing(orifice_show) ){
+    orifice_show <- if(snapshot$assumption_orificeheight_ft == 0){0}else{1}
+  }
+  
+  if( missing(orifice_height_ft) ){
+    orifice_height_ft <- snapshot$assumption_orificeheight_ft
+  }
+  
+  if( missing(storage_depth_ft) ){
+    storage_depth_ft <- snapshot$storage_depth_ft
+  }
+  
+  
+  # Combine strings for structure name
+  structure_name <- paste0(smp_id," | Monitoring Location: ",ow_suffix)
+  
+  #Add a last date so the hyetograph looks better
+  rainfall_in <- append(rainfall_in, 0)
+  rainfall_datetime <- append(rainfall_datetime, max(obs_datetime)) %>% lubridate::with_tz("EST")
+  
+  #1 Run functions for individual plots
+  level_plot <- pwdgsi::marsWaterLevelPlot(event = event_data$event_uid[1], 
+                                           structure_name = structure_name, 
+                                           obs_datetime = obs_datetime,
+                                           obs_level_ft = obs_level_ft,
+                                           storage_depth_ft = storage_depth_ft,
+                                           orifice_show = orifice_show,
+                                           orifice_height_ft = orifice_height_ft)
+  
+  rainfall_plot <- pwdgsi::marsRainfallPlot(event = event_data$event_uid[1], 
+                                            dtime_est = rainfall_datetime, 
+                                            rainfall_in = rainfall_in,
+                                            reverse_y = TRUE)
+  
+  #2 Combine Plots
+  
+  #Save out legends
+  level_legend <- get_legend(level_plot)
+  rainfall_legend <- get_legend(rainfall_plot)
+  
+  #Calculate date plotting limits(x-axis) 
+  #Calculate minimum and maximum data values
+    min_date <- min(obs_datetime, na.rm = TRUE)
+    max_date <- max(obs_datetime, na.rm = TRUE) #+ hours(6)
+  
+  #Calculate ranges in values to set axis breaks by category
+  event_duration <- max_date - min_date
+  
+  #set date marker offset by duration
+  if(units(event_duration) == "days"){
+    marker_scale <- 0.02
+  }else{
+    marker_scale <- 0.015
+  }
+  
+  #Calculations for dashed vertical line at day boundaries
+  day_strip <- lubridate::date(min_date)
+  day_marker <- lubridate::force_tz(seq.POSIXt(as.POSIXlt(day_strip, tz = "EST"), by = "day", length.out = 14), tz = "EST")
+  
+  #Calculate axis breaks based on plotting limits
+  #Select major x-axis breaks based on event duration (all extend observed record by 12 hours)
+  major_date_breaks <- lubridate::force_tz(seq.POSIXt(day_marker[1], max_date, by = "12 hours"), tz = "EST") 
+  
+  #All plots use one-hour interval for minor x-axis breaks
+  minor_date_breaks <- lubridate::force_tz(seq.POSIXt(day_marker[1] - lubridate::hours(12), max_date + lubridate::hours(6), by = "hour"), tz = "EST") 
+  
+  #Title
+  title_text <- paste0("Water Level and Rainfall\nSMP ID: ", structure_name,
+                       " | Event: ", event_uid,
+                       " | Start Date and Time: ", 
+                       scales::date_format("%Y-%m-%d %H:%M", tz = "EST")(min_date),
+                       sep = "")
+  
+  #Remove legends and titles and update axes
+  level_plot <- level_plot + 
+    ggplot2::theme(legend.position = "none", 
+                   plot.title = ggplot2::element_blank(), 
+                   axis.title = ggplot2::element_text(size = ggplot2::rel(1)), 
+                   axis.text = ggplot2::element_text(size = ggplot2::rel(.95)))
+  rainfall_plot <- rainfall_plot + 
+    ggplot2::theme(legend.position = "none", 
+                   plot.title = ggplot2::element_text(size = ggplot2::rel(1.35)),
+                   axis.title.x = ggplot2::element_blank(),
+                   axis.text.x = ggplot2::element_blank(), 
+                   axis.text.y = ggplot2::element_text(size = ggplot2::rel(1.25)), 
+                   axis.title.y = ggplot2::element_text(size = ggplot2::rel(1.25))) +
+    ggplot2::scale_x_datetime(
+      name = " ", # x axis label
+      labels = scales::date_format("%H:%M", "EST"),
+      limits = c(min_date - lubridate::minutes(15), max_date + lubridate::minutes(60)),
+      breaks = major_date_breaks,
+      minor_breaks = minor_date_breaks)  +
+    ggplot2::labs(title = title_text)
+  
+  # ggplot2::geom_label(ggplot2::aes(x = max_date - (max_date - min_date)*0.1, 
+  #                                  y = Inf, 
+  #                                  label = metrics_caption),
+  #                    # size = ggplot2::rel(5),
+  #                     size = 4.7,
+  #                     fill = "white", 
+  #                     label.size = 0)
+  # ggplot2::annotate("richtext", y = Inf, x = max_date - (max_date - min_date)*0.01, vjust=0, hjust = 1, size = 4.7, label = metrics_caption, fill = "white")
+  # ggplot2::annotate("text", x = max_date - lubridate::minutes(60), y = max(rainfall_in), vjust=0, hjust = 1, label = metrics_caption)
+  
+  
+  if( missing(metrics_show) ){metrics_show <- FALSE}
+  if(metrics_show == TRUE){
+    
+    #set missing values to ""
+    if( missing(obs_draindown_hr) ){obs_draindown_hr <- ""}
+    if( missing(sim_draindown_hr) ){sim_draindown_hr <- ""}
+    if( missing(obs_infil_inhr) ){obs_infil_inhr <- ""}
+    if( missing(sim_infil_inhr) ){sim_infil_inhr <- ""}
+    if( missing(obs_RSPU) ){obs_RSPU <- ""}
+    if( missing(sim_RSPU) ){sim_RSPU <- ""}
+    if( missing(obs_overtopping) ){obs_overtopping <- ""}
+    if( missing(sim_overtopping) ){sim_overtopping <- ""}
+    
+    level_plot %<>% marsMetricsTable(obs_RSPU = obs_RSPU,
+                                     obs_infil_inhr = obs_infil_inhr,
+                                     obs_draindown_hr = obs_draindown_hr,
+                                     obs_overtopping = obs_overtopping,
+                                     sim_RSPU = sim_RSPU,
+                                     sim_infil_inhr = sim_infil_inhr,
+                                     sim_draindown_hr = sim_draindown_hr,
+                                     sim_overtopping = sim_overtopping) 
+  }
+  
+  
   
   #Calculate max width and set both to that value
   #Grob
@@ -816,6 +1115,8 @@ marsCombinedPlot <- function(event,
   
   return(combined_plot)
 }
+
+
 
 # marsBaroRasterPlot --------------------------------------------------------
 #' Barometric Pressure Raster Plot
@@ -853,3 +1154,184 @@ marsBaroRasterPlot <- function(baro){
   
 }
 
+
+# marsMetricsTable ------------------------------------------------------------
+
+#' Add metrics to an existing water level or combined plot
+#'
+#' Return the gpglot object, with the metrics added to the object as a tableGrob annotation
+#'
+#' @param in_plot                             ggplot object without annotative metrics table 
+#' @param obs_RSPU                            num, Metric: Observed relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
+#' @param obs_infil_inhr                      num, Metric: Observed infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
+#' @param obs_draindown_hr                    num, Metric: Observed draindown time in hours, see \code{marsDraindown_hr} (optional)
+#' @param obs_overtopping                     bool, Metric: Observed overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+#' @param sim_RSPU                            num, Metric: Simulated relative percentage of storage used, see \code{marsPeakStorage_percent} (optional)
+#' @param sim_infil_inhr                      num, Metric: Simulated infiltration rate in inches per hour, see \code{marsInfiltrationRate_inhr} (optional)
+#' @param sim_draindown_hr                    num, Metric: Simulated draindown time in hours, see \code{marsDraindown_hr} (optional)
+#' @param sim_overtopping                     bool, Metric: Simulated overtopping boolean, see \code{marsOvertoppingCheck_bool} (optional)
+#' 
+#' @return Output ggplot object adding metrics when necessary
+#'  
+#' @export
+#' 
+
+marsMetricsTable <- function(in_plot,
+                              obs_RSPU,
+                              obs_infil_inhr,
+                              obs_draindown_hr,
+                              obs_overtopping,
+                              sim_RSPU,
+                              sim_infil_inhr,
+                              sim_draindown_hr,
+                              sim_overtopping){
+  
+    #set missing values to ""
+    if( missing(obs_draindown_hr) ){obs_draindown_hr <- ""}
+    if( missing(sim_draindown_hr) ){sim_draindown_hr <- ""}
+    if( missing(obs_infil_inhr) ){obs_infil_inhr <- ""}
+    if( missing(sim_infil_inhr) ){sim_infil_inhr <- ""}
+    if( missing(obs_RSPU) ){obs_RSPU <- ""}
+    if( missing(sim_RSPU) ){sim_RSPU <- ""}
+    if( missing(obs_overtopping) ){obs_overtopping <- ""}
+    if( missing(sim_overtopping) ){sim_overtopping <- ""}
+  
+    # browser()
+    if( is.numeric(obs_infil_inhr) & obs_infil_inhr < 0 ){
+      obs_infil_inhr <- paste0("ERR: ", obs_infil_inhr)
+    }
+    if( is.numeric(sim_infil_inhr) & sim_infil_inhr < 0 ){
+      sim_infil_inhr <- paste0("ERR: ", sim_infil_inhr)
+    }
+    
+    if(is.numeric(obs_draindown_hr)){ obs_draindown_hr <- round(obs_draindown_hr,2) %>% as.character}
+    if(is.numeric(sim_draindown_hr)){ sim_draindown_hr <- round(sim_draindown_hr,2) %>% as.character}
+    if(is.numeric(obs_infil_inhr)){ obs_infil_inhr <- round(obs_infil_inhr,2) %>% as.character}
+    if(is.numeric(sim_infil_inhr)){ sim_infil_inhr <- round(sim_infil_inhr,2) %>% as.character}
+    if(is.numeric(obs_RSPU)){ obs_RSPU <- round(obs_RSPU,2) %>% as.character}
+    if(is.numeric(sim_RSPU)){ sim_RSPU <- round(sim_RSPU,2) %>% as.character}
+    
+    # browser()
+    #------ table version
+    metric_table <- as.data.frame(matrix(nrow=4))
+    colnames(metric_table) <- "Metrics"
+    metric_table$Metrics <- c("Drain down (hrs)",
+                              "Infiltration rate (in/hr)",
+                              "RSPU (%)",
+                              "Overtopping (T/F)")
+    
+    obs_mets <- c(obs_draindown_hr,obs_infil_inhr, obs_RSPU, obs_overtopping)
+    sim_mets <- c(sim_draindown_hr,sim_infil_inhr, sim_RSPU, sim_overtopping)
+    
+    #add columns if obs/sim exists
+    if(sum(obs_mets == '') < 4){metric_table$Observed <- obs_mets}
+    if(sum(sim_mets == '') < 4){metric_table$Simulated <- sim_mets}
+    
+    #remove rows if both are empty
+    remove <- c()
+    if(sum(metric_table[1,] == "") == ncol(metric_table)-1){ remove <- c(remove,1)}
+    if(sum(metric_table[2,] == "") == ncol(metric_table)-1){ remove <- c(remove,2)}
+    if(sum(metric_table[3,] == "") == ncol(metric_table)-1){ remove <- c(remove,3)}
+    if(sum(metric_table[4,] == "") == ncol(metric_table)-1){ remove <- c(remove,4)}
+    
+    metric_table <- metric_table[c(1:4)[!(c(1:4) %in% remove)],]
+    
+    
+    # determine if we're working with a ggplot object or a grob
+    if('ggplot' %in% class(in_plot)) plot_type <- "ggplot" else plot_type <- "grob"
+    
+    
+    if(plot_type == 'ggplot'){
+      # get ymax value
+      ymax_val <- max(ggplot_build(in_plot)$layout$panel_scales_y[[1]]$range$range)
+      
+      #add table to plot
+      out_plot <- in_plot +
+                  ggplot2::annotation_custom (grob = gridExtra::tableGrob(metric_table,
+                                              rows = NULL,
+                                              theme = ggpp::ttheme_gtlight()),
+                                    ymin = (ymax_val*0.70),
+                                    ymax = (ymax_val*0.95),
+                                    xmin = in_plot$data$obs_datetime[round(length(in_plot$data$obs_datetime)*0.5)],
+                                    xmax = in_plot$data$obs_datetime[round(length(in_plot$data$obs_datetime))])
+    }
+    
+    if(plot_type == 'grob'){
+      
+      # add the table in the water level grob
+      wl_grob <- in_plot$grobs[[2]] %>% ggpubr::as_ggplot()
+      
+      in_plot$grobs[[2]] <- (wl_grob +
+                            ggplot2::annotation_custom (grob = gridExtra::tableGrob(metric_table,
+                                                        rows = NULL,
+                                                        theme = ggpp::ttheme_gtlight()),
+                                                        ymin = .7,
+                                                        ymax = .9,
+                                                        xmin = 0.5,
+                                                        xmax = 0.95)) %>%  ggplot2::ggplotGrob()
+      out_plot <- in_plot
+      
+    }
+    
+    
+    return(out_plot)
+
+    
+  
+}
+
+
+# marsSavePlot ------------------------------------------------------------
+
+#' Wrapper function for ggsave that ensures text appears correctly for saved images of pwdgsi plots 
+#'
+#' Return the gpglot object, with the metrics added to the object as a tableGrob annotation
+#'
+#' @param in_plot                             ggplot object without annotative metrics table 
+#' @param filename                            text, file location to save the document refer to \code{ggsave}
+#' @param plot_type                           text, one of 'combined', 'level', or 'rain' to determine the dimensions to use
+#' @param resolution                          text, one of 'low', 'med', or 'high'. Each consists of default options that can be overwritten with ggsave arguments.
+#' @param ...                                 overwrite assumed values of resolution. Accepts existing arguments to ggsave, see \code{ggsave} (optional)
+#' @return Output ggplot object adding metrics when necessary
+#'  
+#' @export
+#' 
+
+marsSavePlot <- function(in_plot = last_plot(),
+                         plot_type,
+                         filename,
+                         resolution = 'med',
+                         ...){
+ 
+  if(!(resolution %in% c('low','med','high'))){
+    stop("Must provided one of 'low', 'med', or 'high' to argument 'resolution'. Values can be overwrittn by providing ggsave arguments.")
+  }
+  
+  #resolution options
+  res_df <- data.frame(name = c('low','med','high'),
+                          dpi = c(75, 150, 250))
+  
+  res_x <- res_df$dpi[res_df$name == resolution]
+  
+  if(is.na(plot_type)){
+    stop("Must provided one of 'level', 'rain', or 'combined' to argument 'plot_type'.")
+  }
+   
+  if(!(plot_type %in% c('level','rain','combined'))){
+    stop("Must provided one of 'level', 'rain', or 'combined' to argument 'plot_type'.")
+  }
+  
+  #plot dimensions
+  plot_df <- data.frame(type = c('level','rain','combined'),
+                           width = c(8, 9.56, 10.67),
+                           height = c(4, 4,8))
+  
+  width_x <- plot_df$width[plot_df$type == plot_type]
+  height_x <- plot_df$height[plot_df$type == plot_type]
+  
+  ggplot2::ggsave(plot = in_plot,
+                  width = width_x,
+                  height = height_x,
+                  dpi = res_x,
+                  filename = filename)
+}

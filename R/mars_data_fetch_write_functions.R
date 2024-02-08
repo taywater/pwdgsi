@@ -24,7 +24,7 @@
 #' 
 
 
-marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
+marsFetchPrivateSMPRecords <- function(con, tracking_number){
   #Validate DB connection
   if(!odbc::dbIsValid(con)){
     stop("Argument 'con' is not an open ODBC channel")
@@ -56,9 +56,9 @@ marsFetchPrivateSMPRecords <- function(con, tracking_numbers){
 #' @param con Formal class 'PostgreSQL', a connection to the MARS Analysis database
 #' @param target_id chr, an SMP_ID that where the user has requested data
 #' @param source chr, either "gage" or "radar" to retrieve rain gage data or radar rainfall data
-#' @param start_date string, format: "YYYY-MM-DD", start of data request range
-#' @param end_date string, format: "YYYY-MM-DD", end of data request range
-#' @param daylight_savings logi, Adjust for daylight savings time? when doing QAQC
+#' @param start_date string or POSIXCT date, format: "YYYY-MM-DD", start of data request range
+#' @param end_date stringor POSIXCT date, format: "YYYY-MM-DD", end of data request range
+#' @param daylightsavings logi, Adjust for daylight savings time? when doing QAQC
 #'   this should be \code{FALSE} because the water level data does not spring forwards.
 #'
 #' @return Output will be a data frame with four columns, which corresponds to the specified SMP and date range:
@@ -78,8 +78,13 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
     stop("Argument 'con' is not an open ODBC channel")
   }
   # browser()
-  start_date %<>% as.POSIXct()
-  end_date %<>% as.POSIXct()
+  start_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  end_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  
+  # Was a string supplied to source?
+  if( isTRUE(all.equal(source, c("gage","radar"))) ){
+    stop("No argument supplied for 'source'. Provide a string of either 'gage' or 'radar'")
+  }
   
   #Are we working with gages or radarcells?
   if(source == "gage"){
@@ -97,39 +102,45 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
   
   #Collect gage data
   #First, get all the relevant data from the closest gage
-  rain_query <- paste(paste0("SELECT * FROM ", rainparams$raintable, " "),
+  rain_query <- paste(paste0("SELECT *, dtime_edt::varchar as dtime FROM ", rainparams$raintable, " "),
                       paste0("WHERE ", rainparams$uidvar, " = CAST('", rainsource, "' as int)"),
                       "AND dtime_edt >= Date('", start_date, "')",
                       "AND dtime_edt <= Date('", end_date + lubridate::days(1), "');")
+  
   #print(rain_query)
   rain_temp <- odbc::dbGetQuery(con, rain_query)
   
   if(nrow(rain_temp) == 0){
     
     if(lubridate::month(start_date) == lubridate::month(lubridate::today())){
-      stop(paste("Rainfall data appears in the MARS database on about a 5 week delay. \nData for", lubridate::month(start_date, label = TRUE, abbr = FALSE), "should be available in the second week of", lubridate::month(lubridate::today() + lubridate::months(1), label = TRUE, abbr = FALSE)))
+      stop(paste("Rainfall data appears in the MARS database on about a 5 week delay. \nData for", lubridate::month(start_date, label = TRUE, abbr = FALSE), "should be available in the second week of", lubridate::month(lubridate::today() + lubridate::dmonths(1), label = TRUE, abbr = FALSE)))
     }
     stop("There is no data in the database for this date range.")
   }
   
   rain_temp$rainfall_in %<>% as.numeric
-  rain_temp$dtime_edt %<>% lubridate::ymd_hms(tz = "America/New_York")
+  # rain_temp$dtime_edt %<>% lubridate::ymd_hms(tz = "America/New_York")
+  # we need to reformat dates at midnight because ymd_hms does not know how to handle them
+  # this is actually a base R issue, but it is still dumb
+  # https://github.com/tidyverse/lubridate/issues/1124
+  rain_temp %<>% dplyr::mutate(dtime_est = lubridate::ymd_hms(dtime, tz = "EST")) %>% dplyr::select(-dtime_edt, -dtime)
   
   #Apparently, attempting to set the time zone on a datetime that falls squarely on the spring forward datetime
   #Such as 2005-04-03 02:00:00
   #Returns NA, because the time is impossible.
   #I hate this so, so much
   #To mitigate this, we will strip NA values from the new object
-  rain_temp %<>% dplyr::filter(!is.na(dtime_edt)) %>% dplyr::arrange(dtime_edt)
+  # rain_temp %<>% dplyr::filter(!is.na(dtime_edt)) %>% dplyr::arrange(dtime_edt)
+  rain_temp %<>% dplyr::filter(!is.na(dtime_est)) %>% dplyr::arrange(dtime_est)
   
   #Our water level data is not corrected for daylight savings time. ie it doesn't spring forwards
   #So we must shift back any datetimes within the DST window
   #Thankfully, the dst() function returns TRUE if a dtime is within that zone
-  if(daylightsavings == FALSE){
-    dst_index <- lubridate::dst(rain_temp$dtime_edt)
-    rain_temp$dtime_edt %<>% lubridate::force_tz("EST") #Assign new TZ without changing dates
-    rain_temp$dtime_edt[dst_index] <- rain_temp$dtime_edt[dst_index] - lubridate::hours(1)
-  }
+  # if(daylightsavings == FALSE){
+  #   dst_index <- lubridate::dst(rain_temp$dtime_edt)
+  #   rain_temp$dtime_edt %<>% lubridate::force_tz("EST") #Assign new TZ without changing dates
+  #   rain_temp$dtime_edt[dst_index] <- rain_temp$dtime_edt[dst_index] - lubridate::hours(1)
+  # }
   
   #Punctuate data with zeroes to prevent linear interpolation when plotting
   #If the time between data points A and B is greater than 15 minutes (the normal timestep), we must insert a zero 15 minutes after A
@@ -139,7 +150,8 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
   zeroFills <- rain_temp[0,]
   #print("Begin zero-filling process")
   for(i in 1:(nrow(rain_temp) - 1)){
-    k <- difftime(rain_temp$dtime_edt[i+1], rain_temp$dtime_edt[i], units = "min")
+    # k <- difftime(rain_temp$dtime_edt[i+1], rain_temp$dtime_edt[i], units = "min")
+    k <- difftime(rain_temp$dtime_est[i+1], rain_temp$dtime_est[i], units = "min")    
     
     #If gap is > 15 mins, put a zero 15 minutes after the gap starts
     if(k > 15){
@@ -148,18 +160,21 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
       zeroFillIndex <- nrow(zeroFills)+1
       
       #Boundaries of the interval to be zeroed
-      boundary.low <- rain_temp$dtime_edt[i]
-      boundary.high <- rain_temp$dtime_edt[i+1]
+      boundary.low <- rain_temp$dtime_est[i]
+      boundary.high <- rain_temp$dtime_est[i+1]
+      # boundary.low <- rain_temp$dtime_edt[i]
+      # boundary.high <- rain_temp$dtime_edt[i+1]
       
       #The zero goes 15 minutes (900 seconds) after the first boundary
       #Filled by index because R is weird about partially filled data frame rows
       fill <- boundary.low + lubridate::seconds(900)
-      zeroFills[zeroFillIndex, 2] <- fill                   #dtime_edt
-      zeroFills[zeroFillIndex, 4] <- 0                      #rainfall_in
-      zeroFills[zeroFillIndex, 3] <- rainsource   #gage_uid or radarcell_uid
-      #browser()
-      #print(paste("Gap-filling event ID. Before:", rain_temp$event[i], "After:", rain_temp$event[i+1]))
-      zeroFills[zeroFillIndex, 5] <- pwdgsi:::marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
+      #these were causing several functions to crash. Need a way to index so this doesn't happen again.
+      zeroFills[zeroFillIndex, 5] <- fill                   #dtime_edt
+      zeroFills[zeroFillIndex, 3] <- 0                      #rainfall_in
+      zeroFills[zeroFillIndex, 2] <- rainsource   #gage_uid or radarcell_uid
+      # browser()
+      # print(paste("Gap-filling event ID. Before:", rain_temp$event[i], "After:", rain_temp$event[i+1]))
+      zeroFills[zeroFillIndex, 5] <- marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
       
       #If the boundary is longer than 30 minutes, we need a second zero
       if(k > 30){
@@ -171,7 +186,7 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
         zeroFills[zeroFillIndex + 1, 3] <- rainsource   #gage_uid or radarcell_uid
         
         #print(paste("Gap-filling event ID. Before:", rain_temp[i, 5], "After:", rain_temp[i+1, 5]))
-        zeroFills[zeroFillIndex + 1, 5] <- pwdgsi:::marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
+        zeroFills[zeroFillIndex + 1, 5] <- marsGapFillEventID(event_low = rain_temp[i, 5], event_high = rain_temp[i+1, 5]) #event
         
       }
       
@@ -180,22 +195,25 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
 
   #Replace UIDs with SMP IDs
   rainlocs <- odbc::dbGetQuery(con, paste0("SELECT * FROM ", rainparams$loctable))
+  # finalseries <- dplyr::bind_rows(rain_temp, zeroFills) %>%
+  #   dplyr::left_join(rainlocs, by = rainparams$uidvar) %>%
+  #   dplyr::select(dtime_edt, rainfall_in, rainparams$uidvar, rainparams$eventuidvar) %>%
+  #   dplyr::arrange(dtime_edt)
   finalseries <- dplyr::bind_rows(rain_temp, zeroFills) %>%
     dplyr::left_join(rainlocs, by = rainparams$uidvar) %>%
-    dplyr::select(dtime_edt, rainfall_in, rainparams$uidvar, rainparams$eventuidvar) %>%
-    dplyr::arrange(dtime_edt)
+    dplyr::select(dtime_est, rainfall_in, rainparams$uidvar, rainparams$eventuidvar) %>%
+    dplyr::arrange(dtime_est)
   
   #round date to nearest minute
   finalseries$dtime_est %<>% lubridate::round_date("minute")
   
   #Rename dtime column if we are undoing daylight savings time
-  if(daylightsavings == FALSE){
-    finalseries <- finalseries %>%
-      dplyr::mutate(dtime_est = dtime_edt) %>%
-      dplyr::select(-dtime_edt)
-    finalseries <- dplyr::select(finalseries, dtime_est, rainfall_in, rainparams$uidvar, rainparams$eventuidvar)
-  }
-  
+  # if(daylightsavings == FALSE){
+  #   finalseries <- finalseries %>%
+  #     dplyr::mutate(dtime_est = dtime_edt) %>%
+  #     dplyr::select(-dtime_edt)
+  #   finalseries <- dplyr::select(finalseries, dtime_est, rainfall_in, rainparams$uidvar, rainparams$eventuidvar)
+  # }
   
   return(finalseries)
 }
@@ -260,7 +278,7 @@ marsGapFillEventID <- function(event_low, event_high){
 #'
 #' @param baro_psi vector, num, barometric pressures measured at the same timestamp
 #' @param smp_id vector, chr, SMP IDs where the measurements took place
-#' @param weights vector, num, of inverse distances weights for each baro, calculated by \code{\link{marsFetchBaroData}}
+#' @param weight vector, num, of inverse distances weights for each baro, calculated by \code{\link{marsFetchBaroData}}
 #' @param target_id chr, single SMP ID where the user has requested data
 #'
 #' @return Output will be a single barometric pressure reading.
@@ -324,8 +342,8 @@ yday_decimal <- function(dtime_est){
 #'   
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param target_id chr, single SMP ID where the user has requested data
-#' @param start_date POSIXct, format: "YYYY-MM-DD", start of data request range
-#' @param end_date POSIXct, format: "YYYY-MM-DD", end of data request range
+#' @param start_date string or POSIXct, format: "YYYY-MM-DD", start of data request range
+#' @param end_date string or POSIXct, format: "YYYY-MM-DD", end of data request range
 #' @param data_interval chr, \code{"5 mins"} or \code{"15 mins"}, interval at which baro data will be returned.
 #'
 #' @return Output will be a dataframe with four columns: 
@@ -354,6 +372,10 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   }
 
 
+  #Handle date Conversion
+  start_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  end_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  
   #Get SMP locations, and the locations of the baro sensors
   smp_loc <- odbc::dbGetQuery(con, "SELECT * FROM admin.tbl_smp_loc")
   locus_loc <- dplyr::filter(smp_loc, smp_id == target_id)
@@ -658,7 +680,7 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
 #'     
 #' @export
 #' 
-#' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchRainEventData}}, \code{\link{marsFetchMonitoringData}}
+#' @seealso \code{\link{marsFetchRainfallData}}, \code{\link{marsFetchRainEventData}}, \code{\link{marsFetchMonitoringData}}
 #' 
 marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, sump_correct){
   
@@ -682,8 +704,8 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
   }else if(!(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")) & sump_correct == FALSE){
     level_table <- "data.tbl_ow_leveldata_raw"
   }
-  start_date %<>% as.POSIXct()
-  end_date %<>% as.POSIXct()
+  start_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  end_date %<>% as.POSIXct(format = '%Y-%m-%d')
   
   #1.4 Add buffer to requested dates
   start_date <- lubridate::round_date(start_date) - lubridate::days(1)
@@ -737,8 +759,13 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
   }
   
   #Sanitize start and end date
-  start_date %<>% lubridate::ymd()
-  end_date %<>% lubridate::ymd()
+  start_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  end_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  
+  # Was a string supplied to source?
+  if( isTRUE(all.equal(source, c("gage","radar"))) ){
+    stop("No argument supplied for 'source'. Provide a string of either 'gage' or 'radar'")
+  }
   
   #Are we working with gages or radarcells?
   if(source == "gage"){
@@ -762,8 +789,11 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
                        "AND eventdataend_edt <= Date('", end_date + lubridate::days(1), "');")
   
   events <- odbc::dbGetQuery(con, event_query) 
-  events$eventdatastart_edt %<>% lubridate::force_tz("America/New_York")
-  events$eventdataend_edt %<>% lubridate::force_tz("America/New_York")
+  # making this "EST"
+  events %<>% dplyr::mutate(eventdatastart_est = lubridate::force_tz(eventdatastart_edt,"EST"))
+  events %<>% dplyr::mutate(eventdataend_est = lubridate::force_tz(eventdataend_edt,"EST"))
+  events %<>% dplyr::select(-eventdatastart_edt,
+                     -eventdataend_edt)
   
   #3 return event data
   return(events)
@@ -786,16 +816,17 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
 #' @param rainfall logical, TRUE if rainfall data should be included in result
 #' @param level logical, TRUE if water level should be included in result
 #' @param daylight_savings logical, Adjust for daylight savings time? when doing QAQC this should be FALSE because the water level data does not spring forward 
+#' @param debug logical, whether to print lookup times and outputs
 #'
 #' @return Output will be a list consisting of a combination of the following:
 #' 
 #'     \item{Rain Event Data}{dataframe, output from \code{\link{marsFetchRainEventData}}}
-#'     \item{Rain Gage Data}{dataframe, output from \code{\link{marsFetchRainGageData}}}
+#'     \item{Rain Gage Data}{dataframe, output from \code{\link{marsFetchRainfallData}}}
 #'     \item{Level Data}{dataframe, output from \code{\link{marsFetchLevelData}}, plus rainfall_gage_event_uids}
 #'     
 #' @export
 #' 
-#' @seealso \code{\link{marsFetchRainGageData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchRainEventData}}
+#' @seealso \code{\link{marsFetchRainfallData}}, \code{\link{marsFetchLevelData}}, \code{\link{marsFetchRainEventData}}
 #' 
 
 
@@ -811,6 +842,11 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   #1.1 Check database connection
   if(!odbc::dbIsValid(con)){
     stop("Argument 'con' is not an open ODBC channel")
+  }
+  
+  # Was a string supplied to source?
+  if( isTRUE(all.equal(source, c("gage","radar"))) ){
+    stop("No argument supplied for 'source'. Provide a string of either 'gage' or 'radar'")
   }
   
   #Are we working with gages or radarcells?
@@ -840,27 +876,24 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   }
   
   #Set datetime date types
-  start_date %<>% as.POSIXct()
-  end_date %<>% as.POSIXct()
+  start_date %<>% as.POSIXct(format = '%Y-%m-%d')
+  end_date %<>% as.POSIXct(format = '%Y-%m-%d')
   
   if(debug){
-    ptm <- proc.time()
+    ptm <- print(paste("date_time conversion time:", (proc.time()-ptm)[3]))
   }
   
   #3 Add rain events
   if(rain_events == TRUE){
     for(i in 1:length(target_id)){
       results[["Rain Event Data step"]] <- marsFetchRainEventData(con, target_id[i], source, start_date[i], end_date[i])
-      start_date[i] <- min(results[["Rain Event Data step"]]$eventdatastart_edt)
-      end_date[i] <- max(results[["Rain Event Data step"]]$eventdataend_edt)
+      start_date[i] <- min(results[["Rain Event Data step"]]$eventdatastart_est)
+      end_date[i] <- max(results[["Rain Event Data step"]]$eventdataend_est)
       results[["Rain Event Data"]] <- dplyr::bind_rows(results[["Rain Event Data"]], results[["Rain Event Data step"]])
       results[["Rain Event Data step"]] <- NULL
     }
   }
   
-  if(debug){
-    print(paste("rain_event_lookup_time:", (proc.time()-ptm)[3]))
-  }
   
   if(debug){
     ptm <- proc.time()
@@ -871,8 +904,8 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   if(rainfall == TRUE){
     for(i in 1:length(target_id)){
       results[["Rainfall Data step"]] <- marsFetchRainfallData(con, target_id[i], source, start_date[i], end_date[i], daylight_savings)
-      start_date[i] <- min(results[["Rainfall Data step"]]$dtime_est - lubridate::days(1))
-      end_date[i] <- max(results[["Rainfall Data step"]]$dtime_est + lubridate::days(1))
+      start_date[i] <- min(results[["Rainfall Data step"]]$dtime_est - lubridate::days(1), na.rm = TRUE)
+      end_date[i] <- max(results[["Rainfall Data step"]]$dtime_est + lubridate::days(1), na.rm = TRUE)
       results[["Rainfall Data"]] <- dplyr::bind_rows(results[["Rainfall Data"]], results[["Rainfall Data step"]])
       results[["Rainfall Data step"]] <- NULL
     }
@@ -890,13 +923,15 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   #5 Add level data
   if(level == TRUE){
     
+    # Taylor update: 5/8/23
     #If rain events are being included, we need to switch the rain event dates to EST instead of EDT
     #But because this should only happen once, since the variable is being renamed, do it here instead of in the loop
-    if(rain_events == TRUE){
-      results[["Rain Event Data"]]$eventdatastart_edt %<>% lubridate::with_tz("EST") #switch to EST and rename
-      results[["Rain Event Data"]]$eventdataend_edt %<>% lubridate::with_tz("EST")
-      results[["Rain Event Data"]] %<>% dplyr::rename(eventdatastart_est = eventdatastart_edt, eventdataend_est = eventdataend_edt)
-    }
+    # if(rain_events == TRUE){
+    #   results[["Rain Event Data"]]$eventdatastart_edt %<>% lubridate::with_tz("EST") #switch to EST and rename
+    #   results[["Rain Event Data"]]$eventdataend_edt %<>% lubridate::with_tz("EST")
+    #   results[["Rain Event Data"]] %<>% dplyr::rename(eventdatastart_est = eventdatastart_edt, eventdataend_est = eventdataend_edt)
+    # }
+    #Commented out - timezone is now switched in rainfall fx, handling pull requesst conflict - BC
     
     for(i in 1:length(target_id)){
       results[["Level Data step"]] <- marsFetchLevelData(con, target_id[i], ow_suffix[i], start_date[i], end_date[i], sump_correct) %>% 
@@ -1060,16 +1095,16 @@ marsWriteInfiltrationData <- function(con,
 #' gather data, and write to MARS Analysis performance_percentstorage table
 #' 
 #' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
-#' @param percent_of_storage_used vector, numeric, raw percent storage (in/hr)
-#' @param relative_percent_of_storage_used vector, numeric, relative percent storage (in/hr)
+#' @param percentstorageused_peak vector, numeric, peak percent of storage (\%)
+#' @param percentstorageused_relative vector, numeric, relative percent storage (\%) 
 #' @param ow_uid vector, numeric observation well UID
 #' @param radar_event_uid vector, numeric event UIDs for rain events from radar data
 #' @param snapshot_uid vector, numeric
 #' @param observed_simulated_lookup_uid vector, numeric, 1 if observed, 2 if simulated
 #' 
-#' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWriteOvertoppingData}},  \code{\link{marsWriteDraindownData}}
+#' @seealso \code{\link{marsWriteOvertoppingData}},  \code{\link{marsWriteDraindownData}}
 #' 
-#' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
+#' @return \code{TRUE} if the write is successful, or an error message if unsuccessful
 #' 
 #' @export
 #' 
@@ -1077,12 +1112,14 @@ marsWriteInfiltrationData <- function(con,
 #' 
 #' marsWritePercentStorageData(con = mars, 
 #'    percentstorageused_peak = summary_250$percentstorageused_peak,
-#'    percentstorageused_relative = summary_250%percentstorageused_relative,
-#'    ow_uid = summary_250%ow_uid,
+#'    percentstorageused_relative = summary_250$percentstorageused_relative,
+#'    ow_uid = summary_250$ow_uid,
 #'    radar_event_uid = summary_250$rainfall_gage_event_uid,
 #'    snapshot_uid = summary_250$snapshot_uid,
 #'    observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 #' 
+
+
 marsWritePercentStorageData <- function(con, 
                                         percentstorageused_peak,
                                         percentstorageused_relative,
@@ -1151,7 +1188,7 @@ marsWritePercentStorageData <- function(con,
 #' 
 #' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
 #' 
-#' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWritePercentStorageData}},  \code{\link{marsWriteDraindownData}}
+#' @seealso \code{\link{marsWritePercentStorageData}},  \code{\link{marsWriteDraindownData}}
 #' 
 #' @export
 #' 
@@ -1206,6 +1243,7 @@ marsWriteOvertoppingData <- function(con,
 #' 
 #' @param con Formal class PostgreSQL, a connection to the MARS Analysis database
 #' @param draindown_hr vector, numeric, draindown time (hr)
+#' @param draindown_assessment_lookup_uid vector, int, assessment of draindown duration from \code{\link{marsDraindownAssessment}} 
 #' @param ow_uid vector, numeric observation well UID
 #' @param radar_event_uid vector, numeric
 #' @param snapshot_uid vector, numeric
@@ -1213,7 +1251,7 @@ marsWriteOvertoppingData <- function(con,
 #' 
 #' @return \code{TRUE} if the write is succesful, or an error message if unsuccessful
 #' 
-#' @seealso \code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWritePercentStorageData}}, \code{\link{marsWriteOvertoppingData}}, 
+#' @seealso \code{\link{marsWritePercentStorageData}}, \code{\link{marsWriteOvertoppingData}}, 
 #' 
 #' @export
 #' 
@@ -1221,9 +1259,9 @@ marsWriteOvertoppingData <- function(con,
 #' 
 #' marsWriteDraindownData(con,
 #'   draindown_hr = summary_250$draindown_hr,
+#'   draindown_assessment_lookup_uid = summary_250$draindown_assessment_lookup_uid,
 #'   ow_uid = summary_250$ow_uid,
-#'   source = "gage",
-#'   event_uid = summary_250$rainfall_gage_event_uid, 
+#'   radar_event_uid = summary_250$rainfall_gage_event_uid, 
 #'   snapshot_uid = summary_250$snapshot_uid,
 #'   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 #' 

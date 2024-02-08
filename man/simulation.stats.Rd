@@ -8,7 +8,7 @@
 \alias{marsDraindown_hr}
 \title{Simulation Stats}
 \usage{
-marsOvertoppingCheck_bool(waterlevel_ft, storage_depth_ft)
+marsOvertoppingCheck_bool(waterlevel_ft, storage_depth_ft, weir_depth)
 
 marsPeakStorage_percent(waterlevel_ft, storage_depth_ft)
 
@@ -26,6 +26,8 @@ marsDraindown_hr(dtime_est, rainfall_in, waterlevel_ft)
 \item{orifice_outflow_ft3}{Orifice outflow volume (cf)}
 
 \item{rainfall_in}{Rainfall depths during periods corresponding to times in  dtime_est (in)}
+
+\item{weir_depth_ft}{Elevation of overflow for storage structures}
 }
 \value{
 \describe{
@@ -57,7 +59,7 @@ Summarize and Evaluate System Performance
 \examples{
 
 simulation_summary <- simulated_data \%>\%
-  dplyr::group_by(rainfall_gage_event_uid) \%>\%
+  dplyr::group_by(event) \%>\%
   dplyr::summarize(startdate = min(dtime_est), #add start date of event to summary table,
                   
    #1. Overtopping check

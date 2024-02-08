@@ -7,10 +7,9 @@
 marsWriteDraindownData(
   con,
   draindown_hr,
-  performance_draindown_assessment_lookup_uid,
+  draindown_assessment_lookup_uid,
   ow_uid,
-  source = c("gage", "radarcell"),
-  event_uid,
+  radar_event_uid,
   snapshot_uid,
   observed_simulated_lookup_uid
 )
@@ -20,11 +19,11 @@ marsWriteDraindownData(
 
 \item{draindown_hr}{vector, numeric, draindown time (hr)}
 
+\item{draindown_assessment_lookup_uid}{vector, int, assessment of draindown duration from \code{\link{marsDraindownAssessment}}}
+
 \item{ow_uid}{vector, numeric observation well UID}
 
-\item{source}{string, one of "gage" or "radarcell" for whether rain gage events or radar rainfall events have been processed}
-
-\item{event_uid}{vector, numeric}
+\item{radar_event_uid}{vector, numeric}
 
 \item{snapshot_uid}{vector, numeric}
 
@@ -41,13 +40,13 @@ and write to MARS Analysis Database performance_draindwown table
 
 marsWriteDraindownData(con,
   draindown_hr = summary_250$draindown_hr,
+  draindown_assessment_lookup_uid = summary_250$draindown_assessment_lookup_uid,
   ow_uid = summary_250$ow_uid,
-  source = "gage",
-  event_uid = summary_250$rainfall_gage_event_uid, 
+  radar_event_uid = summary_250$rainfall_gage_event_uid, 
   snapshot_uid = summary_250$snapshot_uid,
   observed_simulated_lookup_uid = summary_250$observed_simulated_lookup_uid)
 
 }
 \seealso{
-\code{\link[pwdgsi]{marsWriteSaturatedData}}, \code{\link{marsWritePercentStorageData}}, \code{\link{marsWriteOvertoppingData}},
+\code{\link{marsWritePercentStorageData}}, \code{\link{marsWriteOvertoppingData}},
 }

@@ -4,7 +4,7 @@
 \alias{marsFetchPrivateSMPRecords}
 \title{Return query results of private SMPs}
 \usage{
-marsFetchPrivateSMPRecords(con, tracking_numbers)
+marsFetchPrivateSMPRecords(con, tracking_number)
 }
 \arguments{
 \item{con}{Formal class PostgreSQL, a connection to the MARS Analysis database}
