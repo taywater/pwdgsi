@@ -998,12 +998,13 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   
   # !!sym syntax comes from here: https://stackoverflow.com/questions/49786597/r-dplyr-filter-with-a-dynamic-variable-name
   # Because our variable name is a string, we need to make it evaluate as an R symbol instead of the string
+  # choked during recent deployment, going to attempt to use rlang::sym() instead
   
   #filter out rain data for events that do have corresponding water level data
-  results[["Rainfall Data"]] %<>% dplyr::filter((!!sym(rainparams$eventuidvar) %in% results[["Level Data"]][, rainparams$eventuidvar]))
+  results[["Rainfall Data"]] %<>% dplyr::filter((!!rlang::sym(rainparams$eventuidvar) %in% results[["Level Data"]][, rainparams$eventuidvar]))
   
   #fiter out rain events that no longer have corresponding rainfall data
-  results[["Rain Event Data"]] %<>% dplyr::filter((!!sym(rainparams$eventuidvar) %in% results[["Rainfall Data"]][, rainparams$eventuidvar]))
+  results[["Rain Event Data"]] %<>% dplyr::filter((!!rlang::sym(rainparams$eventuidvar) %in% results[["Rainfall Data"]][, rainparams$eventuidvar]))
   
   if(debug){
     print(paste("filtering_time:", (proc.time()-ptm)[3]))
