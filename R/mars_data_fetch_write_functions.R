@@ -887,8 +887,12 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   if(rain_events == TRUE){
     for(i in 1:length(target_id)){
       results[["Rain Event Data step"]] <- marsFetchRainEventData(con, target_id[i], source, start_date[i], end_date[i])
-      start_date[i] <- min(results[["Rain Event Data step"]]$eventdatastart_est)
-      end_date[i] <- max(results[["Rain Event Data step"]]$eventdataend_est)
+      start_date[i] <- ifelse(nrow(results$`Rain Event Data step`) > 1,
+                              min(results[["Rain Event Data step"]]$eventdatastart_est),
+                              start_date[i])
+      end_date[i] <-  ifelse(nrow(results$`Rain Event Data step`) > 1,
+                           max(results[["Rain Event Data step"]]$eventdatastart_est),
+                           end_date[i])
       results[["Rain Event Data"]] <- dplyr::bind_rows(results[["Rain Event Data"]], results[["Rain Event Data step"]])
       results[["Rain Event Data step"]] <- NULL
     }
