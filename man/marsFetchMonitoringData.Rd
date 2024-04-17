@@ -16,7 +16,8 @@ marsFetchMonitoringData(
   rainfall = TRUE,
   level = TRUE,
   daylight_savings = FALSE,
-  debug = FALSE
+  debug = FALSE,
+  browser = FALSE
 )
 }
 \arguments{

@@ -14,17 +14,11 @@ a dataframe with 1309 rows and 6 columns
   \item{simulated_vol_ft3}{simulated volume in the system (cf)}
   \item{simulated_orifice_vol_ft3}{simulated volume leaving the orifice (cf)}
   }
-
-An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 1309 rows and 6 columns.
 }
 \usage{
 simulated_data
-
-testing
 }
 \description{
 An example dataframe of simulated draindown data
-
-An example list of observed data for system 1265-7. Used for testing function performance.
 }
 \keyword{datasets}

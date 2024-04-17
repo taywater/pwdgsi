@@ -551,11 +551,142 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
   
 }
 
+# marsCheckSMPSnapshot --------------------------------
+#' Check if a data snapshot for an SMP exists
+#'
+#' Returns a data frame with requested snapshot date, SMP ID, OW suffix, and SMP snapshot
+#'   
+#' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
+#' @param smp_id vector of chr, SMP ID, where the user has requested data
+#' @param ow_suffix vector of chr, OW Suffix, where the user has requested data
+#' @param request_date single date or vector the length of SMP ID, either "YYYY-MM-DD" or "today", of the request data
+#'
+#' @return vector of boolean outcomes,
+#'   
+#'     \item{snapshot_present}{bool, TRUE or FALSE value based on whether a snapshot can exist or is made}
+#'     
+#' @export
+#'   
+
+marsCheckSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
+  
+  #1 Argument Validation
+  #1.1 Check database connection
+  if(!odbc::dbIsValid(con)){
+    stop("Argument 'con' is not an open ODBC channel")
+  }
+  
+  #1.2 check argument lengths
+  if(length(smp_id) != length(ow_suffix)){
+    stop("smp_id and ow_suffix must be of equal length")
+  }
+  
+  if(length(smp_id) != length(request_date) & length(request_date) != 1){
+    stop("request_date must be a single date, or equal length to smp_id and ow_suffix")
+  }
+  
+  #1.3 Assign today() to 'today'
+  request_date <- stringr::str_replace(request_date, "today", as.character(lubridate::today()))
+  
+  #1.4 Check if smp_id and ow_suffix combination are valid
+  #1.4.1 Create dataframe
+  request_df <- data.frame(smp_id, ow_suffix, request_date, stringsAsFactors = FALSE)
+  
+  #1.4.2 Query fieldwork.tbl_ow and check if each smp id and observation well are there
+  # Initialize dataframe
+  ow_validity <- data.frame(ow_uid = numeric(), 
+                            smp_id =  character(),  
+                            ow_suffix = character(), 
+                            stringsAsFactors = FALSE)
+  
+  # Check if smp_id and ow_suffix are in the MARS table "fieldwork.tbl_ow"
+  # Return matches
+  for(i in 1:length(request_df$smp_id)){
+    ow_valid_check <- odbc::dbGetQuery(con, "SELECT * FROM fieldwork.tbl_ow") %>% dplyr::select(-facility_id) %>%  dplyr::filter(smp_id == request_df$smp_id[i] & ow_suffix == request_df$ow_suffix[i])
+    ow_validity <- dplyr::bind_rows(ow_validity, ow_valid_check)
+  }
+  
+  
+  # Join dates back to observation wells and ow_uids back to request criteria
+  ow_validity %<>% dplyr::left_join(request_df, by = c("smp_id", "ow_suffix")) 
+  request_df_validity <- dplyr::left_join(request_df  %>% dplyr::select(-request_date), ow_validity, by = c("smp_id", "ow_suffix"))
+  
+  #2 Query
+  #2.1 initialize dataframe
+  result <- data.frame("snapshot_uid" = numeric(),
+                       "ow_uid" = numeric(),
+                       "dcia_ft2" = numeric(),
+                       "storage_footprint_ft2" = numeric(), 
+                       "orifice_diam_in" = numeric(),
+                       "infil_footprint_ft2" = numeric(),
+                       "storage_depth_ft" = numeric(),
+                       "lined" = character(), # make logical later 
+                       "surface" = character(),  # make logical later 
+                       "storage_volume_ft3" = numeric(),
+                       "infil_dsg_rate_inhr" = numeric(),
+                       stringsAsFactors = FALSE)
+  
+  
+  #2.2 Run get_arbitrary_snapshot in a loop and bind results
+  for(i in 1:length(ow_validity$smp_id)){
+    snapshot_query <- paste0("SELECT * FROM metrics.fun_get_arbitrary_snapshot('", ow_validity$smp_id[i], "','", ow_validity$ow_suffix[i], "','", ow_validity$request_date[i], "') ORDER BY snapshot_uid DESC LIMIT 1")
+    new_result <- odbc::dbGetQuery(con, snapshot_query)
+    result <- dplyr::bind_rows(result, new_result)
+  }
+  
+  #3 Are the snapshots we have equal to the current GreenIT values!?
+  
+  #3.1 Let's look at the view greenit unified
+  current_greenit_query <- paste0("SELECT * FROM external.viw_greenit_unified where smp_id IN ('",paste(ow_validity$smp_id, collapse = "', '"),"')")
+  current_greenit <- odbc::dbGetQuery(con, current_greenit_query)
+  
+  #3.2 Now let's compare between the two for differences
+  comp_fields <- c("ow_uid", "dcia_ft2", "storage_footprint_ft2",
+                   "orifice_diam_in", "infil_footprint_ft2", "storage_depth_ft",
+                   "lined", "surface", "storage_volume_ft3", "infil_dsg_rate_inhr")
+
+  comp_greenit <- current_greenit %>% dplyr::select(comp_fields) %>% arrange(ow_uid)
+  comp_result <- result %>% dplyr::select(comp_fields) %>% arrange(ow_uid)
+  
+  # let's compare
+  for(i in length(comp_result$ow_uid)){
+  result_hash <- digest::digest(comp_result[i,], algo = "md5")
+  greenit_hash <- digest::digest(comp_greenit[i,], algo = "md5")  
+  
+  if(result_hash != greenit_hash){
+    
+    smp_id_x <- ow_validity$smp_id[ow_validity$ow_uid == comp_result$ow_uid[i]]
+    suffix_x <- ow_validity$ow_suffix[ow_validity$ow_uid == comp_result$ow_uid[i]]
+    
+    #new snapshot entry dbSendQuery, complete tonight/tomorrow
+    update_query <- paste0("select * from metrics.fun_insert_snapshot('",smp_id_x,"', '",suffix_x,"')")
+    dbGetQuery(con, update_query)
+    }
+  
+  }
+  
+  
+  #4 Join results to original request df
+  #4.1 not.na function
+    not.na <- function(x){
+    !is.na(x)
+  }
+  
+  #4.2 turn it into a bool
+  result_bool <- request_df_validity %>% dplyr::left_join(result, by = "ow_uid") %>%
+                 dplyr::select(snapshot_uid) %>% not.na() %>% as.vector
+  
+  return(result_bool)
+  
+}
+
+
+
 # marsFetchSMPSnapshot --------------------------------
 
 #' Fetch data snapshot for an SMP
 #'
-#' Returns a data frame with requested snapshote date, SMP ID, OW suffix, and SMP snapshot
+#' Returns a data frame with requested snapshot date, SMP ID, OW suffix, and SMP snapshot
 #'   
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param smp_id vector of chr, SMP ID, where the user has requested data

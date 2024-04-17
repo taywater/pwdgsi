@@ -8,16 +8,13 @@ test_that("marsWaterLevelplot", {
   # # data path
   # folder <- paste0(getwd(),'/tests/testthat/')
   # # source test data for a few systems
-  # load("C://users//brian.cruice//pwdgsi//tests//testthat//sys306_data.Rds")
-  # load("c:/users/brian.cruice/pwdgsi/tests/testthat/sys1265_data.Rds")
-  # load("C://users//brian.cruice//pwdgsi//tests//testthat//sys1265_snap.Rds")
-  # load("C://users//brian.cruice//pwdgsi//tests//testthat//sys306_snap.Rds")
-  
   # load data
-  load(system.file("testdata","sys306_data.Rds",package = "pwdgsi"))
-  load(system.file("testdata","sys1265_data.Rds",package = "pwdgsi")) 
-  load(system.file("testdata","sys306_snap.Rds",package = "pwdgsi"))
-  load(system.file("testdata","sys1265_snap.Rds",package = "pwdgsi"))
+  sys306_data <- pwdgsi::sys306_data
+  sys1265_data <- pwdgsi::sys1265_data
+  # sys306_mets <- pwdgsi::sys306_mets
+  # sys1265_mets <- pwdgsi::sys1265_mets
+  sys306_snap <- pwdgsi::sys306_snap
+  sys1265_snap <- pwdgsi::sys1265_snap
   
   #system 2
   sys1265_event <- sys1265_data$`Rain Event Data` %>%
@@ -73,13 +70,14 @@ expectedWLMets <- c("gg", "ggplot")
 
 test_that("marsWaterLevelplot with metrics", {
   
-  # # source test data for a few systems
-  load(system.file("testdata","sys306_data.Rds",package = "pwdgsi"))
-  load(system.file("testdata","sys1265_data.Rds",package = "pwdgsi")) 
-  sys306_mets <- readRDS(system.file("testdata","sys306_metrics.Rds",package = "pwdgsi"))
-  sys1265_mets <- readRDS(system.file("testdata","sys1265_metrics.Rds",package = "pwdgsi"))
-  load(system.file("testdata","sys306_snap.Rds",package = "pwdgsi"))
-  load(system.file("testdata","sys1265_snap.Rds",package = "pwdgsi"))
+  # source test data for a few systems
+  sys306_data <- pwdgsi::sys306_data
+  sys1265_data <- pwdgsi::sys1265_data
+  sys306_mets <- pwdgsi::sys306_mets
+  sys1265_mets <- pwdgsi::sys1265_mets
+  sys306_snap <- pwdgsi::sys306_snap
+  sys1265_snap <- pwdgsi::sys1265_snap
+
   
   
   #system 2
@@ -163,8 +161,9 @@ test_that("marsEventCombinedPlot w/ date supplied", {
 test_that("marsEventCombinedPlot w/ event supplied", {
   
   # # source pre-calculated metrics
-  sys306_mets <- readRDS(system.file("testdata","sys306_metrics.Rds",package = "pwdgsi"))
-  sys1265_mets <- readRDS(system.file("testdata","sys1265_metrics.Rds",package = "pwdgsi"))
+  sys306_mets <- pwdgsi::sys306_mets
+  sys1265_mets <- pwdgsi::sys1265_mets
+
 
   
   comb3 <- marsEventCombinedPlot(con = mars_con,

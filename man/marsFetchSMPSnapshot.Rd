@@ -37,5 +37,5 @@ Output will be a dataframe with the following columns:
     Function queries the SQL function "insert_snapshot", which inserts rows into the MARS table "snapshot", and, in turn, "snapshot_metadata".
 }
 \description{
-Returns a data frame with requested snapshote date, SMP ID, OW suffix, and SMP snapshot
+Returns a data frame with requested snapshot date, SMP ID, OW suffix, and SMP snapshot
 }

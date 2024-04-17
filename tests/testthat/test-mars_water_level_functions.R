@@ -4,13 +4,12 @@ mars_con <- dbConnect(odbc(), "mars14_datav2")
 test_that("RPSU calculations", {
   
   # load data
-  load(system.file("testdata","sys306_data.Rds",package = "pwdgsi"))
-  load(system.file("testdata","sys1265_data.Rds",package = "pwdgsi")) 
-  sys306_mets <- readRDS(system.file("testdata","sys306_metrics.Rds",package = "pwdgsi"))
-  sys1265_mets <- readRDS(system.file("testdata","sys1265_metrics.Rds",package = "pwdgsi"))
-  load(system.file("testdata","sys306_snap.Rds",package = "pwdgsi"))
-  load(system.file("testdata","sys1265_snap.Rds",package = "pwdgsi"))
-  
+  sys306_data <- pwdgsi::sys306_data
+  sys1265_data <- pwdgsi::sys1265_data
+  sys306_mets <- pwdgsi::sys306_mets
+  sys1265_mets <- pwdgsi::sys1265_mets
+  sys306_snap <- pwdgsi::sys306_snap
+  sys1265_snap <- pwdgsi::sys1265_snap
   
   # pick an event
   event306 <- sys306_data$`Rain Event Data` %>%
@@ -42,13 +41,13 @@ test_that("RPSU calculations", {
 test_that("Infil calculations", {
   
   # load data
-  load(system.file("testdata","sys306_data.Rds",package = "pwdgsi"))
-  load(system.file("testdata","sys1265_data.Rds",package = "pwdgsi"))
-  sys306_mets <- readRDS(system.file("testdata","sys306_metrics.Rds",package = "pwdgsi"))
-  sys1265_mets <- readRDS(system.file("testdata","sys1265_metrics.Rds",package = "pwdgsi"))
-  load(system.file("testdata","sys306_snap.Rds",package = "pwdgsi"))
-  load(system.file("testdata","sys1265_snap.Rds",package = "pwdgsi"))
-  
+  sys306_data <- pwdgsi::sys306_data
+  sys1265_data <- pwdgsi::sys1265_data
+  sys306_mets <- pwdgsi::sys306_mets
+  sys1265_mets <- pwdgsi::sys1265_mets
+  sys306_snap <- pwdgsi::sys306_snap
+  sys1265_snap <- pwdgsi::sys1265_snap
+
   # pick an event
   event306 <- sys306_data$`Rain Event Data` %>%
     dplyr::filter(eventdepth_in == max(sys306_data$`Rain Event Data`$eventdepth_in)) %>%
