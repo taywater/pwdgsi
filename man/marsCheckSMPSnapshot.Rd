@@ -21,5 +21,5 @@ vector of boolean outcomes,
     \item{snapshot_present}{bool, TRUE or FALSE value based on whether a snapshot can exist or is made}
 }
 \description{
-Returns a data frame with requested snapshot date, SMP ID, OW suffix, and SMP snapshot
+Returns a vector of boolean outcomes, TRUE if a snapshot exists or is written, FALSE if one does not exist
 }

@@ -554,7 +554,7 @@ marsFetchBaroData <- function(con, target_id, start_date, end_date, data_interva
 # marsCheckSMPSnapshot --------------------------------
 #' Check if a data snapshot for an SMP exists
 #'
-#' Returns a data frame with requested snapshot date, SMP ID, OW suffix, and SMP snapshot
+#' Returns a vector of boolean outcomes, TRUE if a snapshot exists or is written, FALSE if one does not exist
 #'   
 #' @param con An ODBC connection to the MARS Analysis database returned by odbc::dbConnect
 #' @param smp_id vector of chr, SMP ID, where the user has requested data
