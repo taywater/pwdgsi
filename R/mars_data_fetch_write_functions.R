@@ -762,31 +762,42 @@ marsFetchSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
   #2.1 initialize dataframe
   result <- data.frame("snapshot_uid" = numeric(),
                        "ow_uid" = numeric(),
+                       "well_measurements_uid" = integer(),
+                       "smp_id" = character(),
+                       "ow_suffix" = character(),
                        "dcia_ft2" = numeric(),
                        "storage_footprint_ft2" = numeric(), 
                        "orifice_diam_in" = numeric(),
                        "infil_footprint_ft2" = numeric(),
-                       "assumption_orificeheight_ft" = numeric(),
                        "storage_depth_ft" = numeric(),
+                       "lined" = logical(),
+                       "surface" = logical(),
+                       "storage_volume_ft3" = numeric(),
+                       "infil_dsg_rate_inhr" = numeric(),
+                       "orifice_lookup_uid" = integer(),
+                       "orificedepth_ft" = numeric(),
+                       "sumpdepth_lookup_uid" = integer(),
                        "sumpdepth_ft" = numeric(),
-                       #"lined" = logical(), 
-                       #"surface" = logical(), 
                        stringsAsFactors = FALSE)
   
   
   #2.2 Run get_arbitrary_snapshot in a loop and bind results
   for(i in 1:length(ow_validity$smp_id)){
-    snapshot_query <- paste0("SELECT * FROM metrics.fun_get_arbitrary_snapshot('", ow_validity$smp_id[i], "','", ow_validity$ow_suffix[i], "','", ow_validity$request_date[i], "') ORDER BY snapshot_uid DESC LIMIT 1")
+    snapshot_query <- paste0("SELECT * FROM metrics.viw_snapshot_well_measurements where ow_uid in (",
+                             ow_validity$ow_uid[i],") ORDER BY snapshot_uid DESC LIMIT 1")
     new_result <- odbc::dbGetQuery(con, snapshot_query)
+    new_result$lined <- new_result$lined %>% as.logical()
+    new_result$surface <- new_result$surface %>% as.logical()
     result <- dplyr::bind_rows(result, new_result)
   }
   
   #3 Join and return
   #3.1 Join results to request criteria
-  snapshot_results <- request_df_validity %>% dplyr::left_join(result, by = "ow_uid") 
-  
+  # snapshot_results <- request_df_validity %>% dplyr::left_join(result, by = "ow_uid") %>%
+  #                     dplyr::filter(!is.na(ow_uid))
+  # 
   #3.2 Return results
-  return(snapshot_results)
+  return(result)
 }
 
 # marsFetchLevelData --------------------------------

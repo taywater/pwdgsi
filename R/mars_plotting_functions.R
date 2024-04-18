@@ -963,16 +963,16 @@ marsEventCombinedPlot <- function(con,
                                request_date = event_date)
   
   #set NA's to 0's
-  if( is.na(snapshot$assumption_orificeheight_ft) ){snapshot$assumption_orificeheight_ft <- 0}
+  if( is.na(snapshot$orificedepth_ft) ){snapshot$orificedepth_ft <- 0}
 
   # set max storage and orifice defaults when not provided
   # browser()
   if( missing(orifice_show) ){
-    orifice_show <- if(snapshot$assumption_orificeheight_ft == 0){0}else{1}
+    orifice_show <- if(snapshot$orificedepth_ft == 0){0}else{1}
   }
   
   if( missing(orifice_height_ft) ){
-    orifice_height_ft <- snapshot$assumption_orificeheight_ft
+    orifice_height_ft <- snapshot$orificedepth_ft
   }
   
   if( missing(storage_depth_ft) ){
