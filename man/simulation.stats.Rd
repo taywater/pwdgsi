@@ -8,7 +8,7 @@
 \alias{marsDraindown_hr}
 \title{Simulation Stats}
 \usage{
-marsOvertoppingCheck_bool(waterlevel_ft, storage_depth_ft, weir_depth)
+marsOvertoppingCheck_bool(waterlevel_ft, storage_depth_ft)
 
 marsPeakStorage_percent(waterlevel_ft, storage_depth_ft)
 
@@ -26,12 +26,12 @@ marsDraindown_hr(dtime_est, rainfall_in, waterlevel_ft)
 \item{orifice_outflow_ft3}{Orifice outflow volume (cf)}
 
 \item{rainfall_in}{Rainfall depths during periods corresponding to times in  dtime_est (in)}
-
-\item{weir_depth_ft}{Elevation of overflow for storage structures}
 }
 \value{
 \describe{
-     \item{\code{marsOvertoppingCheck_bool}}{Output is true or false based on overtopping evaluation}
+     \item{\code{marsOvertoppingCheck_bool}}{Output is TRUE or FALSE based on overtopping evaluation}
+     \item{\code{-710}}{No Water Level were provided for evaluation}
+     \item{\code{-720}}{Non-numeric argument was provided for either storage_depth_ft}
 }
 
 \describe{
