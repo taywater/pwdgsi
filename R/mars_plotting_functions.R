@@ -459,12 +459,18 @@ marsWaterLevelPlot <- function(event,
     
     ggplot2::geom_hline(yintercept = storage_depth_ft, color = "orange", linewidth = 1.2) + #top
     
-    ggplot2::geom_label(ggplot2::aes(x = min_date + event_duration/4, 
-                                     y = storage_depth_ft*1.04, 
-                                     label = "Maximum Storage Depth"),
+    ggplot2::geom_label(x = min_date + event_duration/4,
+                                     y = storage_depth_ft*1.04,
+                                     label = "Maximum Storage Depth",
                         size = ggplot2::rel(5),
-                        fill = "white", 
+                        fill = "white",
                         label.size = 0) +
+    # ggplot2::annotate(ggplot2::aes(x = min_date + event_duration/4, 
+    #                                  y = storage_depth_ft*1.04, 
+    #                                  label = "Maximum Storage Depth"),
+    #                     size = ggplot2::rel(5),
+    #                     fill = "white", 
+    #                     label.size = 0) +
     
     #Observed water level
     ggplot2::geom_line(data = obs_df,
@@ -833,6 +839,11 @@ marsEventCombinedPlot <- function(con,
                                   
 ){
   
+  ##debug
+  # if(debug == TRUE){
+  #   browser()
+  # }
+  
   ## Check DB connection
   if(!odbc::dbIsValid(con)){
     stop("Argument 'con' is not an open ODBC channel")
@@ -944,9 +955,18 @@ marsEventCombinedPlot <- function(con,
   #filter to specific event
   rainfall_data <- rainfall_data[rainfall_data[,event_col] == event_data[,event_col],]
   
-  level_data <- mon_data$`Level Data`[!is.na(mon_data$`Level Data`[,event_col]),]
+  
+  # make sure we capture at least three points before the water level response
+  level_data <- mon_data$`Level Data`
+  level_data$lvl_lag <- c(diff(level_data$level_ft, 3),0,0,0)
+  level_data <- level_data %>% dplyr::mutate(lageql = abs(level_ft - lvl_lag)) %>%
+                dplyr::mutate(isevent = !is.na(level_data[,event_col])) %>%
+                dplyr::filter(lageql != 0 | isevent) %>%
+                #remove columns no longer used
+                dplyr::select(-lvl_lag, -lageql,-isevent)
+  # level_data <- mon_data$`Level Data`[!is.na(mon_data$`Level Data`[,event_col]),]
   #filter to specific event
-  level_data <- level_data[level_data[,event_col] == event_data[,event_col],]
+  # level_data <- level_data[level_data[,event_col] == event_data[,event_col],]
   
   
   #match inputs to marsCombinedPlot
