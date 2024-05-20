@@ -87,7 +87,7 @@ marsFetchRainfallData <- function(con, target_id, source = c("gage", "radar"), s
   }
   
   #Are we working with gages or radarcells?
-  if(source == "gage"){
+  if(source == "gage" | source == "gauge"){
     rainparams <- data.frame(smptable = "admin.tbl_smp_gage", raintable = "data.viw_gage_rainfall", uidvar = "gage_uid", loctable = "admin.tbl_gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
   } else if(source == "radar"){
     rainparams <- data.frame(smptable = "admin.tbl_smp_radar", raintable = "data.viw_radar_rainfall", uidvar = "radar_uid", loctable = "admin.tbl_radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)
@@ -838,7 +838,10 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
   validity_query <- paste0("select * from fieldwork.fun_get_ow_uid('",target_id,"','",ow_suffix,"', NULL)")
   ow_uid <- odbc::dbGetQuery(con, validity_query)
   
-  #1.3 Pick which table to query
+  #1.3 check if data exists in viw will have a sump. Change sump_correct to FALSE if necessary
+  
+  
+  #1.4 Pick which table to query
   if(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")){
     level_table <- "data.tbl_gw_depthdata_raw"
   }else if(!(stringr::str_replace(ow_suffix, ".$", "") %in% c("CW", "GW", "PZ")) & sump_correct == TRUE){
@@ -849,7 +852,7 @@ marsFetchLevelData <- function(con, target_id, ow_suffix, start_date, end_date, 
   start_date %<>% as.POSIXct(format = '%Y-%m-%d')
   end_date %<>% as.POSIXct(format = '%Y-%m-%d')
   
-  #1.4 Add buffer to requested dates
+  #1.5 Add buffer to requested dates
   start_date <- lubridate::round_date(start_date) - lubridate::days(1)
   end_date <- lubridate::round_date(end_date) + lubridate::days(1)
   
@@ -910,7 +913,7 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
   }
   
   #Are we working with gages or radarcells?
-  if(source == "gage"){
+  if(source == "gage" | source == "gauge"){
     rainparams <- data.frame(smptable = "admin.tbl_smp_gage", eventtable = "data.tbl_gage_event", uidvar = "gage_uid", loctable = "admin.tbl_gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
   } else if(source == "radar"){
     rainparams <- data.frame(smptable = "admin.tbl_smp_radar", eventtable = "data.tbl_radar_event", uidvar = "radar_uid", loctable = "admin.tbl_radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)
@@ -974,11 +977,11 @@ marsFetchRainEventData <- function(con, target_id, source = c("gage", "radar"), 
 
 marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage", "radar"), start_date, end_date,
                                     sump_correct = TRUE, rain_events = TRUE, rainfall = TRUE, level = TRUE, daylight_savings = FALSE,
-                                    debug = FALSE, browser = FALSE){
+                                    debug = FALSE){
 
-  if(browser == TRUE){
-    browser()
-  }
+  # if(browser == TRUE){
+  #   browser()
+  # }
   
   #1 Argument validation
   #1.1 Check database connection
@@ -988,11 +991,11 @@ marsFetchMonitoringData <- function(con, target_id, ow_suffix, source = c("gage"
   
   # Was a string supplied to source?
   if( isTRUE(all.equal(source, c("gage","radar"))) ){
-    stop("No argument supplied for 'source'. Provide a string of either 'gage' or 'radar'")
+    stop("No argument supplied for 'source'. Provide a string of either 'gage/gauge' or 'radar'")
   }
   
   #Are we working with gages or radarcells?
-  if(source == "gage"){
+  if(source == "gage" | source == "gauge"){
     rainparams <- data.frame(smptable = "admin.tbl_smp_gage", eventtable = "data.tbl_gage_event", uidvar = "gage_uid", loctable = "admin.tbl_gage", eventuidvar = "gage_event_uid", stringsAsFactors=FALSE)
   } else if(source == "radar"){
     rainparams <- data.frame(smptable = "admin.tbl_smp_radar", eventtable = "data.tbl_radar_event", uidvar = "radar_uid", loctable = "admin.tbl_radar", eventuidvar = "radar_event_uid", stringsAsFactors=FALSE)

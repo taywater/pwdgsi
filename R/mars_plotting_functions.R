@@ -850,7 +850,7 @@ marsEventCombinedPlot <- function(con,
   }
 
   # Was a string supplied to source?
-  if( isTRUE(all.equal(source, c("gage","radar"))) ){
+  if( isTRUE(all.equal(source, c("gage", "radar"))) ){
     stop("No argument supplied for 'source'. Provide a string of either 'gage' or 'radar'")
   }
   
