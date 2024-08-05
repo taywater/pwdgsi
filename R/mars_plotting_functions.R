@@ -1175,6 +1175,96 @@ marsBaroRasterPlot <- function(baro){
 }
 
 
+# marsOvertoppingPlot ------------------------------------------------------------
+
+#' Add metrics to an existing water level or combined plot
+#'
+#' Return the gpglot object, with the metrics added to the object as a tableGrob annotation
+#'
+#' @param data                                dataframe, a data frame with a unique row each containing ow_uid, radar_event_uid, ow_suffix, eventdatastart_edt, smp_id, eventavgintensity_inhr, eventpeakintensity_inhr, eventdepth_in, and overtop
+#' @param design_storm                        num, a numeric value fro the design stomr in inches, see \code{marsFetchSMPSnapshot}
+#' @param event_dates                         date, a vector of dates to show up as major events in the monitoring locations history (maintenance, retrofit, etc.)
+#' @param event_descriptions                  char, a vector of strings corresponding to labels fo each major event on the plot (eg, "pipe jetting", "filter bag replaced") 
+#' 
+#' @return Output ggplot object plotting overtopping, event peak intensity, and date
+#'  
+#' @export
+#' 
+marsOvertoppingPlot <- function(data,
+                                design_storm,
+                                event_dates = NULL,
+                                event_descriptions = NULL){
+  
+  
+  min_date <- min(data$eventdatastart_edt)
+  max_date <- max(data$eventdatastart_edt)
+  
+  
+  event_dates <- event_dates %>% lubridate::as_datetime(format = date_formats)
+  
+  #Set overtop to sizes
+  data$overtop_sz[data$overtop == FALSE] <- as.numeric(2)
+  data$overtop_sz[data$overtop == TRUE] <- as.numeric(4)
+  data$overtop_col[data$overtop == FALSE] <- "#899DA4"
+  data$overtop_col[data$overtop == TRUE] <- "#C93312"
+  
+  #subset of data exceeding design storm
+  data_ovr_design <- data %>% dplyr::filter(eventdepth_in > design_storm)
+  data <- data %>% mutate("ExceedDesignStorm" = ifelse(eventdepth_in > design_storm,"True",NA))
+  # y-max value
+  ymax_obs <- max(data$eventpeakintensity_inhr, na.rm = TRUE)
+  
+  
+  plot_x <- ggplot(data,
+                   aes(x = eventdatastart_edt,
+                       y = eventpeakintensity_inhr)) +
+    geom_point(aes(color = factor(overtop_col),
+                   size = factor(overtop_sz))) +
+    geom_hline(yintercept = 2.5, color = color = "#DC863B", size = 1.5) +
+    scale_y_continuous(limits = c(0,max(3.6,ymax_obs)), minor_breaks =seq(0,max(3,ymax_obs),0.2)) +
+    scale_x_datetime(date_minor_breaks = "2 months") +
+    ylab("Event Peak Intensity (in/hr)") + xlab("Event Date/Time") +
+    geom_text(label = "Philadelphia 1-year, 15-minute Peak Intensity: 2.5 in/hr",
+              y = 2.6, color = "black", size = 12 / .pt, hjust = "left",
+              x = data$eventdatastart_edt[round(0.05*length(data$eventdatastart_edt))]) +
+    ggtitle(paste0("Event Peak Intensity and Overtopping vs Time for ",data$smp_id[1])) +
+    
+    #add design storm values
+    geom_point(aes(x = eventdatastart_edt,
+                   y = eventpeakintensity_inhr, size = factor(overtop_sz),  color = factor(overtop_col), shape = factor(ExceedDesignStorm))) +
+    scale_shape_manual(name = paste0("Exceeds Design Storm Depth: ",round(design_storm,2)," in"), values = c(2), labels = c("True"), na.translate = FALSE) +
+    scale_color_manual(name = "Overtopping", values = c("#899DA4" "#C93312"), labels = c("False","True"), guide = guide_legend(reverse = TRUE)) +
+    scale_size_manual(name = "Overtopping", values = c(2,4), labels = c("False","True"), guide = guide_legend(reverse = TRUE)) +
+    #from pwdgsi plots
+    ggplot2::theme(
+      #text = element_text(size = rel(2)), #size previously set to 16
+      axis.title.y = ggplot2::element_text(size = ggplot2::rel(1.2), color = "black"),
+      axis.text.x = ggplot2::element_text(size = ggplot2::rel(1.2), color = "black"), # set font size and color of x axis text #size previously set to 14
+      axis.text.y = ggplot2::element_text(size = ggplot2::rel(1.2), color = "black"), # set font size and color of y axis text
+      panel.background =  ggplot2::element_rect(fill = "whitesmoke", colour = NA), # set white background
+      panel.border =      ggplot2::element_rect(fill = NA, colour="black"), # set black border
+      panel.grid.major =  ggplot2::element_line(colour = "grey70", size = 0.5), # set major grid lines
+      panel.grid.minor =  ggplot2::element_line(colour = "grey90", size = 0.5), # set minor grid lines
+      legend.position = "bottom", #format legend (to be compiled with rainfall plot in grid.arrange())
+      legend.text = ggplot2::element_text(size = ggplot2::rel(.9)))
+  
+  if(length(event_dates) > 0 & length(event_descriptions) > 0){
+    for(i in 1:length(event_dates)){
+      plot_x <- plot_x + geom_vline(xintercept = event_dates[i], color = "#DC863B", size = 1.1, linetype = "dashed") +
+        geom_text(label = event_descriptions[i], angle = 90,
+                  y = 2.7, color = "black", size = 12 / .pt, hjust = "left",
+                  x = as.numeric(event_dates[i] + days(8)))
+    }
+    
+  }
+  
+  
+  
+  return(plot_x)
+  
+}
+
+
 # marsMetricsTable ------------------------------------------------------------
 
 #' Add metrics to an existing water level or combined plot

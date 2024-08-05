@@ -192,5 +192,12 @@ test_that("marsEventCombinedPlot w/ event supplied", {
   
 })
 
+test_that("marsIntensityPlot",{
+  
+  sys306_data <- pwdgsi::sys306_data
+  sys1265_data <- pwdgsi::sys1265_data
+  
+})
+
 
 
