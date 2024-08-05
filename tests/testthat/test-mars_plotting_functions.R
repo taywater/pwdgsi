@@ -197,6 +197,42 @@ test_that("marsIntensityPlot",{
   sys306_data <- pwdgsi::sys306_data
   sys1265_data <- pwdgsi::sys1265_data
   
+  sys306_snap <- pwdgsi::sys306_snap
+  sys1265_snap <- pwdgsi::sys1265_snap
+  
+  sys306_ot <- as.data.frame(matrix(ncol = 9,nrow = 0))
+  colnames(sys306_ot) <- c("ow_uid", "radar_event_uid", "ow_suffix",
+                        "eventdatastart_edt", "smp_id", "eventavgintensity_inhr",
+                        "eventpeakintensity_inhr", "eventdepth_in", "overtop")
+  
+  for(i in 1:nrow(sys306_data$`Rain Event Data`)){
+    
+    event_uid_x <- sys306_data$`Rain Event Data`$radar_event_uid[i]
+    event_start_x <- sys306_data$`Rain Event Data`$eventdatastart_est[i]
+    event_end_x <- sys306_data$`Rain Event Data`$eventdataend_est[i]
+    
+    level_x <- sys306_data$`Level Data` %>% dplyr::filter(radar_event_uid == event_uid_x |
+                                                            (dtime_est >= event_start_x &
+                                                             dtime_est <= event_end_x))
+    
+    overtop_x <- pwdgsi::marsOvertoppingCheck_bool(level_x$level_ft, sys306_snap$storage_depth_ft)
+    
+    sys306_ot[i,] <- c(level_x$ow_uid[1],
+                       event_uid_x,
+                       sys306_snap$ow_suffix,
+                       event_start_x,
+                       sys306_snap$smp_id,
+                       sys306_data$`Rain Event Data`$eventavgintensity_inhr[i],
+                       sys306_data$`Rain Event Data`$eventpeakintensity_inhr[i],
+                       sys306_data$`Rain Event Data`$eventdepth_in[i],
+                       overtop_x
+                      )
+  }
+  pwdgsi::marsOvertoppingPlot(data = sys306_ot)
+  
+  
+  
+  
 })
 
 

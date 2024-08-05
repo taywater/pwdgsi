@@ -1220,7 +1220,7 @@ marsOvertoppingPlot <- function(data,
                        y = eventpeakintensity_inhr)) +
     geom_point(aes(color = factor(overtop_col),
                    size = factor(overtop_sz))) +
-    geom_hline(yintercept = 2.5, color = color = "#DC863B", size = 1.5) +
+    geom_hline(yintercept = 2.5, color = "#DC863B", size = 1.5) +
     scale_y_continuous(limits = c(0,max(3.6,ymax_obs)), minor_breaks =seq(0,max(3,ymax_obs),0.2)) +
     scale_x_datetime(date_minor_breaks = "2 months") +
     ylab("Event Peak Intensity (in/hr)") + xlab("Event Date/Time") +
@@ -1233,7 +1233,7 @@ marsOvertoppingPlot <- function(data,
     geom_point(aes(x = eventdatastart_edt,
                    y = eventpeakintensity_inhr, size = factor(overtop_sz),  color = factor(overtop_col), shape = factor(ExceedDesignStorm))) +
     scale_shape_manual(name = paste0("Exceeds Design Storm Depth: ",round(design_storm,2)," in"), values = c(2), labels = c("True"), na.translate = FALSE) +
-    scale_color_manual(name = "Overtopping", values = c("#899DA4" "#C93312"), labels = c("False","True"), guide = guide_legend(reverse = TRUE)) +
+    scale_color_manual(name = "Overtopping", values = c("#899DA4", "#C93312"), labels = c("False","True"), guide = guide_legend(reverse = TRUE)) +
     scale_size_manual(name = "Overtopping", values = c(2,4), labels = c("False","True"), guide = guide_legend(reverse = TRUE)) +
     #from pwdgsi plots
     ggplot2::theme(
