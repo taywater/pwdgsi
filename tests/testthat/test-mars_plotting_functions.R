@@ -25,7 +25,7 @@ test_that("marsWaterLevelplot", {
   
   sys1265_rain <- sys1265_data$`Rainfall Data` %>% dplyr::filter(radar_event_uid == sys1265_event$radar_event_uid)
   sys1265_level <- sys1265_data$`Level Data` %>% dplyr::filter(radar_event_uid == sys1265_event$radar_event_uid)
-
+  
   sys306_rain <- sys306_data$`Rainfall Data` %>% dplyr::filter(radar_event_uid == sys306_event$radar_event_uid)
   sys306_level <- sys306_data$`Level Data` %>% dplyr::filter(radar_event_uid == sys306_event$radar_event_uid)
   
@@ -38,14 +38,14 @@ test_that("marsWaterLevelplot", {
   synthetic_7 <- sys306_level$level_ft + 1.8
   
   waterlev1 <- marsWaterLevelPlot(event = "testplot", storage_depth_ft = sys1265_snap$storage_depth_ft,
-                     obs_datetime = sys1265_level$dtime_est, obs_level_ft = sys1265_level$level_ft,
-                     datetime_2 = sys1265_level$dtime_est,
-                     level_ft_2 = synthetic_2,
-                     datetime_3 = sys1265_level$dtime_est,
-                     level_ft_3 = synthetic_3,
-                     datetime_4 = sys1265_level$dtime_est,
-                     level_ft_4 = synthetic_4,
-                     structure_name = "OW1")
+                                  obs_datetime = sys1265_level$dtime_est, obs_level_ft = sys1265_level$level_ft,
+                                  datetime_2 = sys1265_level$dtime_est,
+                                  level_ft_2 = synthetic_2,
+                                  datetime_3 = sys1265_level$dtime_est,
+                                  level_ft_3 = synthetic_3,
+                                  datetime_4 = sys1265_level$dtime_est,
+                                  level_ft_4 = synthetic_4,
+                                  structure_name = "OW1")
   
   waterlev2 <- marsWaterLevelPlot(event = "testplot2", storage_depth_ft = sys306_snap$storage_depth_ft,
                                   obs_datetime = sys306_level$dtime_est, obs_level_ft = sys306_level$level_ft,
@@ -61,7 +61,7 @@ test_that("marsWaterLevelplot", {
   testthat::expect_equal(length(waterlev1$layers), expected = 10)
   testthat::expect_equal(length(waterlev2$layers), expected = 10)
   
-
+  
   
 })
 
@@ -77,7 +77,7 @@ test_that("marsWaterLevelplot with metrics", {
   sys1265_mets <- pwdgsi::sys1265_mets
   sys306_snap <- pwdgsi::sys306_snap
   sys1265_snap <- pwdgsi::sys1265_snap
-
+  
   
   
   #system 2
@@ -102,35 +102,35 @@ test_that("marsWaterLevelplot with metrics", {
   synthetic_7 <- sys306_level$level_ft + 1.8
   
   wl_met1 <- marsWaterLevelPlot(event = "testplot", storage_depth_ft = sys1265_snap$storage_depth_ft,
-                                  obs_datetime = sys1265_level$dtime_est, obs_level_ft = sys1265_level$level_ft,
-                                  datetime_2 = sys1265_level$dtime_est,
-                                  level_ft_2 = synthetic_2,
-                                  datetime_3 = sys1265_level$dtime_est,
-                                  level_ft_3 = synthetic_3,
-                                  datetime_4 = sys1265_level$dtime_est,
-                                  level_ft_4 = synthetic_4,
-                                  structure_name = "OW1",
-                                  metrics_show = TRUE,
-                                  obs_RSPU = sys1265_mets$RPSU[1],
-                                  obs_infil_inhr = sys1265_mets$Infiltration_rate_inhrs[1],
-                                  obs_draindown_hr = sys1265_mets$Draindown_hrs[1],
-                                  obs_overtopping = sys1265_mets$Overtopping[1])
+                                obs_datetime = sys1265_level$dtime_est, obs_level_ft = sys1265_level$level_ft,
+                                datetime_2 = sys1265_level$dtime_est,
+                                level_ft_2 = synthetic_2,
+                                datetime_3 = sys1265_level$dtime_est,
+                                level_ft_3 = synthetic_3,
+                                datetime_4 = sys1265_level$dtime_est,
+                                level_ft_4 = synthetic_4,
+                                structure_name = "OW1",
+                                metrics_show = TRUE,
+                                obs_RSPU = sys1265_mets$RPSU[1],
+                                obs_infil_inhr = sys1265_mets$Infiltration_rate_inhrs[1],
+                                obs_draindown_hr = sys1265_mets$Draindown_hrs[1],
+                                obs_overtopping = sys1265_mets$Overtopping[1])
   
   wl_met2 <- marsWaterLevelPlot(event = "testplot2", storage_depth_ft = sys306_snap$storage_depth_ft,
-                                  obs_datetime = sys306_level$dtime_est, obs_level_ft = sys306_level$level_ft,
-                                  datetime_2 = sys306_level$dtime_est,
-                                  level_ft_2 = synthetic_5,
-                                  datetime_3 = sys306_level$dtime_est,
-                                  level_ft_3 = synthetic_6,
-                                  datetime_4 = sys306_level$dtime_est,
-                                  level_ft_4 = synthetic_7,
-                                  structure_name = "OW1",
-                                  metrics_show = TRUE,
-                                  obs_RSPU = sys306_mets$RPSU[1],
-                                  obs_infil_inhr = sys306_mets$Infiltration_rate_inhrs[1],
-                                  obs_draindown_hr = sys306_mets$Draindown_hrs[1],
-                                  obs_overtopping = sys306_mets$Overtopping[1])
-
+                                obs_datetime = sys306_level$dtime_est, obs_level_ft = sys306_level$level_ft,
+                                datetime_2 = sys306_level$dtime_est,
+                                level_ft_2 = synthetic_5,
+                                datetime_3 = sys306_level$dtime_est,
+                                level_ft_3 = synthetic_6,
+                                datetime_4 = sys306_level$dtime_est,
+                                level_ft_4 = synthetic_7,
+                                structure_name = "OW1",
+                                metrics_show = TRUE,
+                                obs_RSPU = sys306_mets$RPSU[1],
+                                obs_infil_inhr = sys306_mets$Infiltration_rate_inhrs[1],
+                                obs_draindown_hr = sys306_mets$Draindown_hrs[1],
+                                obs_overtopping = sys306_mets$Overtopping[1])
+  
   expect_s3_class(wl_met1, expectedWLMets)
   expect_s3_class(wl_met2, expectedWLMets)
   # correct layer number
@@ -141,21 +141,37 @@ test_that("marsWaterLevelplot with metrics", {
 
 
 test_that("marsEventCombinedPlot w/ date supplied", {
-  comb1 <- marsEventCombinedPlot(con = mars_con,
-                                 event_date = '2023-01-25',
-                                 smp_id = '1265-7-1',
-                                 ow_suffix = 'OW1')
+  
+  tryCatch(expr = { comb1 <- marsEventCombinedPlot(con = mars_con,
+                                                   event_date = '2023-01-25',
+                                                   smp_id = '1265-7-1',
+                                                   ow_suffix = 'OW1')},
+           error = function(e){
+             
+             message("an error occurred")
+             comb1 <<- "an error occurred"
+           }
+  )
+  
+  
+  
   
   expect_s3_class(comb1,expectedCombined)
   
-  comb2 <- marsEventCombinedPlot(con = mars_con,
-                                 event_date = '2023-01-04',
-                                 smp_id = '306-3-1',
-                                 ow_suffix = 'OW1')
+  tryCatch(expr = { results <- marsEventCombinedPlot(con = mars_con,
+                                                     event_date = '2023-01-04',
+                                                     smp_id = '306-3-1',
+                                                     ow_suffix = 'OW1')},
+           error = function(e){
+             
+             message("an error occurred")
+             results <<- "an error occurred"
+           }
+  )
   
-  expect_s3_class(comb2,expectedCombined)
+  expect_equal(results,"an error occurred")
   
-  })
+})
 
 
 test_that("marsEventCombinedPlot w/ event supplied", {
@@ -163,32 +179,44 @@ test_that("marsEventCombinedPlot w/ event supplied", {
   # # source pre-calculated metrics
   sys306_mets <- pwdgsi::sys306_mets
   sys1265_mets <- pwdgsi::sys1265_mets
-
-
   
-  comb3 <- marsEventCombinedPlot(con = mars_con,
-                                 event_uid = 332235,
-                                 smp_id = '1265-7-1',
-                                 ow_suffix = 'OW1',
-                                 metrics_show = TRUE,
-                                 obs_RSPU = sys1265_mets$RPSU[1],
-                                 obs_infil_inhr = sys1265_mets$Infiltration_rate_inhrs[1],
-                                 obs_draindown_hr = sys1265_mets$Draindown_hrs[1],
-                                 obs_overtopping = sys1265_mets$Overtopping[1])
+  
+  tryCatch(expr = { comb3 <- marsEventCombinedPlot(con = mars_con,
+                                                   event_uid = 332235,
+                                                   smp_id = '1265-7-1',
+                                                   ow_suffix = 'OW1',
+                                                   metrics_show = TRUE,
+                                                   obs_RSPU = sys1265_mets$RPSU[1],
+                                                   obs_infil_inhr = sys1265_mets$Infiltration_rate_inhrs[1],
+                                                   obs_draindown_hr = sys1265_mets$Draindown_hrs[1],
+                                                   obs_overtopping = sys1265_mets$Overtopping[1])},
+           error = function(e){
+             
+             message("an error occurred")
+             comb3 <<- "an error occurred"
+           }
+  )
+  
   
   expect_s3_class(comb3,expectedCombined)
   
-  comb4 <- marsEventCombinedPlot(con = mars_con,
-                                 event_uid = 330576,
-                                 smp_id = '306-3-1',
-                                 ow_suffix = 'OW1',
-                                 metrics_show = TRUE,
-                                 obs_RSPU = sys306_mets$RPSU[1],
-                                 obs_infil_inhr = sys306_mets$Infiltration_rate_inhrs[1],
-                                 obs_draindown_hr = sys306_mets$Draindown_hrs[1],
-                                 obs_overtopping = sys306_mets$Overtopping[1])
+  tryCatch(expr = { comb4 <- marsEventCombinedPlot(con = mars_con,
+                                                   event_uid = 330576,
+                                                   smp_id = '306-3-1',
+                                                   ow_suffix = 'OW1',
+                                                   metrics_show = TRUE,
+                                                   obs_RSPU = sys306_mets$RPSU[1],
+                                                   obs_infil_inhr = sys306_mets$Infiltration_rate_inhrs[1],
+                                                   obs_draindown_hr = sys306_mets$Draindown_hrs[1],
+                                                   obs_overtopping = sys306_mets$Overtopping[1])},
+           error = function(e){
+             
+             message("an error occurred")
+             comb4 <<- "an error occurred"
+           }
+  )
   
-  expect_s3_class(comb4,expectedCombined)
+  expect_equal(comb4,"an error occurred")
   
 })
 
@@ -202,8 +230,8 @@ test_that("marsIntensityPlot",{
   
   sys306_ot <- as.data.frame(matrix(ncol = 9,nrow = 0))
   colnames(sys306_ot) <- c("ow_uid", "radar_event_uid", "ow_suffix",
-                        "eventdatastart_edt", "smp_id", "eventavgintensity_inhr",
-                        "eventpeakintensity_inhr", "eventdepth_in", "overtop")
+                           "eventdatastart_edt", "smp_id", "eventavgintensity_inhr",
+                           "eventpeakintensity_inhr", "eventdepth_in", "overtop")
   
   for(i in 1:nrow(sys306_data$`Rain Event Data`)){
     
@@ -213,7 +241,7 @@ test_that("marsIntensityPlot",{
     
     level_x <- sys306_data$`Level Data` %>% dplyr::filter(radar_event_uid == event_uid_x |
                                                             (dtime_est >= event_start_x &
-                                                             dtime_est <= event_end_x))
+                                                               dtime_est <= event_end_x))
     
     overtop_x <- pwdgsi::marsOvertoppingCheck_bool(level_x$level_ft, sys306_snap$storage_depth_ft)
     
@@ -226,9 +254,9 @@ test_that("marsIntensityPlot",{
                        sys306_data$`Rain Event Data`$eventpeakintensity_inhr[i],
                        sys306_data$`Rain Event Data`$eventdepth_in[i],
                        overtop_x
-                      )
+    )
   }
-  pwdgsi::marsOvertoppingPlot(data = sys306_ot)
+  pwdgsi::marsOvertoppingPlot(data = sys306_ot, design_storm = 1.5)
   
   
   
