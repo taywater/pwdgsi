@@ -634,26 +634,53 @@ marsCheckSMPSnapshot <- function(con, smp_id, ow_suffix, request_date){
     result <- dplyr::bind_rows(result, new_result)
   }
   
-  #3 Are the snapshots we have equal to the current GreenIT values!?
+  #3 Are the snapshots we have equal to the current GreenIT/PlanReview values!?
   
-  #3.1 Let's look at the view greenit unified
-  current_greenit_query <- paste0("SELECT * FROM external.viw_greenit_unified where smp_id IN ('",paste(ow_validity$smp_id, collapse = "', '"),"')")
-  current_greenit <- odbc::dbGetQuery(con, current_greenit_query)
+  #3.0.5 Where are we looking?
+  table_query <- paste0('select smp_id, \'viw_planreview_crosstab_snapshot\' as location from external.tbl_planreview_crosstab
+                         where smp_id IN (\'',paste(ow_validity$smp_id, collapse = "', '"),'\')  
+                         UNION
+                         select smp_id, \'viw_greenit_unified\' as location from external.viw_greenit_unified
+                         where  smp_id IN (\'',paste(ow_validity$smp_id, collapse = "', '"),'\')')
+  
+  check_table <- odbc::dbGetQuery(con, table_query)
+  
+  
+  #3.1 Let's look at the view greenit unified/planreview crosstab
+  current_values <- data.frame("ow_uid" = numeric(),
+                               "dcia_ft2" = numeric(),
+                               "storage_footprint_ft2" = numeric(), 
+                               "orifice_diam_in" = numeric(),
+                               "infil_footprint_ft2" = numeric(),
+                               "storage_depth_ft" = numeric(),
+                               "lined" = character(), # make logical later 
+                               "surface" = character(),  # make logical later 
+                               "storage_volume_ft3" = numeric(),
+                               "infil_dsg_rate_inhr" = numeric(),
+                               stringsAsFactors = FALSE)
+  
+  # change the query based on the smp chosen
+  for(i in 1:nrow(check_table)){
+    current_values_query <- paste0("SELECT * FROM external.", check_table$location[i]," where smp_id IN ('",check_table$smp_id[i],"')")
+    current_value <- odbc::dbGetQuery(con, current_values_query)
+    current_values <- dplyr::bind_rows(current_values, current_value)
+  }
+
   
   #3.2 Now let's compare between the two for differences
   comp_fields <- c("ow_uid", "dcia_ft2", "storage_footprint_ft2",
                    "orifice_diam_in", "infil_footprint_ft2", "storage_depth_ft",
                    "lined", "surface", "storage_volume_ft3", "infil_dsg_rate_inhr")
 
-  comp_greenit <- current_greenit %>% dplyr::select(comp_fields) %>% arrange(ow_uid)
-  comp_result <- result %>% dplyr::select(comp_fields) %>% arrange(ow_uid)
+  comp_values <- current_values %>% dplyr::select(all_of(comp_fields)) %>% arrange(ow_uid)
+  comp_result <- result %>% dplyr::select(all_of(comp_fields)) %>% arrange(ow_uid)
   
   # let's compare
   for(i in length(comp_result$ow_uid)){
   result_hash <- digest::digest(comp_result[i,], algo = "md5")
-  greenit_hash <- digest::digest(comp_greenit[i,], algo = "md5")  
+  value_hash <- digest::digest(comp_values[i,], algo = "md5")  
   
-  if(result_hash != greenit_hash){
+  if(result_hash != value_hash){
     
     smp_id_x <- ow_validity$smp_id[ow_validity$ow_uid == comp_result$ow_uid[i]]
     suffix_x <- ow_validity$ow_suffix[ow_validity$ow_uid == comp_result$ow_uid[i]]

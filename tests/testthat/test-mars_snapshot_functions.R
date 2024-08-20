@@ -14,7 +14,7 @@ testthat::test_that("marsCheckSMPSnapshot",{
                                ow_suffix = test_ow_suffix,
                                request_date = test_request_date)
   
-  testthat::expect_equal(mcs_outcome, c(TRUE,TRUE,FALSE))
+  testthat::expect_equal(mcs_outcome, c(TRUE,TRUE,FALSE,TRUE))
   
 })
 
@@ -38,7 +38,7 @@ test_that("marsFetchSMPSnapshot",{
   
   testthat::expect_equal(colnames(mfs_outcome), cols)
   
-  testthat::expect_equal(nrow(mfs_outcome), 2)
+  testthat::expect_equal(nrow(mfs_outcome), 3)
   
   
 })
